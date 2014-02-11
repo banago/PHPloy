@@ -38,8 +38,10 @@ class PHPloy {
 	public $revision;
 	public $files_to_ignore = array('.gitignore', '.gitmodules');
 	
+	
 	protected $connection = false;
 	protected $print = true;
+	protected $server = '';
 	protected $repo;
 	protected $main_repo;
 	protected $is_submodule = false;
@@ -53,6 +55,10 @@ class PHPloy {
 		
 		if( isset( $options['l'] ) or isset( $options['list'] ) ) {	
 			$this->list_files = true;
+		}
+
+		if( isset( $options['s'] ) or isset( $options['server'] ) ) {	
+			$this->server = isset( $options['s'] ) ? $options['s'] : $options['server'];
 		}
 
 		$this->revision = isset( $options['revision'] ) ? $options['revision'] : 'HEAD';
@@ -103,51 +109,51 @@ class PHPloy {
 	 */
 	function parseCredentials($deploy) 
 	{
-		  if( ! file_exists( $deploy ) ) {
-				$this->output("'$deploy' does not exist.");
-				exit;
-		  } else {
-				$servers = parse_ini_file($deploy, true);
-				if( ! $servers ) {
-					 $this->output("'$deploy' is not a valid .ini file.");
-					 exit;
-				} else {
-					 $this->checkServers($servers);
-				}
-		  }
-		  $this->ignore($deploy);
-	 }
+		if( ! file_exists( $deploy ) ) {
+			$this->output("'$deploy' does not exist.");
+			exit;
+		} else {
+			$servers = parse_ini_file($deploy, true);
+			if( ! $servers ) {
+				 $this->output("'$deploy' is not a valid .ini file.");
+				 exit;
+			} else {
+				$this->ignore($deploy);
+				return $servers;
+			}
+		}
+	}
 
 	/**
 	 * Add Servers
 	 */
-	 function checkServers($servers) 
-	 {
-		  foreach($servers as $uri => $options) {
+	function prepareServers() 
+	{
+		$servers = $this->parseCredentials('deploy.ini');
+		
+		foreach($servers as $name => $options) {
 
-				if(substr($uri, 0, 6) === 'ftp://') {
-					 $options = array_merge($options, parse_url($uri));
+			if($name === 'quickmode') {
+				foreach($options as $env => $creds) {
+					$options = parse_url($creds);
+					$this->servers[$env] = $options;
 				}
+				break;
+			}
 
-				// Defaults
-				$options = array_merge(array(
-					 'skip' => false,
-					 'host' => '',
-					 'user' => '',
-					 'pass' => '',
-					 'port' => 21,
-					 'path' => '/',
-					 'passive' => true,
-					 'clean_directories' => array()
-				), $options);
-
-				if ($options['skip']) {
-					 continue;
-				} else {
-					 $this->servers[$uri] = $options;
-				}
-		  }
-	 }
+			$options = array_merge(array(
+				 'host' => '',
+				 'user' => '',
+				 'pass' => '',
+				 'port' => 21,
+				 'path' => '/',
+				 'passive' => true,
+				 'clean_directories' => array()
+			), $options);
+			
+			$this->servers[$name] = $options;		
+		}
+	}
 
 	/**
 	 * Ignore files 
@@ -176,7 +182,7 @@ class PHPloy {
 			 $remote_revision = trim(fread($tmp_file, 1024));
 			 fclose($tmp_file);
 		} else {
-			 $this->output('No revision file exists on the server.');
+			 $this->output('Fresh deployment - grab a ☕');
 		}
 		
 		if( ! empty( $remote_revision ) ) {
@@ -226,14 +232,19 @@ class PHPloy {
 	 */
 	function deploy($revision = 'HEAD') 
 	{
-		$this->parseCredentials('deploy.ini');
-		foreach( $this->servers as $server ) 
-		{			
+		$this->prepareServers();
+		
+		foreach( $this->servers as $name => $server ) 
+		{	
+			// Skip servers not specified, if specified.
+			if( $this->server != '' && $this->server != $name ) continue;
+			
 			$this->connect( $server );
 			$files = $this->compare( $revision );
 			if( $this->list_files === true ) {
 				$this->listFiles($files);
 			} else {
+				$this->output("➝ " . $name);
 				$this->push( $files );
 			}
 
@@ -280,14 +291,13 @@ class PHPloy {
 	 */
 	protected function connect( $server )
 	{
-		# Let's make sure the $path ends with a slash.
+		// Let's make sure the $path ends with a slash.
 		if(substr($server['path'], strlen($server['path']) - 1, strlen($server['path'])) !== '/') {
 			$server['path'] = $server['path'] . '/';
 		}
 		$paths_that_exist = array();
 
-		// Okay, let's connect to the server.
-
+		// Let's connect to the server.
 		$connection = @ftp_connect($server['host'], $server['port']);
 
 		if (!$connection) {
@@ -296,7 +306,7 @@ class PHPloy {
 			if (!@ftp_login($connection, $server['user'], $server['pass'])) {
 				throw new Exception("Could not login to {$server['host']} (Tried to login as {$server['user']}).");
 			}
-			ftp_pasv($connection, $server['passive']);
+			ftp_pasv($connection, true);
 			if(ftp_chdir($connection, $server['path']))	{	
 				$this->connection = $connection;
 				$this->output("\r\n+ ---------- ☻ ---------- +");	
