@@ -2,13 +2,16 @@
 
 PHPloy is a little PHP script that allows you to deploy files through FTP to a server. It makes use of Git to know which files it should upload and which one it should delete. It is a real time-saver. PHPloy supports deployments of submodules and sub-submodules.
 
-## Usage Globally
+## Usage 
+As any script, you can use PHPloy globally, from your `bin` directory or locally, from your project directory:
+
+### Using PHPloy Globally
 
 1. Drop `phploy` into `/usr/local/bin` and make it executable by running `sudo chmod +x phploy`.
 2. Create the `deploy.ini` file.
 3. Run `phploy` in terminal.
 
-## Usage Locally
+## Using PHPloy Locally
 
 1. Drop `phploy` into your project.
 2. Create the `deploy.ini` file.
@@ -34,6 +37,18 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
     [ftp://example:password@example.com:21/path/to/installation]
 
 The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload all the files of your project.
+
+## View files
+
+PHPloy allows you to check out what are going to be uploaded/deleted before you actually push them. 
+
+Short option:
+
+	phploy -l
+
+Long option:
+
+	phploy --list
 
 ## Ignore files
 
