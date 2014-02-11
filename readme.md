@@ -11,7 +11,7 @@ As any script, you can use PHPloy globally, from your `bin` directory or locally
 2. Create the `deploy.ini` file.
 3. Run `phploy` in terminal.
 
-## Using PHPloy Locally
+### Using PHPloy Locally
 
 1. Drop `phploy` into your project.
 2. Create the `deploy.ini` file.
@@ -40,13 +40,11 @@ The first time it's executed, PHPloy will assume that your deployment server is 
 
 ## View files
 
-PHPloy allows you to check out what are going to be uploaded/deleted before you actually push them. 
-
-Short option:
+PHPloy allows you to check out what are going to be uploaded/deleted before you actually push them. Just run: 
 
 	phploy -l
 
-Long option:
+Or:
 
 	phploy --list
 
