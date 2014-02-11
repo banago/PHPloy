@@ -11,64 +11,61 @@
  * @version 1.0
  */
 
-$opts = getopt("repo::rev::list::");
+$shortopts  = "ls:";
+$longopts  = array(
+    "list",         // No value
+    "repo:",    	// Required value
+    "revision:",    // Required value
+    "server:",      // Required value
+);
+$options = getopt($shortopts, $longopts);
 
-$list = isset( $opts['ls'] );
-$revision = isset( $opts['rv'] ) ? $opts['rv'] : 'HEAD';
-
-$repo = isset( $opts['rp'] ) ? rtrim( $opts['rp'], '/') : getcwd();
-if( ! file_exists( "$repo/.git" ) ) 
-{
-	trigger_error("Looks like '{$repo}' is not git repository.");
-}
-
+/**
+ * Run deployment
+ */
 try {
-	$git = new PHPloy( $repo );
-	if( !$list ) 
-	{
-		$git->deploy($revision);
-	} 
-	else 
-	{
-		$files = $git->compare();
-		if (count($files['upload']) > 0) 
-		{
-			$git->output("Files to upload:");
-			foreach ($files['upload'] as $file_to_upload) 
-			{
-				 $git->output($file_to_upload);
-			}
-		}
-
-		if (count($files['delete']) > 0) {
-			$git->output("Files to delete:");
-			foreach ($files['delete'] as $file_to_delete) {
-				 $git->output($file_to_delete);
-			}
-		}
-	 }
+	$git = new PHPloy( $options );
+	$git->deploy($git->revision);
 } catch (Exception $e) {
 	 echo $e->getMessage();
 }
 
+/**
+ * PHPloy Class
+ */
 class PHPloy {
 
+	public $revision;
+	public $files_to_ignore = array('.gitignore', '.gitmodules');
+	
 	protected $connection = false;
-	protected $files_to_ignore = array('.gitignore', '.gitmodules');
 	protected $print = true;
 	protected $repo;
 	protected $main_repo;
 	protected $is_submodule = false;
 	protected $dot_revision = '.revision';
+	protected $list_files = false;
 
 	public $servers = array();
 	public $submodules = array();
 	 
-	function __construct( $repo ) {
+	function __construct( $options ) {
 		
-		$this->repo = $repo;
-		$this->main_repo = $repo;
-		$this->checkSubmodules( $repo );
+		if( isset( $options['l'] ) or isset( $options['list'] ) ) {	
+			$this->list_files = true;
+		}
+
+		$this->revision = isset( $options['revision'] ) ? $options['revision'] : 'HEAD';
+		$this->repo = isset( $opts['repo'] ) ? rtrim( $opts['repo'], '/') : getcwd();
+		
+		if( ! file_exists( "$this->repo/.git" ) ) {
+			$this->output("'{$this->repo}' is not Git repository.");
+			exit;
+		}
+
+		$this->main_repo = $this->repo;
+		$this->checkSubmodules( $this->repo );
+
 	 }
 
 	/**
@@ -106,12 +103,14 @@ class PHPloy {
 	 */
 	function parseCredentials($deploy) 
 	{
-		  if (!@file_exists($deploy)) {
-				throw new Exception("File '$deploy' does not exist.");
+		  if( ! file_exists( $deploy ) ) {
+				$this->output("'$deploy' does not exist.");
+				exit;
 		  } else {
 				$servers = parse_ini_file($deploy, true);
-				if (!$servers) {
-					 throw new Exception("File '$deploy' is not a valid .ini file.");
+				if( ! $servers ) {
+					 $this->output("'$deploy' is not a valid .ini file.");
+					 exit;
 				} else {
 					 $this->checkServers($servers);
 				}
@@ -124,9 +123,9 @@ class PHPloy {
 	 */
 	 function checkServers($servers) 
 	 {
-		  foreach ($servers as $uri => $options) {
+		  foreach($servers as $uri => $options) {
 
-				if (substr($uri, 0, 6) === 'ftp://') {
+				if(substr($uri, 0, 6) === 'ftp://') {
 					 $options = array_merge($options, parse_url($uri));
 				}
 
@@ -231,7 +230,10 @@ class PHPloy {
 		foreach( $this->servers as $server ) 
 		{			
 			$this->connect( $server );
-			if( $files = $this->compare( $revision ) ) {
+			$files = $this->compare( $revision );
+			if( $this->list_files === true ) {
+				$this->listFiles($files);
+			} else {
 				$this->push( $files );
 			}
 
@@ -240,10 +242,12 @@ class PHPloy {
 					$this->repo = $submodule['path'];
 					$this->is_submodule = $submodule['name'];
 					$this->output("SUBMODULE: " . $this->is_submodule);
-					if( $files = $this->compare( $revision ) ) 
-					{
+					$files = $this->compare( $revision );
+					if( $this->list_files === true ) {
+						$this->listFiles($files);
+					} else {
 						$this->push( $files );
-					}
+					} 
 				}
 			}
 			
@@ -252,9 +256,29 @@ class PHPloy {
 	 }
 
 	/**
+	 * Check what files will be uploaded/deleted
+	 */
+	protected function listFiles( $files ) {
+		if (count($files['upload']) > 0) 
+		{
+			$this->output("Files to upload:");
+			foreach ($files['upload'] as $file_to_upload) 
+			{
+				 $this->output(" ↑ " . $file_to_upload);
+			}
+		}
+		if (count($files['delete']) > 0) {
+			$this->output("Files to delete:");
+			foreach ($files['delete'] as $file_to_delete) {
+				 $this->output(" ✗ " . $file_to_delete);
+			}
+		}
+	 }
+
+	/**
 	 * Connect to the Server
 	 */
-	public function connect( $server )
+	protected function connect( $server )
 	{
 		# Let's make sure the $path ends with a slash.
 		if(substr($server['path'], strlen($server['path']) - 1, strlen($server['path'])) !== '/') {
@@ -285,7 +309,7 @@ class PHPloy {
 	/**
 	 * Push Files one by one.
 	 */
-	function push( $files )
+	protected function push( $files )
 	{
 		$files_to_upload = $files['upload'];
 		$files_to_delete = $files['delete'];
@@ -362,7 +386,7 @@ class PHPloy {
 			file_put_contents( $temp, $loc_rev );
 			ftp_put( $this->connection, $this->dot_revision, $temp, FTP_BINARY );
 			unlink( $temp );
-			$this->output("+---------- ✓ ----------+\r\n");
+			$this->output("+ ---------- ✓ ---------- +\r\n");
 		} else {
 			 $this->output("No files to upload.");
 		}
