@@ -8,22 +8,14 @@
  * @author Bruno De Barros <bruno@terraduo.com>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 1.2.1
+ * @version 1.2.2
  */
-
-/**
- * CLI options
- */
-$shortopts  = 'ls:';
-$longopts  = array('list', 'repo:', 'revision:', 'server:');
-$options = getopt($shortopts, $longopts);
 
 /**
  * Run deployment
  */
 try {
-	$git = new PHPloy( $options );
-	$git->deploy($git->revision);
+	$phploy = new PHPloy();
 } catch (Exception $e) {
 	 echo $e->getMessage();
 }
@@ -37,6 +29,9 @@ class PHPloy {
 	public $files_to_ignore = array('.gitignore', '.gitmodules');
 	public $servers = array();
 	public $submodules = array();
+
+	protected $shortopts  = 'ls:';
+	protected $longopts  = array('list', 'repo:', 'revision:', 'server:');
 		
 	protected $connection = false;
 	protected $server = '';
@@ -46,8 +41,25 @@ class PHPloy {
 	protected $dot_revision = '.revision';
 	protected $list_files = false;
 	 
-	function __construct( $options ) {
+	function __construct() 
+	{	
+		$this->parseOptions();
 		
+		if( file_exists( "$this->repo/.git" ) ) {
+			$this->checkSubmodules( $this->repo );
+			$this->deploy($this->revision);
+		} else {
+			$this->output("'{$this->repo}' is not Git repository.", true);
+		}	
+	}
+
+	/**
+	 * Parse CLI options
+	 */
+	protected function parseOptions() 
+	{		
+		$options = getopt($this->shortopts, $this->longopts);
+
 		if( isset( $options['l'] ) or isset( $options['list'] ) ) {	
 			$this->list_files = true;
 		}
@@ -58,20 +70,16 @@ class PHPloy {
 
 		$this->revision = isset( $options['revision'] ) ? $options['revision'] : 'HEAD';
 		$this->repo = isset( $opts['repo'] ) ? rtrim( $opts['repo'], '/') : getcwd();
-		
-		if( ! file_exists( "$this->repo/.git" ) ) {
-			$this->output("'{$this->repo}' is not Git repository.", true);
-		}
-
 		$this->main_repo = $this->repo;
-		$this->checkSubmodules( $this->repo );
-
-	 }
+		
+		return;
+	}
 
 	/**
 	 * Check for submodules
 	 */
-	protected function checkSubmodules( $repo ) {
+	protected function checkSubmodules( $repo ) 
+	{
 		$command = "git --git-dir=\"$repo/.git\" --work-tree=\"$repo\" submodule status";		
 		$output = array();
 		exec($command, $output);
@@ -88,7 +96,8 @@ class PHPloy {
 	/**
 	 * Check for sub-submodules
 	 */
-	protected function checkSubSubmodules( $repo, $name ) {
+	protected function checkSubSubmodules( $repo, $name ) 
+	{
 		$command = "git --git-dir=\"$repo/.git\" --work-tree=\"$repo\" submodule foreach git submodule status";		
 		$output = array();
 		exec($command, $output);
@@ -156,7 +165,7 @@ class PHPloy {
 	 * 
 	 * @return array
 	 */
-	protected function compare($local_revision = 'HEAD')
+	protected function compare($revision)
 	{
 		$remote_revision = '';
 		$tmp_file = tmpfile();
@@ -257,7 +266,8 @@ class PHPloy {
 	/**
 	 * Check what files will be uploaded/deleted
 	 */
-	protected function listFiles( $files ) {
+	protected function listFiles( $files ) 
+	{
 		if (count($files['upload']) > 0) 
 		{
 			$this->output("Files to upload:");
