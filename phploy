@@ -165,7 +165,7 @@ class PHPloy {
 	 * 
 	 * @return array
 	 */
-	protected function compare($revision)
+	protected function compare($local_revision)
 	{
 		$remote_revision = '';
 		$tmp_file = tmpfile();
