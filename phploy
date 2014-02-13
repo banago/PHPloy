@@ -138,7 +138,7 @@ class PHPloy {
 		
 		foreach($servers as $name => $options) {
 
-			if($name === 'quickmode') {
+			if($name == 'quickmode') {
 				foreach($options as $env => $creds) {
 					$options = parse_url($creds);
 					$this->servers[$env] = $options;
@@ -167,8 +167,10 @@ class PHPloy {
 	 */
 	protected function compare($local_revision)
 	{
-		$remote_revision = '';
+		$remote_revision = null;
 		$tmp_file = tmpfile();
+        $files_to_upload = array();
+        $files_to_delete = array();
 
 		if( $this->is_submodule ) {
 			$this->dot_revision = $this->is_submodule . '/.revision';
@@ -182,41 +184,31 @@ class PHPloy {
 			 $this->output('Fresh deployment - grab a ☕');
 		}
 		
-		if( ! empty( $remote_revision ) ) {
+		if( $remote_revision ) ) {
 			$command = "git --git-dir=\"$this->repo/.git\" --work-tree=\"$this->repo\" diff --name-status {$remote_revision	}...{$local_revision}";
+            exec( $command, $output );
+
+            foreach( $output as $line ) {
+                // Accessing single characters in a string
+                // can also be achieved using "square brackets"
+                if( $line[0] == 'A' or $line[0] == 'C' or $line[0] == 'M') {
+                    $files_to_upload[] = trim( substr( $line, 1 ) );
+                } 
+                elseif( $line[0] == 'D' ) {
+                    $files_to_delete[] = trim( substr( $line, 1 ) );
+                } 
+                else {
+                    throw new Exception("Unknown git-diff status: {$line[0]}");
+                }
+            }
 		} else {
 			$command = "git --git-dir=\"$this->repo/.git\" --work-tree=\"$this->repo\" ls-files";
+            exec( $command, $output );
+
+            $files_to_upload = $output;
 		}
 
-		$output = array();
-		exec( $command, $output );
-
-		$files_to_upload = array();
-		$files_to_delete = array();
-
-		if( ! empty( $remote_revision ) ) {
-			foreach( $output as $line ) {
-				// Accessing single characters in a string
-				// can also be achieved using "square brackets"
-				if( $line[0] == 'A' or $line[0] == 'C' or $line[0] == 'M') {
-					$files_to_upload[] = trim( substr( $line, 1 ) );
-				} 
-				elseif( $line[0] == 'D' ) {
-					$files_to_delete[] = trim( substr( $line, 1 ) );
-				} 
-				else {
-					throw new Exception("Unknown git-diff status: {$line[0]}");
-				}
-			}
-		} else {
-			$files_to_upload = $output;
-		}
-
-		foreach( $files_to_upload as $key => $file ) {
-			if( in_array( $file, $this->files_to_ignore ) ) {
-				 unset($files_to_upload[$key]);
-			}
-		}
+        $files_to_upload = array_diff($files_to_upload, $this->files_to_ignore);
 
 		return array(
 			'upload' => $files_to_upload,
@@ -298,20 +290,20 @@ class PHPloy {
 		// Let's connect to the server.
 		$connection = @ftp_connect($server['host'], $server['port']);
 
-		if(!$connection) {
-			$this->output("Could not connect to {$server['host']}", true);
-		} else {
-			if (!@ftp_login($connection, $server['user'], $server['pass'])) {
-				throw new Exception("Could not login to {$server['host']} (Tried to login as {$server['user']}).");
-			}
-			ftp_pasv($connection, true);
-			if(ftp_chdir($connection, $server['path']))	{	
-				$this->connection = $connection;
-				$this->output("\r\n+ ---------- ☻ ---------- +");	
-			} else {
-				throw new Exception("Could not change the FTP directory to {$server['path']}.");
-			}
-		}
+        if($connection) {
+            if (!@ftp_login($connection, $server['user'], $server['pass'])) {
+                throw new Exception("Could not login to {$server['host']} (Tried to login as {$server['user']}).");
+            }
+            ftp_pasv($connection, true);
+            if(ftp_chdir($connection, $server['path'])) {   
+                $this->connection = $connection;
+                $this->output("\r\n+ ---------- ☻ ---------- +");   
+            } else {
+                throw new Exception("Could not change the FTP directory to {$server['path']}.");
+            }
+        } else {
+            throw new Exception("Could not connect to {$server['host']}");
+        }
 	}
 
 	/**
