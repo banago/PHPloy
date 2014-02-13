@@ -1,14 +1,15 @@
-#!/usr/bin/php
+#!/usr/bin/env php
 <?php
 /**
  * PHPloy - A PHP Deployment Script
  *
  * @package  PHPloy
  * @author Baki Goxhaj <banago@gmail.com>
+ * @author Fadion Dashi <jonidashi@gmail.com>
  * @author Bruno De Barros <bruno@terraduo.com>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 1.2.2
+ * @version 1.2.3
  */
 
 /**
@@ -184,7 +185,7 @@ class PHPloy {
 			 $this->output('Fresh deployment - grab a ☕');
 		}
 		
-		if( $remote_revision ) ) {
+		if( $remote_revision ) {
 			$command = "git --git-dir=\"$this->repo/.git\" --work-tree=\"$this->repo\" diff --name-status {$remote_revision	}...{$local_revision}";
             exec( $command, $output );
 
