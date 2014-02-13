@@ -73,7 +73,6 @@ class PHPloy {
 
 		if( isset( $options['rollback'] ) ) {	
 			$this->revision = ($options['rollback'] == '') ? 'HEAD^' : $options['rollback'];
-			$this->output('Rollback is: '. $options['rollback']);
 		} else {
 			$this->revision = 'HEAD';
 		}
@@ -91,7 +90,7 @@ class PHPloy {
 	{
 		$command = "git --git-dir=\"$repo/.git\" --work-tree=\"$repo\" submodule status";		
 		$output = array();
-		exec($command, $output);
+		exec(escapeshellcmd($command), $output);
 		if( count( $output ) > 0 ) {
 			foreach($output as $line) {
 				$line = explode(' ', trim($line));
@@ -109,7 +108,7 @@ class PHPloy {
 	{
 		$command = "git --git-dir=\"$repo/.git\" --work-tree=\"$repo\" submodule foreach git submodule status";		
 		$output = array();
-		exec($command, $output);
+		exec(escapeshellcmd($command), $output);
 		if( count( $output ) > 0 ) {
 			foreach ($output as $line) {
 				$line = explode(' ', trim($line));
@@ -193,18 +192,19 @@ class PHPloy {
 			 $this->output('Fresh deployment - grab a ☕');
 		}
 
-		$this->output("Remote revision is: " . $remote_revision);
-
 		$git_command = "git --git-dir=\"$this->repo/.git\" --work-tree=\"$this->repo\" ";	
 
 		if( $local_revision == 'HEAD' ) {
-			$command = $git_command . "diff --name-status {$remote_revision }...{$local_revision}";
+			$command = $git_command . 'diff --name-status ' . $remote_revision . ' ...' . $local_revision;
 		} else {
-			$command = $git_command . "diff --name-status {$local_revision }...{$remote_revision}"; // Swap revisions when you revert
+			$command = $git_command . 'diff --name-status ' . $local_revision ' ...' . $remote_revision; // Swap revisions when you revert
 		}
 
+		$this->output("Remote revision	: " . $remote_revision);
+		$this->output("Comand: " . $command);
+
 		$output = array();
-		exec( $command, $output );
+		exec(escapeshellcmd($command), $output);
 		
 		print_r( $output );
 
