@@ -22,46 +22,46 @@ As any script, you can use PHPloy globally, from your `bin` directory or locally
 The `deploy.ini` file hold your credentials and it must be in the root directory of your project. Use as many servers as you need and whichever configuration type you prefer.
 
     ; This is a sample deploy.ini file.
-	; You can specify as many servers as you need
-	; and use whichever configuration way you like.
+    ; You can specify as many servers as you need
+    ; and use whichever configuration way you like.
 
-	[staging]
-	
-	user = example
-	pass = password
-	host = staging-example.com
-	path = /path/to/installation
-	port = 21
-	passive = true
-	
-	[production]
-	
-	user = example
-	pass = password
-	host = production-example.com
-	path = /path/to/installation
-	port = 21
-	passive = true
-	
-	; If that seemed too long for you, you can use quickmode instead:
-	[quickmode]
-		staging = ftp://example:password@staging-example.com:21/path/to/installation
-		production = ftp://example:password@production-example.com:21/path/to/installation
+    [staging]
+    
+    user = example
+    pass = password
+    host = staging-example.com
+    path = /path/to/installation
+    port = 21
+    passive = true
+    
+    [production]
+    
+    user = example
+    pass = password
+    host = production-example.com
+    path = /path/to/installation
+    port = 21
+    passive = true
+    
+    ; If that seemed too long for you, you can use quickmode instead:
+    [quickmode]
+        staging = ftp://example:password@staging-example.com:21/path/to/installation
+        production = ftp://example:password@production-example.com:21/path/to/installation
 
 
 The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload all the files of your project.
 
-## Specify Server
+## Multiple Servers
 
 PHPloy allows you to configure multilple servers in the deploy file and deploy to any of them with ease. By default it will deploy to all specified servers.
 To specify one server run: 
 
-	phploy -s servername
+    phploy -s servername
 
 Or:
 
-	phploy --server servername
-	
+    phploy --server servername
+    
 `servername` stands for the name you have given to the server in the `deploy.ini` configuration file.
 
 ## Rollbacks
@@ -70,11 +70,11 @@ PHPloy allows you to roll back to an earlier version when you need to. Rolling b
 
 To roll back to the previous commit, you just run:
 
-	phploy --rollback
+    phploy --rollback
 
 To roll back to whatever commit you want to, you run:
 
-	phploy --rollback="commit-hash-goes-here"
+    phploy --rollback="commit-hash-goes-here"
 
 Note that there is not a short version of `--rollback` and also that when you run a rollback your files will revert **temporarely** to the version of the rollback you are running. When the deploymnet is finished, everything will go back as it was. 
 
@@ -82,11 +82,11 @@ Note that there is not a short version of `--rollback` and also that when you ru
 
 PHPloy allows you to check out what are going to be uploaded/deleted before you actually push them. Just run: 
 
-	phploy -l
+    phploy -l
 
 Or:
 
-	phploy --list
+    phploy --list
 
 ## How It Works
 
