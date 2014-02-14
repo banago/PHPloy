@@ -415,8 +415,8 @@ class PHPloy {
 		}
 
 		// If revision is not HEAD, the current one, it means this is a rollback. 
-		// So, we have to revert the master because we reverted to a earlier revision
-		// before the deploy start.
+		// So, we have to revert the master because we reverted to a earlier 
+		// revision before the deploy start.
 		if( $this->revision != 'HEAD' ) {
 			$command = 'git --git-dir="' . $this->repo . '/.git" --work-tree="' . $this->repo . '" checkout master';
 			exec(escapeshellcmd($command));	
