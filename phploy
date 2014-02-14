@@ -61,8 +61,6 @@ class PHPloy {
 	{		
 		$options = getopt($this->shortopts, $this->longopts);
 
-		print_r( $options );
-
 		if( isset( $options['l'] ) or isset( $options['list'] ) ) {	
 			$this->list_files = true;
 		}
@@ -192,22 +190,17 @@ class PHPloy {
 			 $this->output('Fresh deployment - grab a ☕');
 		}
 
-		$git_command = "git --git-dir=\"$this->repo/.git\" --work-tree=\"$this->repo\" ";	
+		$git_command = 'git --git-dir="' . $this->repo . '/.git" --work-tree="' . $this->repo . '"';	
 
 		if( $local_revision == 'HEAD' ) {
-			$command = $git_command . 'diff --name-status ' . $remote_revision . ' ...' . $local_revision;
+			$command = $git_command . ' diff --name-status ' . $remote_revision . '...' . $local_revision;
 		} else {
-			$command = $git_command . 'diff --name-status ' . $local_revision ' ...' . $remote_revision; // Swap revisions when you revert
+			$command = $git_command . ' diff --name-status ' . $remote_revision . '... ' . $local_revision; // Swap revisions when you revert
 		}
-
-		$this->output("Remote revision	: " . $remote_revision);
-		$this->output("Comand: " . $command);
 
 		$output = array();
 		exec(escapeshellcmd($command), $output);
 		
-		print_r( $output );
-
 		$files_to_upload = array();
 		$files_to_delete = array();
 
@@ -249,10 +242,10 @@ class PHPloy {
 			$files = $this->compare( $revision );		
 			
 			if( $this->list_files === true ) {
-				$this->output("➝ " . $name);				
+				$this->output("SERVER ➝ " . $name);
 				$this->listFiles($files);
 			} else {
-				$this->output("➝ " . $name);
+				$this->output("SERVER ➝ " . $name);
 				$this->push( $files );
 			}
 
@@ -279,7 +272,7 @@ class PHPloy {
 	 */
 	protected function listFiles( $files ) 
 	{
-		if (count($files) > 0) {
+		if (count($files['upload']) > 0 && count($files['delete']) > 0) {
 			$this->output("No files to upload.");
 		}
 	 
@@ -334,15 +327,18 @@ class PHPloy {
 	 */
 	protected function push( $files )
 	{
+		// If revision is not HEAD, the current one, it means this is a rollback. 
+		// So, we have to revert the files the the state they were in that revision.
+		
+		if( $this->revision != 'HEAD' ) {
+			 $this->output("⟲ Rolling back");
+			$command = 'git --git-dir="' . $this->repo . '/.git" --work-tree="' . $this->repo . '" checkout ' . $this->revision;
+			exec(escapeshellcmd($command));	
+		}
+
 		$files_to_upload = $files['upload'];
 		$files_to_delete = $files['delete'];
 		unset($files);
-
-/*		if( $this->revision != 'HEAD' ) {
-			$git_command = "git --git-dir=\"$this->repo/.git\" --work-tree=\"$this->repo\" ";
-			$command = $git_command . "checkout {$this->revision}";
-			exec( $command );	
-		}*/
 	
 		foreach($files_to_upload as $file) {	
 			if( $this->is_submodule ) $file = $this->is_submodule . '/' . $file;
@@ -417,6 +413,15 @@ class PHPloy {
 		} else {
 			 $this->output("No files to upload.");
 		}
+
+		// If revision is not HEAD, the current one, it means this is a rollback. 
+		// So, we have to revert the master because we reverted to a earlier revision
+		// before the deploy start.
+		if( $this->revision != 'HEAD' ) {
+			$command = 'git --git-dir="' . $this->repo . '/.git" --work-tree="' . $this->repo . '" checkout master';
+			exec(escapeshellcmd($command));	
+		}
+	
 	}
 	
 	/**
