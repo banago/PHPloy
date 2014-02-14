@@ -64,6 +64,20 @@ Or:
 	
 `servername` stands for the name you have given to the server in the `deploy.ini` configuration file.
 
+## Rollbacks
+
+PHPloy allows you to roll back to an earlier version when you need to. Rolling back is very easy. 
+
+To roll back to the previous commit, you just run:
+
+	phploy --rollback
+
+To roll back to whatever commit you want to, you run:
+
+	phploy --rollback="commit-hash-goes-here"
+
+Note that there is not a short version of `--rollback` and also that when you run a rollback your files will revert **temporarely** to the version of the rollback you are running. When the deploymnet is finished, everything will go back as it was. 
+
 ## View files
 
 PHPloy allows you to check out what are going to be uploaded/deleted before you actually push them. Just run: 
@@ -73,15 +87,6 @@ PHPloy allows you to check out what are going to be uploaded/deleted before you 
 Or:
 
 	phploy --list
-
-## Ignore files
-
-PHPloy ignores everything that Git ignores. But if you have files that you don't want uploaded to your server but Git is tracking them, you can ignore them by adding the following to your deploy.ini file:
-
-	ignore_files[] = file/toignore.txt
-	ignore_files[] = another/file/toignore.php
-
-And PHPloy will ignore those files.
 
 ## How It Works
 
