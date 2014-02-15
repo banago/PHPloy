@@ -246,6 +246,7 @@ class PHPloy
         $tmpFile = tmpfile();
         $filesToUpload = array();
         $filesToDelete = array();
+        $output = array();
 
         if ($this->isSubmodule) {
             $this->dotRevision = $this->isSubmodule.'/.revision';
@@ -259,34 +260,35 @@ class PHPloy
             $this->output('Fresh deployment - grab a ☕');
         }
 
-        $gitCommand = 'git --git-dir="'.$this->repo.'/.git" --work-tree="'.$this->repo.'"';    
+		$gitCommand = 'git --git-dir="'.$this->repo.'/.git" --work-tree="'.$this->repo.'"';
 
-        if ($localRevision == 'HEAD') {
+		if (empty($remoteRevision)) {
+			$command = $gitCommand.' ls-files';
+		} else if ($localRevision == 'HEAD') {
             $command = $gitCommand.' diff --name-status '.$remoteRevision.'...'.$localRevision;
         } else {
-            // Swap revisions when you revert
             $command = $gitCommand.' diff --name-status '.$remoteRevision.'... '.$localRevision;
         }
 
-        $output = array();
         exec(escapeshellcmd($command), $output);
 
-        $filesToUpload = array();
-        $filesToDelete = array();
+		if (!empty($remoteRevision)) {
+	        foreach ($output as $line) {
+	            if ($line[0] == 'A' or $line[0] == 'C' or $line[0] == 'M') {
+	                // Added (A), Modified (C), Unmerged (M)
+	                $filesToUpload[] = trim(substr($line, 1));
+	            } elseif ($line[0] == 'D') {
+	                // Deleted (D)
+	                $filesToDelete[] = trim(substr($line, 1));
+	            } else {
+	                throw new Exception("Unknown git-diff status: {$line[0]}");
+	            }
+	        }
+        } else {
+		    $filesToUpload = $output;
+		}
 
-        foreach ($output as $line) {
-            if ($line[0] == 'A' or $line[0] == 'C' or $line[0] == 'M') {
-                // Added (A), Modified (C), Unmerged (M)
-                $filesToUpload[] = trim(substr($line, 1));
-            } elseif ($line[0] == 'D') {
-                // Deleted (D)
-                $filesToDelete[] = trim(substr($line, 1));
-            } else {
-                throw new Exception("Unknown git-diff status: {$line[0]}");
-            }
-        }
-
-        $filesToUpload = array_diff($filesToUpload, $this->files_to_ignore);
+        $filesToUpload = array_diff($filesToUpload, $this->filesToIgnore);
 
         return array(
             'upload' => $filesToUpload,
