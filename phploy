@@ -392,7 +392,13 @@ class PHPloy
                 throw new Exception("Could not login to {$server['host']} (Tried to login as {$server['user']}).");
             }
 
-            ftp_pasv($connection, true);
+            $passive = true;
+            if (isset($server['passive']) and (bool) $server['passive'] == false)
+            {
+                $passive = false;
+            }
+
+            ftp_pasv($connection, $passive);
 
             if (ftp_chdir($connection, $server['path'])) {
                 $this->connection = $connection;
