@@ -1,15 +1,15 @@
-#!/usr/bin/env php
+#! /usr/bin/env php
 <?php
 /**
  * PHPloy - A PHP Deployment Script
  *
- * @package  PHPloy
+ * @package PHPloy
  * @author Baki Goxhaj <banago@gmail.com>
  * @author Fadion Dashi <jonidashi@gmail.com>
  * @author Bruno De Barros <bruno@terraduo.com>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 /**
@@ -103,7 +103,7 @@ class PHPloy
             $this->checkSubmodules($this->repo);
             $this->deploy($this->revision);
         } else {
-            $this->output("'{$this->repo}' is not Git repository.", true);
+            throw new Exception("Oh Snap: '{$this->repo}' is not Git repository.\n");
         }
     }
 
@@ -187,12 +187,12 @@ class PHPloy
     protected function parseCredentials($deploy)
     {
         if (! file_exists($deploy)) {
-            $this->output("'$deploy' does not exist.", true);
+            throw new Exception("Oh Snap: '$deploy' does not exist.\n");
         } else {
             $servers = parse_ini_file($deploy, true);
 
             if (! $servers) {
-                 $this->output("'$deploy' is not a valid .ini file.", true);
+                 throw new Exception("Oh Snap: '$deploy' is not a valid .ini file.\n");
             } else {
                 $this->filesToIgnore[] = $deploy;
                 return $servers;
@@ -205,29 +205,29 @@ class PHPloy
      */
     protected function prepareServers()
     {
+        $defaults = array(
+            'host' => '',
+            'user' => '',
+            'pass' => '',
+            'port' => 21,
+            'path' => '/',
+            'passive' => true,
+            'clean_directories' => array()
+        );
+        
         $servers = $this->parseCredentials('deploy.ini');
 
         foreach ($servers as $name => $options) {
             if ($name == 'quickmode') {
                 foreach ($options as $env => $creds) {
                     $options = parse_url($creds);
+                    $options = array_merge($defaults, $options);
                     $this->servers[$env] = $options;
                 }
-
                 break;
             }
 
-            $options = array_merge(
-                array(
-                    'host' => '',
-                    'user' => '',
-                    'pass' => '',
-                    'port' => 21,
-                    'path' => '/',
-                    'passive' => true,
-                    'clean_directories' => array()
-                ),
-            $options);
+            $options = array_merge($defaults, $options);
 
             $this->servers[$name] = $options;
         }
@@ -252,7 +252,7 @@ class PHPloy
             $this->dotRevision = $this->isSubmodule.'/.revision';
         }
 
-        if (@ftp_fget($this->connection, $tmpFile, $this->dotRevision, FTP_ASCII)) {
+        if (ftp_fget($this->connection, $tmpFile, $this->dotRevision, FTP_ASCII)) {
             fseek($tmpFile, 0);
             $remoteRevision = trim(fread($tmpFile, 1024));
             fclose($tmpFile);
@@ -272,7 +272,7 @@ class PHPloy
 
         exec(escapeshellcmd($command), $output);
 
-		if (!empty($remoteRevision)) {
+		if (! empty($remoteRevision)) {
 	        foreach ($output as $line) {
 	            if ($line[0] == 'A' or $line[0] == 'C' or $line[0] == 'M') {
 	                // Added (A), Modified (C), Unmerged (M)
@@ -281,7 +281,7 @@ class PHPloy
 	                // Deleted (D)
 	                $filesToDelete[] = trim(substr($line, 1));
 	            } else {
-	                throw new Exception("Unknown git-diff status: {$line[0]}");
+	                throw new Exception("Oh Snap: Unknown git-diff status: {$line[0]}");
 	            }
 	        }
         } else {
@@ -379,17 +379,16 @@ class PHPloy
      */
     protected function connect($server)
     {
-        // Let's make sure the $path ends with a slash.
+        // Make sure the $path ends with a slash.
         $server['path'] = rtrim($server['path'], '/').'/';
 
         $pathsThatExist = array();
 
-        // Let's connect to the server.
-        $connection = @ftp_connect($server['host'], $server['port']);
+        $connection = ftp_connect($server['host'], $server['port']);
 
         if ($connection) {
-            if (!@ftp_login($connection, $server['user'], $server['pass'])) {
-                throw new Exception("Could not login to {$server['host']} (Tried to login as {$server['user']}).");
+            if (! ftp_login($connection, $server['user'], $server['pass'])) {
+                throw new Exception("Oh Snap: Could not login to {$server['host']} (Tried to login as {$server['user']}).\n");
             }
 
             ftp_pasv($connection, true);
@@ -398,10 +397,10 @@ class PHPloy
                 $this->connection = $connection;
                 $this->output("\r\n+ ---------- ☻ ---------- +");
             } else {
-                throw new Exception("Could not change the FTP directory to {$server['path']}.");
+                throw new Exception("Oh Snap: Could not change the FTP directory to {$server['path']}.\n");
             }
         } else {
-            throw new Exception("Could not connect to {$server['host']}");
+            throw new Exception("Oh Snap: Could not connect to {$server['host']}\n");
         }
     }
 
@@ -436,8 +435,8 @@ class PHPloy
                 if (! isset($pathsThatExist[$path])) {
                     $origin = ftp_pwd($this->connection);
                     
-                    if (! @ftp_chdir($this->connection, $path)) {
-                        if (! @ftp_mkdir($this->connection, $path)) {
+                    if (! ftp_chdir($this->connection, $path)) {
+                        if (! ftp_mkdir($this->connection, $path)) {
                             $ret = false;
                             
                             $this->output("Failed to create '$path'.");
@@ -461,10 +460,10 @@ class PHPloy
             
             while (! $uploaded) {
                 if ($attempts == 10) {
-                    $this->output("Tried to upload $file 10 times and failed. Something is wrong ...", true);
+                    throw new Exception("Oh Snap: Tried to upload $file 10 times and failed. Something is wrong ...\n");
                 }
 
-                $uploaded = @ftp_put($this->connection, $file, $file, FTP_BINARY);
+                $uploaded = ftp_put($this->connection, $file, $file, FTP_BINARY);
 
                 if (! $uploaded) {
                     $attempts = $attempts + 1;
@@ -476,13 +475,13 @@ class PHPloy
         }
 
         foreach ($filesToDelete as $file) {
-            @ftp_delete($this->connection, $file);
+            ftp_delete($this->connection, $file);
             $this->output("✓ \033[01;37m{$file}\033[0m \033[01;31mremoved\033[0m");
         }
 
         if (! empty($server['clean_directories'])) {
             foreach ($server['clean_directories'] as $dir) {
-                if (!$tmpFiles = ftp_nlist($this->connection, $dir)) {
+                if (! $tmpFiles = ftp_nlist($this->connection, $dir)) {
                     $this->output("{$dir} already empty");
                     continue;
                 }
@@ -497,7 +496,8 @@ class PHPloy
 
         if (count($filesToUpload) > 0 or count($filesToDelete) > 0) {
             $temp = tempnam(sys_get_temp_dir(), 'gitRevision');
-            $loc_rev = exec("git --git-dir=\"$this->repo/.git\" --work-tree=\"$this->repo\" rev-parse HEAD");
+            $command = "git --git-dir='$this->repo/.git' --work-tree='$this->repo\' rev-parse HEAD";
+            exec(escapeshellcmd($command));
 
             file_put_contents($temp, $loc_rev);
             ftp_put($this->connection, $this->dotRevision, $temp, FTP_BINARY);
@@ -522,15 +522,9 @@ class PHPloy
      * Helper method to display messages on the screen.
      * 
      * @param string $message
-     * @param bool $exit
      */
-    public function output($message, $exit = false) {
-        if ($exit === true) {
-            echo "Error: ".$message."\r\n";
-            exit;
-        } else {
-            echo $message."\r\n";
-        }
+    public function output($message) {
+        echo $message."\r\n";
     }
 
 }
