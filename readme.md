@@ -99,4 +99,4 @@ PHPloy also stores a `.revision` file for each submodule in your repository.
 If you've got any suggestions, questions, or anything else about PHPloy, [you should create an issue here](https://github.com/banago/PHPloy/issues). 
 
 ## Credits
-PHPloy is developed by Baki Goxhaj, a [freelance WordPress and Laravel developer](http://wplancer.com) from Albania. It is based on the work of Bruno De Barros. This project was taken furtheer because the original project did not suport Git Submodues.
+PHPloy is developed by Baki Goxhaj, a [freelance WordPress and Laravel developer](http://wplancer.com) from Albania. It is based on the work of Bruno De Barros. This project was taken further because the original project did not suport Git Submodues. 
