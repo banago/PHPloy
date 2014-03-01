@@ -391,13 +391,7 @@ class PHPloy
                 throw new Exception("Oh Snap: Could not login to {$server['host']} (Tried to login as {$server['user']}).\n");
             }
 
-            $passive = true;
-            if (isset($server['passive']) and (bool) $server['passive'] == false)
-            {
-                $passive = false;
-            }
-
-            ftp_pasv($connection, $passive);
+            ftp_pasv($connection, $server['passive']);
 
             if (ftp_chdir($connection, $server['path'])) {
                 $this->connection = $connection;
