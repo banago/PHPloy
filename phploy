@@ -9,7 +9,7 @@
  * @author Bruno De Barros <bruno@terraduo.com>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 1.3.3
+ * @version 1.3.4
  */
 
 /**
@@ -497,14 +497,16 @@ class PHPloy
         if (count($filesToUpload) > 0 or count($filesToDelete) > 0) {
             $temp = tempnam(sys_get_temp_dir(), 'gitRevision');
             $command = "git --git-dir='$this->repo/.git' --work-tree='$this->repo\' rev-parse HEAD";
-            exec(escapeshellcmd($command));
+            exec(escapeshellcmd($command), $locRev);
 
-            file_put_contents($temp, $loc_rev);
-            ftp_put($this->connection, $this->dotRevision, $temp, FTP_BINARY);
+            file_put_contents($temp, $locRev);
             
-            unlink($temp);
-            
-            $this->output("+ ---------- ✓ ---------- +\r\n");
+            if (ftp_put($this->connection, $this->dotRevision, $temp, FTP_BINARY)) {         
+                unlink($temp);
+                $this->output("+ ---------- ✓ ---------- +\r\n");
+            } else {
+                throw new Exception("Oh Snap: Could not update the revision file on server.");   
+            }                
         } else {
             $this->output("No files to upload.");
         }
