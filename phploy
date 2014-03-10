@@ -9,7 +9,7 @@
  * @author Bruno De Barros <bruno@terraduo.com>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 1.3.4
+ * @version 1.3.5
  */
 
 /**
@@ -174,7 +174,7 @@ class PHPloy
                 if (trim($line[0]) == 'Entering') continue;
                 
                 $this->submodules[] = array('revision' => $line[0], 'name' => $name.'/'.$line[1], 'path' => $repo.'/'.$name.'/'.$line[1]);
-                $this->filesToIgnore[] = $name.'/'.$line[1];
+                $this->filesToIgnore[] = $line[1];
             }
         }
     }
@@ -252,7 +252,7 @@ class PHPloy
             $this->dotRevision = $this->isSubmodule.'/.revision';
         }
 
-        if (ftp_fget($this->connection, $tmpFile, $this->dotRevision, FTP_ASCII)) {
+        if (@ftp_fget($this->connection, $tmpFile, $this->dotRevision, FTP_ASCII)) {
             fseek($tmpFile, 0);
             $remoteRevision = trim(fread($tmpFile, 1024));
             fclose($tmpFile);
