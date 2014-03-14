@@ -88,6 +88,16 @@ Or:
 
     phploy --list
 
+## Sync Revision
+
+If you want to sync the `.revision` file on the server with the current revision you are currently on locally, run:
+
+    phploy --sync
+
+If you want to set it to another previous commit revision, you just repecify the revision like this:
+
+    phploy --sync="your-revision-hash-here"
+
 ## How It Works
 
 PHPloy stores a file called `.revision` on your server. This file contains the hash of the commit that you have deployed to that server. When you run phploy, it downloads that file and compares the commit reference in it with the commit you are trying to deploy to find out which files to upload.

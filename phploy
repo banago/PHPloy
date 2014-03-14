@@ -9,7 +9,7 @@
  * @author Bruno De Barros <bruno@terraduo.com>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 1.3.5
+ * @version 1.4.0
  */
 
 /**
@@ -55,7 +55,7 @@ class PHPloy
     /**
      * @var array $longopts
      */
-    protected $longopts  = array('list', 'rollback::', 'server:');
+    protected $longopts  = array('list', 'rollback::', 'server:', 'sync::');
 
     /**
      * @var bool|resource $connection
@@ -93,6 +93,11 @@ class PHPloy
     protected $listFiles = false;
 
     /**
+     * @var bool $listFiles
+     */
+    protected $sync = false;
+
+    /**
      * Constructor
      */
     public function __construct()
@@ -120,6 +125,10 @@ class PHPloy
 
         if (isset($options['s']) or isset($options['server'])) {
             $this->server = isset($options['s']) ? $options['s'] : $options['server'];
+        }
+
+        if (isset($options['sync'])) {
+            $this->sync = empty($options['sync']) ? 'sync' : $options['sync'];
         }
 
         if (isset($options['rollback'])) {
@@ -310,6 +319,12 @@ class PHPloy
             if ($this->server != '' && $this->server != $name) continue;
 
             $this->connect($server);
+
+            if( $this->sync ) {
+                $this->setRevision();
+                continue;
+            }
+            
             $files = $this->compare($revision);
 
             if ($this->listFiles === true) {
@@ -384,7 +399,7 @@ class PHPloy
 
         $pathsThatExist = array();
 
-        $connection = ftp_connect($server['host'], $server['port']);
+        $connection = @ftp_connect($server['host'], $server['port']);
 
         if ($connection) {
             if (! ftp_login($connection, $server['user'], $server['pass'])) {
@@ -393,7 +408,7 @@ class PHPloy
 
             ftp_pasv($connection, $server['passive']);
 
-            if (ftp_chdir($connection, $server['path'])) {
+            if (@ftp_chdir($connection, $server['path'])) {
                 $this->connection = $connection;
                 $this->output("\r\n+ ---------- ☻ ---------- +");
             } else {
@@ -435,7 +450,7 @@ class PHPloy
                 if (! isset($pathsThatExist[$path])) {
                     $origin = ftp_pwd($this->connection);
                     
-                    if (! ftp_chdir($this->connection, $path)) {
+                    if (! @ftp_chdir($this->connection, $path)) {
                         if (! ftp_mkdir($this->connection, $path)) {
                             $ret = false;
                             
@@ -451,7 +466,7 @@ class PHPloy
                         $pathsThatExist[$path] = true;
                     }
                 
-                    ftp_chdir($this->connection, $origin);
+                    @ftp_chdir($this->connection, $origin);
                 }
             }
 
@@ -494,19 +509,9 @@ class PHPloy
             }
         }
 
-        if (count($filesToUpload) > 0 or count($filesToDelete) > 0) {
-            $temp = tempnam(sys_get_temp_dir(), 'gitRevision');
-            $command = "git --git-dir='$this->repo/.git' --work-tree='$this->repo\' rev-parse HEAD";
-            exec(escapeshellcmd($command), $locRev);
-
-            file_put_contents($temp, $locRev);
-            
-            if (ftp_put($this->connection, $this->dotRevision, $temp, FTP_BINARY)) {         
-                unlink($temp);
-                $this->output("+ ---------- ✓ ---------- +\r\n");
-            } else {
-                throw new Exception("Oh Snap: Could not update the revision file on server.");   
-            }                
+        if (count($filesToUpload) > 0 or count($filesToDelete) > 0) {            
+            // Set revision on server
+            $this->setRevision();              
         } else {
             $this->output("No files to upload.");
         }
@@ -518,6 +523,31 @@ class PHPloy
             $command = 'git --git-dir="'.$this->repo.'/.git" --work-tree="'.$this->repo.'" checkout master';
             exec(escapeshellcmd($command));
         }
+    }
+
+    /**
+     * Sets version hash on the server.
+     * 
+     */
+    protected function setRevision()
+    {
+        if ( $this->sync == 'sync' or $this->sync == false ) {
+            $command = "git --git-dir='$this->repo/.git' --work-tree='$this->repo\' rev-parse HEAD";
+            exec(escapeshellcmd($command), $locRev);
+        } else {
+            $locRev = $this->sync;
+        }
+        
+        $temp = tempnam(sys_get_temp_dir(), 'gitRevision');
+        file_put_contents($temp, $locRev);
+
+        if (ftp_put($this->connection, $this->dotRevision, $temp, FTP_BINARY)) {         
+            unlink($temp);
+            if( $this->sync ) $this->output("⟲ revision synced");
+            $this->output("+ ---------- ✓ ---------- +\r\n");
+        } else {
+            throw new Exception("Oh Snap: Could not update the revision file on server.");   
+        }                
     }
 
     /**
