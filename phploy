@@ -33,9 +33,18 @@ class PHPloy
     public $revision;
 
     /**
+     * A list of files that should NOT be uploaded to the remote server
+     * (must match the absolute path in its entirety)
+     *
+     * @todo - implement the ability to specify entire folders (or use wildcards?) here
+     * 
      * @var array $filesToIgnore
      */
-    public $filesToIgnore = array('.gitignore', '.gitmodules');
+    public $filesToIgnore = array(
+        '.gitignore', 
+        '.gitmodules', 
+        'ftpsync.settings',
+    );
 
     /**
      * @var array $servers
@@ -46,6 +55,16 @@ class PHPloy
      * @var array $submodules
      */
     public $submodules = array();
+
+    /**
+     * @var string $dotRevisionFilename
+     */
+    public $dotRevisionFilename = '.revision';
+
+    /**
+     * @var string $phployVersion
+     */
+    protected $phployVersion = '2.0.0-beta';
 
     /**
      * @var string $shortops
@@ -78,14 +97,17 @@ class PHPloy
     protected $mainRepo;
 
     /**
-     * @var bool|string $isSubmodule
+     * @var bool|string $currentSubmoduleName
      */
-    protected $isSubmodule = false;
+    protected $currentSubmoduleName = false;
 
     /**
+     * Holds the path to the .revision file
+     * For the main repository this will be '.revision', but for submodules, the submodule path
+     * will be prepended
      * @var string $dotRevision
      */
-    protected $dotRevision = '.revision';
+    protected $dotRevision;
 
     /**
      * @var bool $listFiles
@@ -97,10 +119,6 @@ class PHPloy
      */
     protected $sync = false;
 
-    /**
-     * @var string $phployVersion
-     */
-    protected $phployVersion = '2.0.0-beta';
 
     /**
      * Constructor
@@ -265,23 +283,27 @@ class PHPloy
         $filesToDelete = array();
         $output = array();
 
-        if ($this->isSubmodule) {
-            $this->dotRevision = $this->isSubmodule.'/.revision';
+        if ($this->currentSubmoduleName) {
+            $this->dotRevision = $this->currentSubmoduleName.'/'.$this->dotRevisionFilename;
+        } else {
+            $this->dotRevision = $this->dotRevisionFilename;
         }
 
+        // Fetch the .revision file from the server and write it to $tmpFile
         if (@ftp_fget($this->connection, $tmpFile, $this->dotRevision, FTP_ASCII)) {
             fseek($tmpFile, 0);
             $remoteRevision = trim(fread($tmpFile, 1024));
-            fclose($tmpFile);
         } else {
-            $this->output('Fresh deployment - grab a coffee');
+            $this->output('No remote revision file present. Running a fresh deployment - grab a coffee...');
         }
+        fclose($tmpFile);
 
-		$gitCommand = 'git --git-dir="'.$this->repo.'/.git" --work-tree="'.$this->repo.'"';
+        // Use git to list the changed files between $remoteRevision and $localRevision
+        $gitCommand = 'git --git-dir="'.$this->repo.'/.git" --work-tree="'.$this->repo.'"';
 
-		if (empty($remoteRevision)) {
-			$command = $gitCommand.' ls-files';
-		} else if ($localRevision == 'HEAD') {
+        if (empty($remoteRevision)) {
+            $command = $gitCommand.' ls-files';
+        } else if ($localRevision == 'HEAD') {
             $command = $gitCommand.' diff --name-status '.$remoteRevision.'...'.$localRevision;
         } else {
             $command = $gitCommand.' diff --name-status '.$remoteRevision.'... '.$localRevision;
@@ -348,9 +370,9 @@ class PHPloy
             if (count($this->submodules) > 0) {
                 foreach ($this->submodules as $submodule) {
                     $this->repo = $submodule['path'];
-                    $this->isSubmodule = $submodule['name'];
+                    $this->currentSubmoduleName = $submodule['name'];
                     
-                    $this->output("\r\nSUBMODULE: ".$this->isSubmodule);
+                    $this->output("\r\nSUBMODULE: ".$this->currentSubmoduleName);
                     
                     $files = $this->compare($revision);
 
@@ -360,6 +382,9 @@ class PHPloy
                         $this->push($files);
                     } 
                 }
+                // We've finished deploying submodules, reset settings for the next server
+                $this->repo = $this->mainRepo;
+                $this->currentSubmoduleName = false;
             }
             if (!$this->listFiles) {
                 $this->output("\r\n------ Deployment complete ------");
@@ -450,7 +475,7 @@ class PHPloy
         unset($files);
 
         foreach ($filesToUpload as $file) {
-            if ($this->isSubmodule) $file = $this->isSubmodule.'/'.$file;
+            if ($this->currentSubmoduleName) $file = $this->currentSubmoduleName.'/'.$file;
 
             // Make sure the folder exists in the FTP server.
             $dir = explode("/", dirname($file));
