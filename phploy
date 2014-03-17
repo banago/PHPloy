@@ -93,9 +93,14 @@ class PHPloy
     protected $listFiles = false;
 
     /**
-     * @var bool $listFiles
+     * @var bool $sync
      */
     protected $sync = false;
+
+    /**
+     * @var string $phployVersion
+     */
+    protected $phployVersion = '2.0.0-beta';
 
     /**
      * Constructor
@@ -104,7 +109,10 @@ class PHPloy
     {
         $this->parseOptions();
 
+        $this->output("\r\n-------------- phploy v{$this->phployVersion} ----------------\r\n");
+
         if (file_exists("$this->repo/.git")) {
+            $this->output('Scanning repository...');
             $this->checkSubmodules($this->repo);
             $this->deploy($this->revision);
         } else {
@@ -266,7 +274,7 @@ class PHPloy
             $remoteRevision = trim(fread($tmpFile, 1024));
             fclose($tmpFile);
         } else {
-            $this->output('Fresh deployment - grab a ☕');
+            $this->output('Fresh deployment - grab a coffee');
         }
 
 		$gitCommand = 'git --git-dir="'.$this->repo.'/.git" --work-tree="'.$this->repo.'"';
@@ -306,7 +314,7 @@ class PHPloy
     }
 
     /**
-     * Deploy files
+     * Deploy/list changed files
      * 
      * @param string $revision
      */
@@ -315,9 +323,12 @@ class PHPloy
         $this->prepareServers();
 
         foreach ($this->servers as $name => $server) {
-            // Skip servers not specified, if specified.
+            
+            // Deploys to ALL servers by default
+            // If a server is specified, we skip all servers that don't match the one specified
             if ($this->server != '' && $this->server != $name) continue;
 
+            $this->output("\r\nConnecting to $name server ($server[host])...");
             $this->connect($server);
 
             if( $this->sync ) {
@@ -327,11 +338,10 @@ class PHPloy
             
             $files = $this->compare($revision);
 
+            $this->output("\r\nSERVER: ".$name);
             if ($this->listFiles === true) {
-                $this->output("SERVER ➝ ".$name);
                 $this->listFiles($files);
             } else {
-                $this->output("SERVER ➝ ".$name);
                 $this->push($files);
             }
 
@@ -340,7 +350,7 @@ class PHPloy
                     $this->repo = $submodule['path'];
                     $this->isSubmodule = $submodule['name'];
                     
-                    $this->output("SUBMODULE: ".$this->isSubmodule);
+                    $this->output("\r\nSUBMODULE: ".$this->isSubmodule);
                     
                     $files = $this->compare($revision);
 
@@ -350,6 +360,9 @@ class PHPloy
                         $this->push($files);
                     } 
                 }
+            }
+            if (!$this->listFiles) {
+                $this->output("\r\n------ Deployment complete ------");
             }
 
             ftp_close($this->connection);
@@ -363,15 +376,15 @@ class PHPloy
      */
     protected function listFiles($files)
     {
-        if (count($files['upload']) > 0 && count($files['delete']) > 0) {
-            $this->output("No files to upload.");
+        if (count($files['upload']) == 0 && count($files['delete']) == 0) {
+            $this->output("   No files to upload.");
         }
 
         if (count($files['upload']) > 0) {
             $this->output("Files to upload:");
 
             foreach ($files['upload'] as $file_to_upload) {
-                $this->output(" ↑ ".$file_to_upload);
+                $this->output(" Upload: ".$file_to_upload);
             }
         }
 
@@ -379,7 +392,7 @@ class PHPloy
             $this->output("Files to delete:");
 
             foreach ($files['delete'] as $file_to_delete) {
-                $this->output(" ✗ ".$file_to_delete);
+                $this->output(" Delete: ".$file_to_delete);
             }
         }
     }
@@ -410,7 +423,7 @@ class PHPloy
 
             if (@ftp_chdir($connection, $server['path'])) {
                 $this->connection = $connection;
-                $this->output("\r\n+ ---------- ☻ ---------- +");
+                $this->output("Connected.");
             } else {
                 throw new Exception("Oh Snap: Could not change the FTP directory to {$server['path']}.\n");
             }
@@ -427,7 +440,7 @@ class PHPloy
         // If revision is not HEAD, the current one, it means this is a rollback.
         // So, we have to revert the files the the state they were in that revision.
         if ($this->revision != 'HEAD') {
-            $this->output("⟲ Rolling back");
+            $this->output("Rolling back");
             $command = 'git --git-dir="'.$this->repo.'/.git" --work-tree="'.$this->repo.'" checkout '.$this->revision;
             exec(escapeshellcmd($command));
         }
@@ -486,12 +499,12 @@ class PHPloy
                 }
             }
             
-            $this->output("✓ \033[01;37m{$file}\033[0m \033[0;32muploaded\033[0m");
+            $this->output("   \033[0;32muploaded\033[0m \033[01;37m{$file}\033[0m");
         }
 
         foreach ($filesToDelete as $file) {
             ftp_delete($this->connection, $file);
-            $this->output("✓ \033[01;37m{$file}\033[0m \033[01;31mremoved\033[0m");
+            $this->output("   \033[01;31mremoved\033[0m \033[01;37m{$file}\033[0m ");
         }
 
         if (! empty($server['clean_directories'])) {
@@ -505,7 +518,7 @@ class PHPloy
                     ftp_delete($this->connection, $file);
                 }
 
-                $this->output("✓ \033[01;37m{$dir}\033[0m \033[01;31memptied\033[0m");
+                $this->output("   \033[01;31memptied\033[0m \033[01;37m{$dir}\033[0m");
             }
         }
 
@@ -513,7 +526,7 @@ class PHPloy
             // Set revision on server
             $this->setRevision();              
         } else {
-            $this->output("No files to upload.");
+            $this->output("   No files to upload.");
         }
 
         // If revision is not HEAD, the current one, it means this is a rollback.
@@ -527,26 +540,25 @@ class PHPloy
 
     /**
      * Sets version hash on the server.
-     * 
      */
     protected function setRevision()
     {
         if ( $this->sync == 'sync' or $this->sync == false ) {
-            $command = "git --git-dir='$this->repo/.git' --work-tree='$this->repo\' rev-parse HEAD";
-            exec(escapeshellcmd($command), $locRev);
+            $command = "git --git-dir=\"$this->repo/.git\" --work-tree=\"$this->repo\" rev-parse HEAD";
+            exec(escapeshellcmd($command), $localRevision);
         } else {
-            $locRev = $this->sync;
+            $localRevision = $this->sync;
         }
         
         $temp = tempnam(sys_get_temp_dir(), 'gitRevision');
-        file_put_contents($temp, $locRev);
+        file_put_contents($temp, $localRevision);
 
         if (ftp_put($this->connection, $this->dotRevision, $temp, FTP_BINARY)) {         
             unlink($temp);
-            if( $this->sync ) $this->output("⟲ revision synced");
-            $this->output("+ ---------- ✓ ---------- +\r\n");
+            if( $this->sync ) $this->output("Revision synced");
+            $this->output("   Remote revision file updated.");
         } else {
-            throw new Exception("Oh Snap: Could not update the revision file on server.");   
+            throw new Exception("   Oh Snap: Could not update the revision file on server.");   
         }                
     }
 

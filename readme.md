@@ -1,21 +1,49 @@
 # PHPloy
+**Version 2.0.0-beta**
 
 PHPloy is a little PHP script that allows you to deploy files through FTP to a server. It makes use of Git to know which files it should upload and which one it should delete. It is a real time-saver. PHPloy supports deployments of submodules and sub-submodules.
 
+## Requirements
+
+* PHP command line interpreter (CLI) version 5.x
+* Windows machines will require AnsiCon to display colors (and not raw color codes) in the command prompt
+    1. [Download AnsiCon here](http://adoxa.hostmyway.net/ansicon/)
+    2. Install it by running `ansicon -i` from a command prompt or run window
+
 ## Usage 
+
 As any script, you can use PHPloy globally, from your `bin` directory or locally, from your project directory:
 
-### Using PHPloy Globally
+### Using PHPloy locally (per project)
+
+1. Drop `phploy` into your project.
+2. Create the `deploy.ini` file.
+3. Run `php phploy` in terminal.
+
+### Using PHPloy globally in Linux
 
 1. Drop `phploy` into `/usr/local/bin` and make it executable by running `sudo chmod +x phploy`.
 2. Create the `deploy.ini` file.
 3. Run `phploy` in terminal.
 
-### Using PHPloy Locally
+### Installing PHPloy globally in Windows
 
-1. Drop `phploy` into your project.
-2. Create the `deploy.ini` file.
-3. Run `php phploy` in terminal.
+1. Extract or clone the PHPloy files into a folder of your choice
+2. Ensure phploy.bat can find the path to php.exe by either:
+    * Adding the path to php.exe to your system path
+    * Manually adding the path inside phploy.bat
+3. Add the phploy folder to your system path
+4. Run `phploy` from the command prompt (from your repository folder)
+
+Adding folders to your *system path* means that you can execute an application from any folder, and not have to specify the full path to it.  To add folders to your system path:
+
+1. Press WINDOWS + PAUSE to open Control Panel > System screen
+2. Click "Advanced System Settings"
+3. Click "Environment Variables"
+4. Under "System variables" there should be a variable called "Path".  Select this and click "Edit".
+5. Keep the existing paths there, add a semi-colon `;` at the end and then type the location of the folder.  Spaces are OK, and no quotes are required.
+6. Click OK
+
 
 ## deploy.ini
 
@@ -24,9 +52,10 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
     ; This is a sample deploy.ini file.
     ; You can specify as many servers as you need
     ; and use whichever configuration way you like.
+    ; 
+    ; NOTE: If you run phploy without specifying which server to deploy to, it will deploy to ALL servers by default
 
     [staging]
-    
     user = example
     pass = password
     host = staging-example.com
@@ -35,7 +64,6 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
     passive = true
     
     [production]
-    
     user = example
     pass = password
     host = production-example.com
@@ -43,17 +71,18 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
     port = 21
     passive = true
     
-    ; If that seemed too long for you, you can use quickmode instead:
     [quickmode]
-        staging = ftp://example:password@staging-example.com:21/path/to/installation
-        production = ftp://example:password@production-example.com:21/path/to/installation
+    ; If that seemed too long for you, you can use quickmode instead
+    staging = ftp://example:password@staging-example.com:21/path/to/installation
+    production = ftp://example:password@production-example.com:21/path/to/installation
 
 
-The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload all the files of your project.
+The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload all the files of your project.  If the remote server already has a copy of the files, you can specify which revision it is on using the `--sync` command (see below).
 
 ## Multiple Servers
 
-PHPloy allows you to configure multilple servers in the deploy file and deploy to any of them with ease. By default it will deploy to all specified servers.
+PHPloy allows you to configure multiple servers in the deploy file and deploy to any of them with ease. By default it will deploy to ALL specified servers.
+
 To specify one server run: 
 
     phploy -s servername
@@ -90,7 +119,7 @@ Or:
 
 ## Sync Revision
 
-If you want to sync the `.revision` file on the server with the current revision you are currently on locally, run:
+If you want to update the `.revision` file on the server with the current revision you are currently on locally, run:
 
     phploy --sync
 
@@ -104,9 +133,19 @@ PHPloy stores a file called `.revision` on your server. This file contains the h
 
 PHPloy also stores a `.revision` file for each submodule in your repository.
 
-##Contribute
+## Contribute
 
 If you've got any suggestions, questions, or anything else about PHPloy, [you should create an issue here](https://github.com/banago/PHPloy/issues). 
 
+## Version history
+
+v2.0.0-beta
+
+* Added support for Windows machines by:
+** removing incompatible UTF characters
+** added phploy.bat
+* Added some additional console output and reformatted some of the outputted strings for clarity
+
 ## Credits
+
 PHPloy is developed by Baki Goxhaj, a [freelance WordPress and Laravel developer](http://wplancer.com) from Albania. It is based on the work of Bruno De Barros. This project was taken further because the original project did not suport Git Submodues.
