@@ -5,10 +5,10 @@ PHPloy is a little PHP script that allows you to deploy files through FTP to a s
 
 ## Requirements
 
-* PHP command line interpreter (CLI) version 5.x
+* PHP 5.3+ command line interpreter (CLI)
 * Windows machines will require AnsiCon to display colors (and not raw color codes) in the command prompt
     1. [Download AnsiCon here](http://adoxa.hostmyway.net/ansicon/)
-    2. Install it by running `ansicon -i` from a command prompt or run window
+    2. Install it by running `ansicon -i` from a command prompt or "Run" window
 
 ## Usage 
 
@@ -23,7 +23,7 @@ As any script, you can use PHPloy globally, from your `bin` directory or locally
 ### Using PHPloy globally in Linux
 
 1. Drop `phploy` into `/usr/local/bin` and make it executable by running `sudo chmod +x phploy`.
-2. Create the `deploy.ini` file.
+2. Create the `deploy.ini` file inside your project folder.
 3. Run `phploy` in terminal.
 
 ### Installing PHPloy globally in Windows
@@ -41,7 +41,7 @@ Adding folders to your *system path* means that you can execute an application f
 2. Click "Advanced System Settings"
 3. Click "Environment Variables"
 4. Under "System variables" there should be a variable called "Path".  Select this and click "Edit".
-5. Keep the existing paths there, add a semi-colon `;` at the end and then type the location of the folder.  Spaces are OK, and no quotes are required.
+5. Keep the existing paths there, add a semi-colon `;` at the end and then type the location of the appropriate folder.  Spaces are OK, and no quotes are required.
 6. Click OK
 
 
@@ -145,6 +145,7 @@ v2.0.0-beta
 ** removing incompatible UTF characters
 ** added phploy.bat
 * Added some additional console output and reformatted some of the outputted strings for clarity
+* Added command-line option --skip-subsubmodules
 
 ## Credits
 
