@@ -1,7 +1,10 @@
 # PHPloy
 **Version 2.0.0-beta**
 
-PHPloy is a little PHP script that allows you to deploy files through FTP to a server. It makes use of Git to know which files it should upload and which one it should delete. It is a real time-saver. PHPloy supports deployments of submodules and sub-submodules.
+PHPloy is a little PHP script that allows you to deploy files through FTP to a server. It makes use of Git to know which files should be uploaded and which should be deleted. It is a real time-saver. 
+
+Unlike other similar scripts, PHPloy supports deployments of submodules and sub-submodules.
+
 
 ## Requirements
 
@@ -10,9 +13,11 @@ PHPloy is a little PHP script that allows you to deploy files through FTP to a s
     1. [Download AnsiCon here](http://adoxa.hostmyway.net/ansicon/)
     2. Install it by running `ansicon -i` from a command prompt or "Run" window
 
+
 ## Usage 
 
 As any script, you can use PHPloy globally, from your `bin` directory or locally, from your project directory:
+
 
 ### Using PHPloy locally (per project)
 
@@ -20,11 +25,13 @@ As any script, you can use PHPloy globally, from your `bin` directory or locally
 2. Create the `deploy.ini` file.
 3. Run `php phploy` in terminal.
 
+
 ### Using PHPloy globally in Linux
 
 1. Drop `phploy` into `/usr/local/bin` and make it executable by running `sudo chmod +x phploy`.
 2. Create the `deploy.ini` file inside your project folder.
 3. Run `phploy` in terminal.
+
 
 ### Installing PHPloy globally in Windows
 
@@ -77,21 +84,23 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
     production = ftp://example:password@production-example.com:21/path/to/installation
 
 
-The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload all the files of your project.  If the remote server already has a copy of the files, you can specify which revision it is on using the `--sync` command (see below).
+The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload ALL the files of your project.  If the remote server already has a copy of the files, you can specify which revision it is on using the `--sync` command (see below).
 
-## Multiple Servers
 
-PHPloy allows you to configure multiple servers in the deploy file and deploy to any of them with ease. By default it will deploy to ALL specified servers.
+## Multiple servers
 
-To specify one server run: 
+PHPloy allows you to configure multiple servers in the deploy file and deploy to any of them with ease. 
+
+By default PHPloy will deploy to *ALL* specified servers.  To specify one single server, run:
 
     phploy -s servername
 
-Or:
+or:
 
     phploy --server servername
     
 `servername` stands for the name you have given to the server in the `deploy.ini` configuration file.
+
 
 ## Rollbacks
 
@@ -105,9 +114,12 @@ To roll back to whatever commit you want to, you run:
 
     phploy --rollback="commit-hash-goes-here"
 
-Note that there is not a short version of `--rollback` and also that when you run a rollback your files will revert **temporarely** to the version of the rollback you are running. When the deploymnet is finished, everything will go back as it was. 
+When you run a rollback, the files in your working copy will revert **temporarily** to the version of the rollback you are deploying. When the deployment has finished, everything will go back as it was.
 
-## View files
+Note that there is not a short version of `--rollback`.
+
+
+## Listing changed files
 
 PHPloy allows you to check out what are going to be uploaded/deleted before you actually push them. Just run: 
 
@@ -117,25 +129,29 @@ Or:
 
     phploy --list
 
-## Sync Revision
 
-If you want to update the `.revision` file on the server with the current revision you are currently on locally, run:
+## Updating or "syncing" the remote revision
+
+If you want to update the `.revision` file on the server to match your current local revision, run:
 
     phploy --sync
 
-If you want to set it to another previous commit revision, you just repecify the revision like this:
+If you want to set it to another previous commit revision, you just specify the revision like this:
 
     phploy --sync="your-revision-hash-here"
 
-## How It Works
+
+## How it works
 
 PHPloy stores a file called `.revision` on your server. This file contains the hash of the commit that you have deployed to that server. When you run phploy, it downloads that file and compares the commit reference in it with the commit you are trying to deploy to find out which files to upload.
 
 PHPloy also stores a `.revision` file for each submodule in your repository.
 
+
 ## Contribute
 
 If you've got any suggestions, questions, or anything else about PHPloy, [you should create an issue here](https://github.com/banago/PHPloy/issues). 
+
 
 ## Version history
 
@@ -146,6 +162,7 @@ v2.0.0-beta
 ** added phploy.bat
 * Added some additional console output and reformatted some of the outputted strings for clarity
 * Added command-line option --skip-subsubmodules
+
 
 ## Credits
 
