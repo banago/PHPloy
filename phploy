@@ -9,7 +9,7 @@
  * @author Bruno De Barros <bruno@terraduo.com>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 1.4.0
+ * @version 2.0.0-beta
  */
 
 /**
@@ -37,7 +37,6 @@ class PHPloy
      * (must match the absolute path in its entirety)
      *
      * @todo - implement the ability to specify entire folders (or use wildcards?) here
-     * 
      * @var array $filesToIgnore
      */
     public $filesToIgnore = array(
@@ -45,6 +44,12 @@ class PHPloy
         '.gitmodules', 
         'ftpsync.settings',
     );
+
+    /**
+     * If you need support for sub-submodules, ensure this is set to TRUE
+     * @var bool $scanForSubSubmodules
+     */
+    public $scanForSubSubmodules = true;
 
     /**
      * @var array $servers
@@ -72,9 +77,10 @@ class PHPloy
     protected $shortopts  = 'ls:';
 
     /**
+     * List of available "long" command line options, prefixed by double-hyphen
      * @var array $longopts
      */
-    protected $longopts  = array('list', 'rollback::', 'server:', 'sync::');
+    protected $longopts  = array('list', 'rollback::', 'server:', 'sync::', 'skip-subsubmodules');
 
     /**
      * @var bool|resource $connection
@@ -179,19 +185,28 @@ class PHPloy
 
         exec(escapeshellcmd($command), $output);
 
+        $this->output('   Found '.count($output).' submodules.');
         if (count($output) > 0) {
             foreach ($output as $line) {
                 $line = explode(' ', trim($line));
                 $this->submodules[] = array('revision' => $line[0], 'name' => $line[1], 'path' => $repo.'/'.$line[1]);
                 $this->filesToIgnore[] = $line[1];
-                $this->checkSubSubmodules($repo, $line[1]);
+                $this->output(sprintf('   Found submodule %s. %s', 
+                    $line[1],
+                    $this->scanForSubSubmodules ? 'Scanning for sub-submodules...' : null
+                ));
+                if ($this->scanForSubSubmodules)
+                    $this->checkSubSubmodules($repo, $line[1]);
             }
         }
     }
 
     /**
      * Check for sub-submodules
-     * 
+     *
+     * @todo This function is quite slow (at least on Windows it often takes several seconds for each call).
+     *       Can it be optimized?
+     *       It appears that this is called for EACH submodule, but then also does another `git submodule foreach`
      * @param string $repo
      * @param string $name
      */
@@ -210,6 +225,7 @@ class PHPloy
                 
                 $this->submodules[] = array('revision' => $line[0], 'name' => $name.'/'.$line[1], 'path' => $repo.'/'.$name.'/'.$line[1]);
                 $this->filesToIgnore[] = $line[1];
+                $this->output(sprintf('      Found sub-submodule %s.', "$name/$line[1]"));
             }
         }
     }
@@ -354,7 +370,10 @@ class PHPloy
             $this->connect($server);
 
             if( $this->sync ) {
+                $this->dotRevision = $this->dotRevisionFilename;
+                // We update .revision file, but don't do any listing or deploying
                 $this->setRevision();
+                ftp_close($this->connection);
                 continue;
             }
             
@@ -568,7 +587,11 @@ class PHPloy
      */
     protected function setRevision()
     {
-        if ( $this->sync == 'sync' or $this->sync == false ) {
+        // By default we update the revision file to the HEAD commit, 
+        // unless the sync command was called with a specific revision
+        $isHeadRevision = $this->sync == 'sync' || $this->sync == false;
+        if ( $isHeadRevision ) {
+            // Find the revision number of HEAD
             $command = "git --git-dir=\"$this->repo/.git\" --work-tree=\"$this->repo\" rev-parse HEAD";
             exec(escapeshellcmd($command), $localRevision);
         } else {
@@ -578,9 +601,14 @@ class PHPloy
         $temp = tempnam(sys_get_temp_dir(), 'gitRevision');
         file_put_contents($temp, $localRevision);
 
+        if ( $this->sync ) {
+            $this->output("\r\nSYNC: Updating remote revision file to ".
+                ($isHeadRevision ? 'current HEAD ('.$localRevision.')' : $localRevision)
+            );
+        }
+
         if (ftp_put($this->connection, $this->dotRevision, $temp, FTP_BINARY)) {         
             unlink($temp);
-            if( $this->sync ) $this->output("Revision synced");
             $this->output("   Remote revision file updated.");
         } else {
             throw new Exception("   Oh Snap: Could not update the revision file on server.");   
