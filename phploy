@@ -42,11 +42,14 @@ class PHPloy
     public $filesToIgnore = array(
         '.gitignore', 
         '.gitmodules', 
-        'ftpsync.settings',
+        // FTPSync is another similar deployment tool in Sublime Text which stores plaintext FTP logins and should NOT exist on remote servers
+        'ftpsync.settings',     
     );
 
     /**
      * If you need support for sub-submodules, ensure this is set to TRUE
+     * Set to false when the --skip-subsubmodules command line option is used
+     * 
      * @var bool $scanForSubSubmodules
      */
     public $scanForSubSubmodules = true;
@@ -62,6 +65,8 @@ class PHPloy
     public $submodules = array();
 
     /**
+     * The name of the file on remote servers that stores the current revision hash
+     * 
      * @var string $dotRevisionFilename
      */
     public $dotRevisionFilename = '.revision';
@@ -72,12 +77,29 @@ class PHPloy
     protected $phployVersion = '2.0.0-beta';
 
     /**
+     * List of available "short" command line options, prefixed by a single hyphen
+     * Colon suffix indicates that the option requires a value
+     * Double-colon suffix indicates that the option *may* accept a value
+     * See descriptions below
+     *
      * @var string $shortops
      */
     protected $shortopts  = 'ls:';
 
     /**
      * List of available "long" command line options, prefixed by double-hyphen
+     * Colon suffix indicates that the option requires a value
+     * Double-colon suffix indicates that the option *may* accept a value
+     * 
+     *      --list or -l                      Lists the files that *would* be deployed if run without this option
+     *      --rollback                        Deploys the previous commit/revision
+     *      --rollback="[revision hash]"      Deploys the specific commit/revision
+     *      --server="[server name]"          Deploys to the server entry listed in deploy.ini
+     *        or -s [server name]
+     *      --sync                            Updates the remote .revision file with the hash of the current HEAD
+     *      --sync="[revision hash]"          Updates the remove .revision file with the provided hash
+     *      --skip-subsubmodules              Skips the scanning of sub-submodules which is currently quite slow
+     * 
      * @var array $longopts
      */
     protected $longopts  = array('list', 'rollback::', 'server:', 'sync::', 'skip-subsubmodules');
@@ -109,8 +131,9 @@ class PHPloy
 
     /**
      * Holds the path to the .revision file
-     * For the main repository this will be '.revision', but for submodules, the submodule path
-     * will be prepended
+     * For the main repository this will be the value of $dotRevisionFilename ('.revision' by default)
+     * but for submodules, the submodule path will be prepended
+     * 
      * @var string $dotRevision
      */
     protected $dotRevision;
@@ -146,6 +169,7 @@ class PHPloy
 
     /**
      * Parse CLI options
+     * For descriptions of the various options, see the comments for $this->longopts
      */
     protected function parseOptions()
     {
@@ -167,6 +191,10 @@ class PHPloy
             $this->revision = ($options['rollback'] == '') ? 'HEAD^' : $options['rollback'];
         } else {
             $this->revision = 'HEAD';
+        }
+
+        if (isset($options['skip-subsubmodules'])) {
+            $this->scanForSubSubmodules = false;
         }
 
         $this->repo = isset($opts['repo']) ? rtrim($opts['repo'], '/') : getcwd();
