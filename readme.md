@@ -158,8 +158,8 @@ If you've got any suggestions, questions, or anything else about PHPloy, [you sh
 v2.0.0-beta
 
 * Added support for Windows machines by:
-** removing incompatible UTF characters
-** added phploy.bat
+    * removing incompatible UTF characters
+    * added phploy.bat
 * Added some additional console output and reformatted some of the outputted strings for clarity
 * Added command-line option --skip-subsubmodules
 
