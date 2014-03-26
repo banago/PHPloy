@@ -12,4 +12,9 @@
 ::		  separated by semi-colons
 :: 			eg. C:\Windows;C:\Windows\System32;C:\path\to\php.exe;C:\path\to\phploy
 
+@ECHO OFF
+
+:: Set the console code page to use UTF-8
+chcp 65001 > NUL
+
 php C:\path\to\phploy %*
