@@ -18,7 +18,8 @@
 try {
     $phploy = new PHPloy();
 } catch (Exception $e) {
-     echo $e->getMessage();
+    // Display the error in red
+    echo "\r\n\033[31mOh Snap: {$e->getMessage()}\033[0m\r\n\r\n";
 }
 
 /**
@@ -40,10 +41,8 @@ class PHPloy
      * @var array $filesToIgnore
      */
     public $filesToIgnore = array(
-        '.gitignore', 
-        '.gitmodules', 
-        // FTPSync is another similar deployment tool in Sublime Text which stores plaintext FTP logins and should NOT exist on remote servers
-        'ftpsync.settings',     
+        '.gitignore',
+        '.gitmodules',
     );
 
     /**
@@ -70,6 +69,13 @@ class PHPloy
      * @var string $dotRevisionFilename
      */
     public $dotRevisionFilename = '.revision';
+
+    /**
+     * The filename from which to read remote server details
+     * 
+     * @var string $deplyIniFilename
+     */
+    public $deployIniFilename = 'deploy.ini';
 
     /**
      * @var string $phployVersion
@@ -163,7 +169,7 @@ class PHPloy
             $this->checkSubmodules($this->repo);
             $this->deploy($this->revision);
         } else {
-            throw new Exception("Oh Snap: '{$this->repo}' is not Git repository.\n");
+            throw new Exception("'{$this->repo}' is not Git repository.");
         }
     }
 
@@ -223,9 +229,13 @@ class PHPloy
                     $line[1],
                     $this->scanForSubSubmodules ? 'Scanning for sub-submodules...' : null
                 ));
+                // The call to checkSubSubmodules also calls a git foreach
+                // So perhaps it should be *outside* the loop here?
                 if ($this->scanForSubSubmodules)
                     $this->checkSubSubmodules($repo, $line[1]);
             }
+            if (!$this->scanForSubSubmodules)
+                $this->output('   Skipping search for sub-submodules.');
         }
     }
 
@@ -266,12 +276,12 @@ class PHPloy
     protected function parseCredentials($deploy)
     {
         if (! file_exists($deploy)) {
-            throw new Exception("Oh Snap: '$deploy' does not exist.\n");
+            throw new Exception("'$deploy' does not exist.");
         } else {
             $servers = parse_ini_file($deploy, true);
 
             if (! $servers) {
-                 throw new Exception("Oh Snap: '$deploy' is not a valid .ini file.\n");
+                 throw new Exception("'$deploy' is not a valid .ini file.");
             } else {
                 $this->filesToIgnore[] = $deploy;
                 return $servers;
@@ -280,7 +290,7 @@ class PHPloy
     }
 
     /**
-     * Add Servers
+     * Reads the deploy.ini file and populates the $this->servers array
      */
     protected function prepareServers()
     {
@@ -294,7 +304,7 @@ class PHPloy
             'clean_directories' => array()
         );
         
-        $servers = $this->parseCredentials('deploy.ini');
+        $servers = $this->parseCredentials($this->deployIniFilename);
 
         foreach ($servers as $name => $options) {
             if ($name == 'quickmode') {
@@ -364,7 +374,7 @@ class PHPloy
 	                // Deleted (D)
 	                $filesToDelete[] = trim(substr($line, 1));
 	            } else {
-	                throw new Exception("Oh Snap: Unknown git-diff status: {$line[0]}");
+	                throw new Exception("Unknown git-diff status: {$line[0]}");
 	            }
 	        }
         } else {
@@ -380,7 +390,7 @@ class PHPloy
     }
 
     /**
-     * Deploy/list changed files
+     * Deploy (or list) changed files
      * 
      * @param string $revision
      */
@@ -388,6 +398,11 @@ class PHPloy
     {
         $this->prepareServers();
 
+        // Exit with an error if the specified server does not exist in deploy.ini
+        if ($this->server != '' && !array_key_exists($this->server, $this->servers))
+            throw new Exception("The server \"{$this->server}\" is not defined in {$this->deployIniFilename}.");
+
+        // Loop through all the servers in deploy.ini
         foreach ($this->servers as $name => $server) {
             
             // Deploys to ALL servers by default
@@ -488,7 +503,7 @@ class PHPloy
 
         if ($connection) {
             if (! ftp_login($connection, $server['user'], $server['pass'])) {
-                throw new Exception("Oh Snap: Could not login to {$server['host']} (Tried to login as {$server['user']}).\n");
+                throw new Exception("Could not login to {$server['host']} (Tried to login as {$server['user']}).");
             }
 
             ftp_pasv($connection, $server['passive']);
@@ -497,10 +512,10 @@ class PHPloy
                 $this->connection = $connection;
                 $this->output("Connected.");
             } else {
-                throw new Exception("Oh Snap: Could not change the FTP directory to {$server['path']}.\n");
+                throw new Exception("Could not change the FTP directory to {$server['path']}.");
             }
         } else {
-            throw new Exception("Oh Snap: Could not connect to {$server['host']}\n");
+            throw new Exception("Could not connect to {$server['host']}.");
         }
     }
 
@@ -539,12 +554,12 @@ class PHPloy
                         if (! ftp_mkdir($this->connection, $path)) {
                             $ret = false;
                             
-                            $this->output("Failed to create '$path'.");
-                            $this->output("Directory could not be created. Please check if a file with the same name exists in the server and delete it.");
+                            $this->output("   Failed to create '$path'.");
+                            $this->output("   Directory could not be created. Please check if a file with the same name exists in the server and delete it.");
                             
                             return;
                         } else {
-                            $this->output("Created directory '$path'.");
+                            $this->output("   Created directory '$path'.");
                             $pathsThatExist[$path] = true;
                         }
                     } else {
@@ -560,14 +575,14 @@ class PHPloy
             
             while (! $uploaded) {
                 if ($attempts == 10) {
-                    throw new Exception("Oh Snap: Tried to upload $file 10 times and failed. Something is wrong ...\n");
+                    throw new Exception("Tried to upload $file 10 times and failed. Something is wrong...");
                 }
 
                 $uploaded = ftp_put($this->connection, $file, $file, FTP_BINARY);
 
                 if (! $uploaded) {
                     $attempts = $attempts + 1;
-                    $this->output("Failed to upload {$file}. Retrying (attempt $attempts/10)... ");
+                    $this->output("   Failed to upload {$file}. Retrying (attempt $attempts/10)... ");
                 }
             }
             
@@ -639,7 +654,7 @@ class PHPloy
             unlink($temp);
             $this->output("   Remote revision file updated.");
         } else {
-            throw new Exception("   Oh Snap: Could not update the revision file on server.");   
+            throw new Exception("Could not update the revision file on server.");   
         }                
     }
 
