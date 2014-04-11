@@ -7,6 +7,7 @@
  * @author Baki Goxhaj <banago@gmail.com>
  * @author Fadion Dashi <jonidashi@gmail.com>
  * @author Bruno De Barros <bruno@terraduo.com>
+ * @author Simon East <simon+github@yump.com.au>
  * @link http://wplancer.com
  * @licence MIT Licence
  * @version 2.1.0
@@ -80,7 +81,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '2.0.0-beta';
+    protected $phployVersion = '2.1.0';
 
     /**
      * List of available "short" command line options, prefixed by a single hyphen
@@ -110,7 +111,7 @@ class PHPloy
      * 
      * @var array $longopts
      */
-    protected $longopts  = array('help', 'list', 'rollback::', 'server:', 'sync::', 'skip-subsubmodules', 'debug');
+    protected $longopts  = array('help', 'list', 'rollback::', 'server:', 'sync::', 'skip-subsubmodules', 'debug', 'version');
 
     /**
      * @var bool|resource $connection
@@ -185,6 +186,10 @@ class PHPloy
             return;
         }
 
+        if ($this->displayVersion) {
+            return;
+        }
+
         if (file_exists("$this->repo/.git")) {
 
             if ($this->listFiles)
@@ -229,6 +234,10 @@ class PHPloy
 
         if (isset($options['debug'])) {
             $this->debug = true;
+        }
+
+        if (isset($options['version'])) {
+            $this->displayVersion = true;
         }
 
         if (isset($options['l']) or isset($options['list'])) {
