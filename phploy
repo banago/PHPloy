@@ -30,6 +30,11 @@ class PHPloy
 {
 
     /**
+     * @var string $phployVersion
+     */
+    protected $phployVersion = '2.0.0-beta2';
+
+    /**
      * @var string $revision
      */
     public $revision;
@@ -77,11 +82,6 @@ class PHPloy
      * @var string $deplyIniFilename
      */
     public $deployIniFilename = 'deploy.ini';
-
-    /**
-     * @var string $phployVersion
-     */
-    protected $phployVersion = '2.1.0';
 
     /**
      * List of available "short" command line options, prefixed by a single hyphen
@@ -160,6 +160,12 @@ class PHPloy
     protected $displayHelp = false;
 
     /**
+     * Whether the --version command line option was given
+     * @var bool $displayHelp
+     */
+    protected $displayVersion = false;
+
+    /**
      * @var bool $sync
      */
     protected $sync = false;
@@ -170,6 +176,7 @@ class PHPloy
      * @var bool $debug
      */
     protected $debug = false;
+
 
 
     /**
