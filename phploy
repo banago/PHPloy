@@ -9,7 +9,7 @@
  * @author Bruno De Barros <bruno@terraduo.com>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 2.0.0-beta
+ * @version 2.1.0
  */
 
 /**
@@ -19,7 +19,7 @@ try {
     $phploy = new PHPloy();
 } catch (Exception $e) {
     // Display the error in red
-    echo "\r\n\033[31mOh Snap: {$e->getMessage()}\033[0m\r\n\r\n";
+    echo tagsToAnsiColors("\r\n<red>Oh Snap: {$e->getMessage()}");
 }
 
 /**
@@ -90,13 +90,14 @@ class PHPloy
      *
      * @var string $shortops
      */
-    protected $shortopts  = 'ls:';
+    protected $shortopts = 'ls:';
 
     /**
      * List of available "long" command line options, prefixed by double-hyphen
      * Colon suffix indicates that the option requires a value
      * Double-colon suffix indicates that the option *may* accept a value
      * 
+     *      --help or -?                      Displays command line options
      *      --list or -l                      Lists the files that *would* be deployed if run without this option
      *      --rollback                        Deploys the previous commit/revision
      *      --rollback="[revision hash]"      Deploys the specific commit/revision
@@ -105,10 +106,11 @@ class PHPloy
      *      --sync                            Updates the remote .revision file with the hash of the current HEAD
      *      --sync="[revision hash]"          Updates the remove .revision file with the provided hash
      *      --skip-subsubmodules              Skips the scanning of sub-submodules which is currently quite slow
+     *      --debug                           Displays extra messages including git and FTP commands
      * 
      * @var array $longopts
      */
-    protected $longopts  = array('list', 'rollback::', 'server:', 'sync::', 'skip-subsubmodules');
+    protected $longopts  = array('help', 'list', 'rollback::', 'server:', 'sync::', 'skip-subsubmodules', 'debug');
 
     /**
      * @var bool|resource $connection
@@ -145,14 +147,28 @@ class PHPloy
     protected $dotRevision;
 
     /**
+     * Whether phploy is running in list mode (--list or -l commands)
      * @var bool $listFiles
      */
     protected $listFiles = false;
 
     /**
+     * Whether the --help command line option was given
+     * @var bool $displayHelp
+     */
+    protected $displayHelp = false;
+
+    /**
      * @var bool $sync
      */
     protected $sync = false;
+
+    /**
+     * Whether to print extra debugging info to the console, especially for git & FTP commands
+     * Activated using --debug command line option
+     * @var bool $debug
+     */
+    protected $debug = false;
 
 
     /**
@@ -164,13 +180,34 @@ class PHPloy
 
         $this->output("\r\n-------------- phploy v{$this->phployVersion} ----------------\r\n");
 
+        if ($this->displayHelp) {
+            $this->displayHelp();
+            return;
+        }
+
         if (file_exists("$this->repo/.git")) {
+
+            if ($this->listFiles)
+                $this->output("<yellow>phploy is running in LIST mode.  No remote files will be modified.\r\n");
+
             $this->output('Scanning repository...');
             $this->checkSubmodules($this->repo);
             $this->deploy($this->revision);
+
         } else {
             throw new Exception("'{$this->repo}' is not Git repository.");
         }
+    }
+
+    /**
+     * Displays the various command line options
+     */
+    protected function displayHelp()
+    {
+        // $this->output();
+        $readMe = __DIR__ . '/readme.md';
+        if (file_exists($readMe))
+            $this->output(file_get_contents($readMe));
     }
 
     /**
@@ -180,6 +217,19 @@ class PHPloy
     protected function parseOptions()
     {
         $options = getopt($this->shortopts, $this->longopts);
+
+        $this->debug('Command line options detected: ' . print_r($options, true));
+
+        // -? command is not correctly parsed by getopt() (at least on Windows)
+        // so need to check $argv variable instead
+        global $argv;
+        if (in_array('-?', $argv) or isset($options['help'])) {
+            $this->displayHelp = true;
+        }
+
+        if (isset($options['debug'])) {
+            $this->debug = true;
+        }
 
         if (isset($options['l']) or isset($options['list'])) {
             $this->listFiles = true;
@@ -214,10 +264,7 @@ class PHPloy
      */
     protected function checkSubmodules($repo)
     {
-        $command = "git --git-dir=\"$repo/.git\" --work-tree=\"$repo\" submodule status";
-        $output = array();
-
-        exec(escapeshellcmd($command), $output);
+        $output = $this->gitCommand('submodule status', $repo);
 
         $this->output('   Found '.count($output).' submodules.');
         if (count($output) > 0) {
@@ -250,10 +297,7 @@ class PHPloy
      */
     protected function checkSubSubmodules($repo, $name)
     {
-        $command = "git --git-dir=\"$repo/.git\" --work-tree=\"$repo\" submodule foreach git submodule status";
-        $output = array();
-
-        exec(escapeshellcmd($command), $output);
+        $output = $this->gitCommand('submodule foreach git submodule status', $repo);
 
         if (count($output) > 0) {
             foreach ($output as $line) {
@@ -261,7 +305,11 @@ class PHPloy
 
                 if (trim($line[0]) == 'Entering') continue;
                 
-                $this->submodules[] = array('revision' => $line[0], 'name' => $name.'/'.$line[1], 'path' => $repo.'/'.$name.'/'.$line[1]);
+                $this->submodules[] = array(
+                    'revision' => $line[0], 
+                    'name' => $name.'/'.$line[1], 
+                    'path' => $repo.'/'.$name.'/'.$line[1]
+                );
                 $this->filesToIgnore[] = $line[1];
                 $this->output(sprintf('      Found sub-submodule %s.', "$name/$line[1]"));
             }
@@ -323,7 +371,45 @@ class PHPloy
     }
 
     /**
-     * Compare revisions and return files to upload
+     * Executes a console command and returns the output (as an array)
+     * 
+     * @return array of all lines output to the console (STDOUT)
+     */
+    protected function runCommand($command)
+    {
+        // Escape special chars in string with a backslash
+        $command = escapeshellcmd($command);
+
+        $this->debug("<yellow>CONSOLE:<darkYellow> $command");
+
+        exec($command, $output);
+
+        $this->debug('<darkYellow>' . implode("\r\n<darkYellow>", $output));
+
+        return $output;
+    }
+
+    /**
+     * Runs a git command and returns the output (as an array)
+     * 
+     * @param string $command "git [your-command-here]"
+     * @param string $repoPath Defaults to $this->repo
+     * @return array Lines of the output
+     */
+    protected function gitCommand($command, $repoPath = null) {
+        if (! $repoPath)
+            $repoPath = $this->repo;
+        $command = 'git --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
+        return $this->runCommand($command);
+    }
+
+    /**
+     * Compare revisions and returns array of files to upload:
+     *
+     *      array(
+     *          'upload' => $filesToUpload,
+     *          'delete' => $filesToDelete
+     *      );
      *
      * @param string $localRevision
      * @return array
@@ -344,26 +430,25 @@ class PHPloy
         }
 
         // Fetch the .revision file from the server and write it to $tmpFile
+        $this->ftpDebug("Fetching {$this->dotRevision} file");
         if (@ftp_fget($this->connection, $tmpFile, $this->dotRevision, FTP_ASCII)) {
             fseek($tmpFile, 0);
             $remoteRevision = trim(fread($tmpFile, 1024));
         } else {
-            $this->output('No remote revision file present. Running a fresh deployment - grab a coffee...');
+            $this->output('<yellow>No remote revision file present. Running a fresh deployment - grab a coffee...');
         }
         fclose($tmpFile);
 
         // Use git to list the changed files between $remoteRevision and $localRevision
-        $gitCommand = 'git --git-dir="'.$this->repo.'/.git" --work-tree="'.$this->repo.'"';
-
         if (empty($remoteRevision)) {
-            $command = $gitCommand.' ls-files';
+            $command = 'ls-files';
         } else if ($localRevision == 'HEAD') {
-            $command = $gitCommand.' diff --name-status '.$remoteRevision.'...'.$localRevision;
+            $command = 'diff --name-status '.$remoteRevision.'...'.$localRevision;
         } else {
-            $command = $gitCommand.' diff --name-status '.$remoteRevision.'... '.$localRevision;
+            $command = 'diff --name-status '.$remoteRevision.'... '.$localRevision;
         }
 
-        exec(escapeshellcmd($command), $output);
+        $output = $this->gitCommand($command);
 
 		if (! empty($remoteRevision)) {
 	        foreach ($output as $line) {
@@ -416,13 +501,14 @@ class PHPloy
                 $this->dotRevision = $this->dotRevisionFilename;
                 // We update .revision file, but don't do any listing or deploying
                 $this->setRevision();
+                $this->ftpDebug('Closing connection');
                 ftp_close($this->connection);
                 continue;
             }
             
             $files = $this->compare($revision);
 
-            $this->output("\r\nSERVER: ".$name);
+            $this->output("\r\n<white>SERVER: ".$name);
             if ($this->listFiles === true) {
                 $this->listFiles($files);
             } else {
@@ -434,7 +520,7 @@ class PHPloy
                     $this->repo = $submodule['path'];
                     $this->currentSubmoduleName = $submodule['name'];
                     
-                    $this->output("\r\nSUBMODULE: ".$this->currentSubmoduleName);
+                    $this->output("\r\n<gray>SUBMODULE: ".$this->currentSubmoduleName);
                     
                     $files = $this->compare($revision);
 
@@ -449,9 +535,10 @@ class PHPloy
                 $this->currentSubmoduleName = false;
             }
             if (!$this->listFiles) {
-                $this->output("\r\n------ Deployment complete ------");
+                $this->output("\r\n<darkGreen>------ Deployment complete ------");
             }
 
+            $this->ftpDebug('Closing connection');
             ftp_close($this->connection);
         }         
     }
@@ -468,18 +555,18 @@ class PHPloy
         }
 
         if (count($files['upload']) > 0) {
-            $this->output("Files to upload:");
+            $this->output("   <green>Files that will be uploaded in next deployment:");
 
             foreach ($files['upload'] as $file_to_upload) {
-                $this->output(" Upload: ".$file_to_upload);
+                $this->output("      ".$file_to_upload);
             }
         }
 
         if (count($files['delete']) > 0) {
-            $this->output("Files to delete:");
+            $this->output("   <red>Files that will be deleted in next deployment:");
 
             foreach ($files['delete'] as $file_to_delete) {
-                $this->output(" Delete: ".$file_to_delete);
+                $this->output("      ".$file_to_delete);
             }
         }
     }
@@ -499,15 +586,19 @@ class PHPloy
 
         $pathsThatExist = array();
 
+        $this->ftpDebug("Connecting to {$server['host']}:{$server['port']}");
         $connection = @ftp_connect($server['host'], $server['port']);
 
         if ($connection) {
+            $this->ftpDebug("Sending username and password");
             if (! ftp_login($connection, $server['user'], $server['pass'])) {
                 throw new Exception("Could not login to {$server['host']} (Tried to login as {$server['user']}).");
             }
 
+            $this->ftpDebug("Setting passive mode: {$server['passive']}");
             ftp_pasv($connection, $server['passive']);
 
+            $this->ftpDebug("Changing directory to: {$server['path']}");
             if (@ftp_chdir($connection, $server['path'])) {
                 $this->connection = $connection;
                 $this->output("Connected.");
@@ -520,42 +611,50 @@ class PHPloy
     }
 
     /**
-     * Push Files one by one.
+     * Update the current remote server with the array of files provided
+     *
+     * @param array $files 2-dimensional array with 2 indices: 'upload' and 'delete'
+     *                     Each of these contains an array of filenames and paths (relative to repository root)
      */
     protected function push($files)
     {
         // If revision is not HEAD, the current one, it means this is a rollback.
         // So, we have to revert the files the the state they were in that revision.
         if ($this->revision != 'HEAD') {
-            $this->output("Rolling back");
-            $command = 'git --git-dir="'.$this->repo.'/.git" --work-tree="'.$this->repo.'" checkout '.$this->revision;
-            exec(escapeshellcmd($command));
+            $this->output("   Rolling back working copy");
+
+            // BUG: This does NOT work correctly for submodules & subsubmodules (and leaves them in an incorrect state)
+            //      It technically should do a submodule update in the parent, not a checkout inside the submodule
+            $this->gitCommand('checkout '.$this->revision);
         }
 
         $filesToUpload = $files['upload'];
         $filesToDelete = $files['delete'];
+        $numberOfFiles = count($files['upload']) + count($files['delete']);
         unset($files);
 
-        foreach ($filesToUpload as $file) {
+        foreach ($filesToUpload as $fileNo => $file) {
             if ($this->currentSubmoduleName) $file = $this->currentSubmoduleName.'/'.$file;
 
             // Make sure the folder exists in the FTP server.
             $dir = explode("/", dirname($file));
             $path = "";
             $ret = true;
-
-            for($i = 0, $count = count($dir); $i < $count; $i++) {
+            // Loop through each folder in the path /a/b/c/d.txt to ensure that it exists
+            for ($i = 0, $count = count($dir); $i < $count; $i++) {
                 $path .= $dir[$i].'/';
 
                 if (! isset($pathsThatExist[$path])) {
                     $origin = ftp_pwd($this->connection);
                     
+                    $this->ftpDebug("Changing directory to $path (to test if exists)");
                     if (! @ftp_chdir($this->connection, $path)) {
+                        $this->ftpDebug('Could not change to remote directory.  Will now attempt to create it...');
                         if (! ftp_mkdir($this->connection, $path)) {
                             $ret = false;
                             
-                            $this->output("   Failed to create '$path'.");
-                            $this->output("   Directory could not be created. Please check if a file with the same name exists in the server and delete it.");
+                            $this->output("   <red>Failed to create '$path'.");
+                            $this->output("   <red>Directory could not be created. Please check if a file with the same name exists in the server and delete it.");
                             
                             return;
                         } else {
@@ -566,13 +665,15 @@ class PHPloy
                         $pathsThatExist[$path] = true;
                     }
                 
+                    
+                    $this->ftpDebug("Changing directory back to origin ($origin)");
                     @ftp_chdir($this->connection, $origin);
                 }
             }
 
+            // Now upload the file, attempting 10 times before exiting with a failure message
             $uploaded = false;
-            $attempts = 1;
-            
+            $attempts = 1;            
             while (! $uploaded) {
                 if ($attempts == 10) {
                     throw new Exception("Tried to upload $file 10 times and failed. Something is wrong...");
@@ -582,30 +683,36 @@ class PHPloy
 
                 if (! $uploaded) {
                     $attempts = $attempts + 1;
-                    $this->output("   Failed to upload {$file}. Retrying (attempt $attempts/10)... ");
+                    $this->output("   <darkRed>Failed to upload {$file}. Retrying (attempt $attempts/10)... ");
                 }
             }
             
-            $this->output("   \033[0;32muploaded\033[0m \033[01;37m{$file}\033[0m");
+            $fileNo = str_pad(++$fileNo, strlen($numberOfFiles), ' ', STR_PAD_LEFT);
+            $this->output("   <green>uploaded $fileNo of $numberOfFiles <white>{$file}");
         }
 
-        foreach ($filesToDelete as $file) {
+        // todo: perhaps detect whether file is actually present, and whether delete is successful/skipped/failed
+        foreach ($filesToDelete as $i => $file) {
             ftp_delete($this->connection, $file);
-            $this->output("   \033[01;31mremoved\033[0m \033[01;37m{$file}\033[0m ");
+            $fileNo = str_pad(++$fileNo, strlen($numberOfFiles), ' ', STR_PAD_LEFT);
+            $this->output("   <red>removed $fileNo of $numberOfFiles <white>{$file}");
         }
 
+        // If deploy.ini specifies some directories to "clean", wipe all files within
         if (! empty($server['clean_directories'])) {
             foreach ($server['clean_directories'] as $dir) {
+                $this->debug("Now cleaning $dir");
                 if (! $tmpFiles = ftp_nlist($this->connection, $dir)) {
-                    $this->output("{$dir} already empty");
+                    $this->output("   {$dir} already empty");
                     continue;
                 }
 
                 foreach ($tmpFiles as $file) {
+                    $this->ftpDebug("Removing file $file");
                     ftp_delete($this->connection, $file);
                 }
 
-                $this->output("   \033[01;31memptied\033[0m \033[01;37m{$dir}\033[0m");
+                $this->output("   <red>emptied <white>{$dir}");
             }
         }
 
@@ -613,15 +720,17 @@ class PHPloy
             // Set revision on server
             $this->setRevision();              
         } else {
-            $this->output("   No files to upload.");
+            $this->output("   <gray>No files to upload.");
         }
 
-        // If revision is not HEAD, the current one, it means this is a rollback.
-        // So, we have to revert the master because we reverted to an earlier
-        // revision before the deploy start.
+        // If $this->revision is not HEAD, it means the rollback command was provided
+        // The working copy was rolled back earlier to run the deployment, and we now want to return the working copy
+        // back to its original state, but this is BUGGY (see below)
         if ($this->revision != 'HEAD') {
-            $command = 'git --git-dir="'.$this->repo.'/.git" --work-tree="'.$this->repo.'" checkout master';
-            exec(escapeshellcmd($command));
+            // BUG: What if the original deployment was not done from the master branch?  This will return the working copy to the wrong branch
+            //      Perhaps we need to detect (and store) the branch at the beginning and reset it here
+            //      This also may be different for each submodule
+            $this->gitCommand('checkout master');
         }
     }
 
@@ -635,8 +744,9 @@ class PHPloy
         $isHeadRevision = $this->sync == 'sync' || $this->sync == false;
         if ( $isHeadRevision ) {
             // Find the revision number of HEAD
-            $command = "git --git-dir=\"$this->repo/.git\" --work-tree=\"$this->repo\" rev-parse HEAD";
-            exec(escapeshellcmd($command), $localRevision);
+            $localRevision = $this->gitCommand('rev-parse HEAD');
+            // exec(escapeshellcmd($command), );
+            $localRevision = $localRevision[0];
         } else {
             $localRevision = $this->sync;
         }
@@ -644,16 +754,22 @@ class PHPloy
         $temp = tempnam(sys_get_temp_dir(), 'gitRevision');
         file_put_contents($temp, $localRevision);
 
+        $consoleMessage = "Updating remote revision file to ".
+                ($isHeadRevision ? 'current HEAD ('.$localRevision.')' : $localRevision);
+
         if ( $this->sync ) {
-            $this->output("\r\nSYNC: Updating remote revision file to ".
-                ($isHeadRevision ? 'current HEAD ('.$localRevision.')' : $localRevision)
-            );
+            $this->output("\r\n<yellow>SYNC: $consoleMessage");
+        } else {
+            $this->ftpDebug($consoleMessage);
         }
 
-        if (ftp_put($this->connection, $this->dotRevision, $temp, FTP_BINARY)) {         
+        if (ftp_put($this->connection, $this->dotRevision, $temp, FTP_BINARY)) {
+            $this->debug("   Removing temp file $temp");
             unlink($temp);
-            $this->output("   Remote revision file updated.");
+            $this->output("   <green>Remote revision file updated.");
         } else {
+            $this->debug("   Removing temp file $temp");
+            unlink($temp);
             throw new Exception("Could not update the revision file on server.");   
         }                
     }
@@ -664,7 +780,106 @@ class PHPloy
      * @param string $message
      */
     public function output($message) {
-        echo $message."\r\n";
+        echo tagsToAnsiColors($message) . "\r\n";
     }
 
+    /**
+     * Helper method to output messages to the console (only in debug mode)
+     * Debug mode is activated by setting $this->debug = true or using the command line option --debug
+     * 
+     * @param string $message Message to display on the console
+     */
+    public function debug($message) {
+        if ($this->debug)
+            $this->output("$message");
+    }
+
+    /**
+     * Helper method to output messages to the console (only in debug mode)
+     * Debug mode is activated by setting $this->debug = true or using the command line option --debug
+     * 
+     * @param string $message Message to display on the console
+     */
+    public function ftpDebug($message) {
+        $this->debug("<yellow>FTP: <darkYellow>$message");
+    }
+
+}
+
+/**
+ * Helper function that replaces the following tags into the appropriate
+ * ANSI colour codes
+ *
+ *      <black>
+ *      <red>
+ *      <green>
+ *      <yellow>
+ *      <blue>
+ *      <magenta>
+ *      <cyan>
+ *      <white>
+ *      <darkRed>
+ *      <darkGreen>
+ *      <darkYellow>
+ *      <darkBlue>
+ *      <darkMagenta>
+ *      <darkCyan>
+ *      <darkWhite>
+ *      <gray>
+ *      <bgBlack>
+ *      <bgRed>
+ *      <bgGreen>
+ *      <bgYellow>
+ *      <bgBlue>
+ *      <bgMagenta>
+ *      <bgCyan>
+ *      <bgWhite>
+ *      <bold>          Not visible on Windows
+ *      <italics>       Not visible on Windows
+ *      <reset>         Clears all colours and styles (required)
+ *
+ * For safety, this function always appends a <reset> at the end, otherwise the console may stick
+ * permanently in the colors you have used.
+ *
+ * Note: we don't use commands like bold-off, underline-off as it was introduced
+ * in ANSI 2.50+ and does not currently display on Windows using ansicon
+ * 
+ * @param string $string
+ * @return string
+ */
+function tagsToAnsiColors($string) {
+    $escape = "\033";
+    $tags = array(
+        '<black>'       => $escape . '[30m',
+        '<red>'         => $escape . '[31m',
+        '<green>'       => $escape . '[32m',
+        '<yellow>'      => $escape . '[33m',
+        '<blue>'        => $escape . '[34m',
+        '<magenta>'     => $escape . '[35m',
+        '<cyan>'        => $escape . '[36m',
+        '<white>'       => $escape . '[37m',
+        '<darkRed>'     => $escape . '[0;31m',
+        '<darkGreen>'   => $escape . '[0;32m',
+        '<darkYellow>'  => $escape . '[0;33m',
+        '<darkBlue>'    => $escape . '[0;34m',
+        '<darkMagenta>' => $escape . '[0;35m',
+        '<darkCyan>'    => $escape . '[0;36m',
+        '<darkWhite>'   => $escape . '[0;37m',
+        '<gray>'        => $escape . '[0;37m',
+        '<bgBlack>'     => $escape . '[40m',
+        '<bgRed>'       => $escape . '[41m',
+        '<bgGreen>'     => $escape . '[42m',
+        '<bgYellow>'    => $escape . '[43m',
+        '<bgBlue>'      => $escape . '[44m',
+        '<bgMagenta>'   => $escape . '[45m',
+        '<bgCyan>'      => $escape . '[46m',
+        '<bgWhite>'     => $escape . '[47m',
+        '<bold>'        => $escape . '[1m',
+        '<italics>'     => $escape . '[3m',
+        '<reset>'       => $escape . '[0m',
+    );
+
+    // We always add a <reset> at the end of each string so that any output following doesn't continue the same styling
+    $string .= '<reset>';
+    return str_replace(array_keys($tags), $tags, $string);
 }
