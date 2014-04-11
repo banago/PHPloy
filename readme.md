@@ -1,7 +1,7 @@
 # PHPloy
-**Version 2.0.0-beta2
+**Version 2.0.0-beta2**
 
-PHPloy is a incremental Git FTP deployment tool you to deploy files through FTP to a server incremetally, meaning only the ones you have edited since the last deploy, making use of Git smartness. PHPloy supports deploy submodules and sub-submodules, deploying multiple servers and rollbacks.
+PHPloy is a incremental Git FTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
 ## Requirements
 
@@ -100,6 +100,8 @@ or:
 
 
 ## Rollbacks
+
+**Warning: the --rollback option does not currently update your submodules correctly.  Until this is fixed, we recommend that you checkout the revision that you would like to deploy, update your submodules, and *then* run phploy.**
 
 PHPloy allows you to roll back to an earlier version when you need to. Rolling back is very easy. 
 
