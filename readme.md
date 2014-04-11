@@ -157,7 +157,7 @@ The people that have brought PHPloy to you are:
 * [Baki Goxhaj](https://twitter.com/banago) - lead developer
 * [Bruno De Barros](https://twitter.com/terraduo) - initial inspiration
 * [Fadion Dashi](https://twitter.com/jonidashi) - contributor
-* [Simon East](https://twitter.com/SimonEast) - contributor, Windows support 
+* [Simon East](https://twitter.com/SimoEast) - contributor, Windows support 
 
 
 ## Version history
