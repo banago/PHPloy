@@ -1,5 +1,5 @@
 # PHPloy
-**Version 2.0.0-beta**
+**Version 2.1.0**
 
 PHPloy is a little PHP script that allows you to deploy files through FTP to a server. It makes use of Git to know which files should be uploaded and which should be deleted. It is a real time-saver. 
 
@@ -155,7 +155,18 @@ If you've got any suggestions, questions, or anything else about PHPloy, [you sh
 
 ## Version history
 
-v2.0.0-beta
+v2.1.0 (11 April 2014)
+
+* Added more ANSI colours to output
+* Added --debug option which provides much more verbose output
+* Added --help option which displays the readme.md file
+* Output now clearly indicates if it's running in --list mode
+* Upload process now displays number of files in the queue (eg. "1 of 52")
+* Internal: ANSI colours are now expressed through simple HTML-like tags such as <red>, <white> etc.
+* Internal: git & console commands are now run from a central function to reduce code repetition and potential bugs
+* Fictional: phploy now makes your coffee during a long deployment
+
+v2.0.0-beta (April 2014)
 
 * Added support for Windows machines by:
     * removing incompatible UTF characters
