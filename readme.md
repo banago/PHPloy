@@ -1,10 +1,7 @@
 # PHPloy
-**Version 2.1.0**
+**Version 2.0.0-beta2
 
-PHPloy is a little PHP script that allows you to deploy files through FTP to a server. It makes use of Git to know which files should be uploaded and which should be deleted. It is a real time-saver. 
-
-Unlike other similar scripts, PHPloy supports deployments of submodules and sub-submodules.
-
+PHPloy is a incremental Git FTP deployment tool you to deploy files through FTP to a server incremetally, meaning only the ones you have edited since the last deploy, making use of Git smartness. PHPloy supports deploy submodules and sub-submodules, deploying multiple servers and rollbacks.
 
 ## Requirements
 
@@ -153,9 +150,19 @@ PHPloy also stores a `.revision` file for each submodule in your repository.
 If you've got any suggestions, questions, or anything else about PHPloy, [you should create an issue here](https://github.com/banago/PHPloy/issues). 
 
 
+## Credits
+
+The people that have brought PHPloy to you are:
+
+* [Baki Goxhaj](https://twitter.com/banago) - lead developer
+* [Bruno De Barros](https://twitter.com/terraduo) - initial inspiration
+* [Fadion Dashi](https://twitter.com/jonidashi) - contributor
+* [Simon East](https://twitter.com/SimonEast) - contributor, Windows support 
+
+
 ## Version history
 
-v2.1.0 (11 April 2014)
+v2.0.0-beta2 (11 April 2014)
 
 * Added more ANSI colours to output
 * Added --debug option which provides much more verbose output
@@ -173,8 +180,3 @@ v2.0.0-beta (April 2014)
     * added phploy.bat
 * Added some additional console output and reformatted some of the outputted strings for clarity
 * Added command-line option --skip-subsubmodules
-
-
-## Credits
-
-PHPloy is developed by Baki Goxhaj, a [freelance WordPress and Laravel developer](http://wplancer.com) from Albania. It is based on the work of Bruno De Barros. This project was taken further because the original project did not suport Git Submodues.
