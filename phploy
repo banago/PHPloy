@@ -20,7 +20,7 @@ try {
     $phploy = new PHPloy();
 } catch (Exception $e) {
     // Display the error in red
-    echo tagsToAnsiColors("\r\n<red>Oh Snap: {$e->getMessage()}");
+    echo Ansi::tagsToColors("\r\n<red>Oh Snap: {$e->getMessage()}");
 }
 
 /**
@@ -111,7 +111,7 @@ class PHPloy
      * 
      * @var array $longopts
      */
-    protected $longopts  = array('help', 'list', 'rollback::', 'server:', 'sync::', 'skip-subsubmodules', 'debug', 'version');
+    protected $longopts  = array('no-colors', 'help', 'list', 'rollback::', 'server:', 'sync::', 'skip-subsubmodules', 'debug', 'version');
 
     /**
      * @var bool|resource $connection
@@ -231,6 +231,10 @@ class PHPloy
         $options = getopt($this->shortopts, $this->longopts);
 
         $this->debug('Command line options detected: ' . print_r($options, true));
+
+        if (isset($options['no-colors'])) {
+            Ansi::$enabled = false;
+        }
 
         // -? command is not correctly parsed by getopt() (at least on Windows)
         // so need to check $argv variable instead
@@ -796,7 +800,7 @@ class PHPloy
      * @param string $message
      */
     public function output($message) {
-        echo tagsToAnsiColors($message) . "\r\n";
+        echo Ansi::tagsToColors($message) . "\r\n";
     }
 
     /**
@@ -823,7 +827,11 @@ class PHPloy
 }
 
 /**
- * Helper function that replaces the following tags into the appropriate
+ * Simple ANSI Colors
+ * Version 1.0.0
+ * https://github.com/SimonEast/Simple-Ansi-Colors
+ * 
+ * Helper class that replaces the following tags into the appropriate
  * ANSI colour codes
  *
  *      <black>
@@ -834,6 +842,7 @@ class PHPloy
  *      <magenta>
  *      <cyan>
  *      <white>
+ *      <gray>
  *      <darkRed>
  *      <darkGreen>
  *      <darkYellow>
@@ -841,7 +850,7 @@ class PHPloy
  *      <darkMagenta>
  *      <darkCyan>
  *      <darkWhite>
- *      <gray>
+ *      <darkGray>
  *      <bgBlack>
  *      <bgRed>
  *      <bgGreen>
@@ -854,48 +863,89 @@ class PHPloy
  *      <italics>       Not visible on Windows
  *      <reset>         Clears all colours and styles (required)
  *
- * For safety, this function always appends a <reset> at the end, otherwise the console may stick
- * permanently in the colors you have used.
- *
  * Note: we don't use commands like bold-off, underline-off as it was introduced
  * in ANSI 2.50+ and does not currently display on Windows using ansicon
- * 
- * @param string $string
- * @return string
  */
-function tagsToAnsiColors($string) {
-    $escape = "\033";
-    $tags = array(
-        '<black>'       => $escape . '[30m',
-        '<red>'         => $escape . '[31m',
-        '<green>'       => $escape . '[32m',
-        '<yellow>'      => $escape . '[33m',
-        '<blue>'        => $escape . '[34m',
-        '<magenta>'     => $escape . '[35m',
-        '<cyan>'        => $escape . '[36m',
-        '<white>'       => $escape . '[37m',
-        '<darkRed>'     => $escape . '[0;31m',
-        '<darkGreen>'   => $escape . '[0;32m',
-        '<darkYellow>'  => $escape . '[0;33m',
-        '<darkBlue>'    => $escape . '[0;34m',
-        '<darkMagenta>' => $escape . '[0;35m',
-        '<darkCyan>'    => $escape . '[0;36m',
-        '<darkWhite>'   => $escape . '[0;37m',
-        '<gray>'        => $escape . '[0;37m',
-        '<bgBlack>'     => $escape . '[40m',
-        '<bgRed>'       => $escape . '[41m',
-        '<bgGreen>'     => $escape . '[42m',
-        '<bgYellow>'    => $escape . '[43m',
-        '<bgBlue>'      => $escape . '[44m',
-        '<bgMagenta>'   => $escape . '[45m',
-        '<bgCyan>'      => $escape . '[46m',
-        '<bgWhite>'     => $escape . '[47m',
-        '<bold>'        => $escape . '[1m',
-        '<italics>'     => $escape . '[3m',
-        '<reset>'       => $escape . '[0m',
+class Ansi {
+
+    /**
+     * Whether colour codes are enabled or not
+     * 
+     * Valid options:
+     *     null - Auto-detected.  Color codes will be enabled on all systems except Windows, unless it
+     *            has a valid ANSICON environment variable 
+     *            (indicating that AnsiCon is installed and running)
+     *     false - will strip all tags and NOT output any ANSI colour codes
+     *     true - will always output color codes
+     */
+    public static $enabled = null;
+
+    public static $tags = array(
+        '<black>'       => "\033[0;30m",
+        '<red>'         => "\033[1;31m",
+        '<green>'       => "\033[1;32m",
+        '<yellow>'      => "\033[1;33m",
+        '<blue>'        => "\033[1;34m",
+        '<magenta>'     => "\033[1;35m",
+        '<cyan>'        => "\033[1;36m",
+        '<white>'       => "\033[1;37m",
+        '<gray>'        => "\033[0;37m",
+        '<darkRed>'     => "\033[0;31m",
+        '<darkGreen>'   => "\033[0;32m",
+        '<darkYellow>'  => "\033[0;33m",
+        '<darkBlue>'    => "\033[0;34m",
+        '<darkMagenta>' => "\033[0;35m",
+        '<darkCyan>'    => "\033[0;36m",
+        '<darkWhite>'   => "\033[0;37m",
+        '<darkGray>'    => "\033[1;30m",
+        '<bgBlack>'     => "\033[40m",
+        '<bgRed>'       => "\033[41m",
+        '<bgGreen>'     => "\033[42m",
+        '<bgYellow>'    => "\033[43m",
+        '<bgBlue>'      => "\033[44m",
+        '<bgMagenta>'   => "\033[45m",
+        '<bgCyan>'      => "\033[46m",
+        '<bgWhite>'     => "\033[47m",
+        '<bold>'        => "\033[1m",
+        '<italics>'     => "\033[3m",
+        '<reset>'       => "\033[0m",
     );
 
-    // We always add a <reset> at the end of each string so that any output following doesn't continue the same styling
-    $string .= '<reset>';
-    return str_replace(array_keys($tags), $tags, $string);
+    /**
+     * This is the primary function for converting tags to ANSI color codes
+     * (see the class description for the supported tags)
+     * 
+     * For safety, this function always appends a <reset> at the end, otherwise the console may stick
+     * permanently in the colors you have used.
+     * 
+     * @param string $string
+     * @return string
+     */
+    public static function tagsToColors($string)
+    {
+        if (static::$enabled === null) {
+            static::$enabled = !static::isWindows() || static::isAnsiCon();
+        }
+
+        if (!static::$enabled) {
+            // Strip tags (replace them with an empty string)
+            return str_replace(array_keys(static::$tags), '', $string);
+        }
+
+        // We always add a <reset> at the end of each string so that any output following doesn't continue the same styling
+        $string .= '<reset>';
+        return str_replace(array_keys(static::$tags), static::$tags, $string);
+    }
+
+    public static function isWindows() 
+    {
+        return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+    }
+
+    public static function isAnsiCon() 
+    {
+        return !empty($_SERVER['ANSICON']) 
+            && substr($_SERVER['ANSICON'], 0, 1) != '0';
+    }
+
 }

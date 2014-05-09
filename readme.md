@@ -6,9 +6,8 @@ PHPloy is a incremental Git FTP deployment tool. By keeping track of the state o
 ## Requirements
 
 * PHP 5.3+ command line interpreter (CLI)
-* Windows machines will require AnsiCon to display colors (and not raw color codes) in the command prompt
-    1. [Download AnsiCon here](http://adoxa.hostmyway.net/ansicon/)
-    2. Install it by running `ansicon -i` from a command prompt or "Run" window
+
+Windows users can optionally [download AnsiCon](https://github.com/adoxa/ansicon/releases) to enable the display of colors in the command prompt.  Install it by running `ansicon -i` from a command prompt or "Run" window.
 
 
 ## Usage 
