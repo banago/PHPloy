@@ -10,7 +10,7 @@
  * @author Simon East <simon+github@yump.com.au>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 2.0.0-beta2
+ * @version 2.0.0-beta3
  */
 
 /**
@@ -32,7 +32,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '2.0.0-beta2';
+    protected $phployVersion = '2.0.0-beta3';
 
     /**
      * @var string $revision
@@ -166,6 +166,7 @@ class PHPloy
     protected $displayVersion = false;
 
     /**
+     * Whether the --sync command line option was given
      * @var bool $sync
      */
     protected $sync = false;
@@ -213,6 +214,8 @@ class PHPloy
 
     /**
      * Displays the various command line options
+     *
+     * @return null
      */
     protected function displayHelp()
     {
@@ -225,6 +228,8 @@ class PHPloy
     /**
      * Parse CLI options
      * For descriptions of the various options, see the comments for $this->longopts
+     *
+     * @return null
      */
     protected function parseOptions()
     {
@@ -281,6 +286,7 @@ class PHPloy
      * Check for submodules
      * 
      * @param string $repo
+     * @return null
      */
     protected function checkSubmodules($repo)
     {
@@ -314,6 +320,7 @@ class PHPloy
      *       It appears that this is called for EACH submodule, but then also does another `git submodule foreach`
      * @param string $repo
      * @param string $name
+     * @return null
      */
     protected function checkSubSubmodules($repo, $name)
     {
@@ -339,7 +346,8 @@ class PHPloy
     /**
      * Parse Credentials
      * 
-     * @param string $deploy
+     * @param string $deploy The filename to obtain the list of servers from, normally $this->deployIniFilename
+     * @return array of servers listed in the file $deploy
      */
     protected function parseCredentials($deploy)
     {
@@ -359,6 +367,8 @@ class PHPloy
 
     /**
      * Reads the deploy.ini file and populates the $this->servers array
+     *
+     * @return null
      */
     protected function prepareServers()
     {
@@ -393,7 +403,7 @@ class PHPloy
     /**
      * Executes a console command and returns the output (as an array)
      * 
-     * @return array of all lines output to the console (STDOUT)
+     * @return array of all lines that were output to the console during the command (STDOUT)
      */
     protected function runCommand($command)
     {
@@ -416,7 +426,8 @@ class PHPloy
      * @param string $repoPath Defaults to $this->repo
      * @return array Lines of the output
      */
-    protected function gitCommand($command, $repoPath = null) {
+    protected function gitCommand($command, $repoPath = null)
+    {
         if (! $repoPath)
             $repoPath = $this->repo;
         $command = 'git --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
@@ -799,7 +810,8 @@ class PHPloy
      * 
      * @param string $message
      */
-    public function output($message) {
+    public function output($message) 
+    {
         echo Ansi::tagsToColors($message) . "\r\n";
     }
 
@@ -809,7 +821,8 @@ class PHPloy
      * 
      * @param string $message Message to display on the console
      */
-    public function debug($message) {
+    public function debug($message) 
+    {
         if ($this->debug)
             $this->output("$message");
     }
@@ -820,7 +833,8 @@ class PHPloy
      * 
      * @param string $message Message to display on the console
      */
-    public function ftpDebug($message) {
+    public function ftpDebug($message) 
+    {
         $this->debug("<yellow>FTP: <darkYellow>$message");
     }
 

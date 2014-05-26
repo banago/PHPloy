@@ -163,6 +163,11 @@ The people that have brought PHPloy to you are:
 
 ## Version history
 
+v2.0.0-beta3 (26 May 2014)
+
+* Colored console output is now *optional* and disabled by default on Windows unless Ansicon is detected.  (Colors can be disabled through the `--no-colors` command-line option.)
+* ANSI color functionality has been moved to a separate class, and is now also a separate project on Github
+
 v2.0.0-beta2 (11 April 2014)
 
 * Added more ANSI colours to output
