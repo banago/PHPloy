@@ -1,14 +1,13 @@
 # PHPloy
-**Version 2.0.0-beta2**
+**Version 2.0.0-beta3**
 
 PHPloy is a incremental Git FTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
 ## Requirements
 
 * PHP 5.3+ command line interpreter (CLI)
-* Windows machines will require AnsiCon to display colors (and not raw color codes) in the command prompt
-    1. [Download AnsiCon here](http://adoxa.hostmyway.net/ansicon/)
-    2. Install it by running `ansicon -i` from a command prompt or "Run" window
+
+Windows users can optionally [download AnsiCon](https://github.com/adoxa/ansicon/releases) to enable the display of colors in the command prompt.  Install it by running `ansicon -i` from a command prompt or "Run" window.
 
 
 ## Usage 
@@ -163,6 +162,11 @@ The people that have brought PHPloy to you are:
 
 
 ## Version history
+
+v2.0.0-beta3 (26 May 2014)
+
+* Colored console output is now *optional* and disabled by default on Windows unless Ansicon is detected.  (Colors can be disabled through the `--no-colors` command-line option.)
+* ANSI color functionality has been moved to a separate class, and is now also a separate project on Github
 
 v2.0.0-beta2 (11 April 2014)
 
