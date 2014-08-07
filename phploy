@@ -178,7 +178,11 @@ class PHPloy
      */
     protected $debug = false;
 
-
+    /**
+     * Keep track of current deployment size
+     * @var int $deploymentSize
+     */
+    protected $deploymentSize = 0;
 
     /**
      * Constructor
@@ -567,11 +571,25 @@ class PHPloy
             }
             if (!$this->listFiles) {
                 $this->output("\r\n<darkGreen>------ Deployment complete ------");
+                $this->output("<darkGreen>------ Deployment size: ".$this->human_filesize($this->deploymentSize)." ------");
+                $this->deploymentSize = 0;
             }
 
             $this->ftpDebug('Closing connection');
             ftp_close($this->connection);
         }         
+    }
+
+    /**
+     * Return a human readable filesize
+     * 
+     * @param int $bytes
+     * @param int $decimals
+     */
+    protected function human_filesize($bytes, $decimals = 2) {
+        $sz = 'BKMGTP';
+        $factor = floor((strlen($bytes) - 1) / 3);
+        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
     }
 
     /**
@@ -710,11 +728,15 @@ class PHPloy
                     throw new Exception("Tried to upload $file 10 times and failed. Something is wrong...");
                 }
 
+
                 $uploaded = ftp_put($this->connection, $file, $file, FTP_BINARY);
 
                 if (! $uploaded) {
                     $attempts = $attempts + 1;
                     $this->output("   <darkRed>Failed to upload {$file}. Retrying (attempt $attempts/10)... ");
+                }
+                else {
+                    $this->deploymentSize += filesize($file);
                 }
             }
             
