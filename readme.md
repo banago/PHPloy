@@ -57,6 +57,8 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
     ; and use whichever configuration way you like.
     ; 
     ; NOTE: If you run phploy without specifying which server to deploy to, it will deploy to ALL servers by default
+    ;
+    ; NOTE: If a value in the ini file contains any non-alphanumeric characters it needs to be enclosed in double-quotes (").
 
     [staging]
     user = example
