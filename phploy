@@ -20,7 +20,7 @@ try {
     $phploy = new PHPloy();
 } catch (Exception $e) {
     // Display the error in red
-    echo Ansi::tagsToColors("\r\n<red>Oh Snap: {$e->getMessage()}");
+    echo Ansi::tagsToColors("\r\n<red>Oh Snap: {$e->getMessage()}\r\n");
 }
 
 /**
