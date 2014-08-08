@@ -842,7 +842,7 @@ class PHPloy
         }
         
         $temp = tempnam(sys_get_temp_dir(), 'gitRevision');
-        //file_put_contents($temp, $localRevision);
+        file_put_contents($temp, $localRevision);
 
         $consoleMessage = "Updating remote revision file to ".
                 ($isHeadRevision ? 'current HEAD ('.$localRevision.')' : $localRevision);
