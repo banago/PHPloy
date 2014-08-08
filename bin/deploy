@@ -1,0 +1,15 @@
+#!/usr/bin/env php
+<?php
+require __DIR__.'/../vendor/autoload.php';
+
+use Banago\PHPloy\PHPloy;
+
+/**
+ * Run deployment
+ */
+try {
+    $phploy = new PHPloy();
+} catch (Exception $e) {
+    // Display the error in red
+    echo Ansi::tagsToColors("\r\n<red>Oh Snap: {$e->getMessage()}\r\n");
+}

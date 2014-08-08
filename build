@@ -1,0 +1,18 @@
+#!/usr/bin/env php
+<?php
+
+@unlink(__DIR__ . '/bin/phploy.phar');
+@mkdir(__DIR__ . '/bin/');
+
+$phar = new Phar(__DIR__ . '/bin/phploy.phar', FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::KEY_AS_FILENAME, 'phploy.phar');
+$phar->startBuffering();
+
+// Adding folders
+$phar->buildFromDirectory(dirname(__FILE__), '/(src|vendor)\/.*$/');
+
+// Adding main file
+$phar->addFile('phploy.php');
+$phar->setStub($phar->createDefaultStub('phploy.php'));
+
+$phar->compressFiles(Phar::GZ);
+$phar->stopBuffering();
