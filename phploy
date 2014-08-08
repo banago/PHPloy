@@ -485,21 +485,21 @@ class PHPloy
 
         $output = $this->gitCommand($command);
 
-		if (! empty($remoteRevision)) {
-	        foreach ($output as $line) {
-	            if ($line[0] == 'A' or $line[0] == 'C' or $line[0] == 'M') {
-	                // Added (A), Modified (C), Unmerged (M)
-	                $filesToUpload[] = trim(substr($line, 1));
-	            } elseif ($line[0] == 'D') {
-	                // Deleted (D)
-	                $filesToDelete[] = trim(substr($line, 1));
-	            } else {
-	                throw new Exception("Unknown git-diff status: {$line[0]}");
-	            }
-	        }
+        if (! empty($remoteRevision)) {
+            foreach ($output as $line) {
+                if ($line[0] == 'A' or $line[0] == 'C' or $line[0] == 'M') {
+                    // Added (A), Modified (C), Unmerged (M)
+                    $filesToUpload[] = trim(substr($line, 1));
+                } elseif ($line[0] == 'D') {
+                    // Deleted (D)
+                    $filesToDelete[] = trim(substr($line, 1));
+                } else {
+                    throw new Exception("Unknown git-diff status: {$line[0]}");
+                }
+            }
         } else {
-		    $filesToUpload = $output;
-		}
+            $filesToUpload = $output;
+        }
 
         $filesToUpload = array_diff($filesToUpload, $this->filesToIgnore);
 
