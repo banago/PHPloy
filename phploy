@@ -571,7 +571,7 @@ class PHPloy
             }
             if (!$this->listFiles) {
                 $this->output("\r\n<darkGreen>------ Deployment complete ------");
-                $this->output("<darkGreen>------ Deployment size: ".$this->human_filesize($this->deploymentSize)." ------");
+                $this->output("<darkGreen>------ Deployment size: ".$this->humanFilesize($this->deploymentSize)." ------");
                 $this->deploymentSize = 0;
             }
 
