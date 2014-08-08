@@ -40,13 +40,25 @@ class PHPloy
     public $revision;
 
     /**
-     * A list of files that should NOT be uploaded to the remote server
-     * (must match the absolute path in its entirety)
+     * Keep track of which server we are currently deploying to
      *
-     * @todo - implement the ability to specify entire folders (or use wildcards?) here
+     * @var string $currentlyDeploying
+     */
+    public $currentlyDeploying = '';
+
+    /**
+     * A list of files that should NOT be uploaded to the remote server
+     *
      * @var array $filesToIgnore
      */
-    public $filesToIgnore = array(
+    public $filesToIgnore = array();
+    
+    /**
+     * A list of files that should NOT be uploaded to the any defined server
+     *
+     * @var array $globalFilesToIgnore
+     */
+    public $globalFilesToIgnore = array(
         '.gitignore',
         '.gitmodules',
     );
@@ -363,7 +375,7 @@ class PHPloy
             if (! $servers) {
                  throw new Exception("'$deploy' is not a valid .ini file.");
             } else {
-                $this->filesToIgnore[] = $deploy;
+                $this->globalFilesToIgnore[] = $deploy;
                 return $servers;
             }
         }
@@ -401,6 +413,10 @@ class PHPloy
             $options = array_merge($defaults, $options);
 
             $this->servers[$name] = $options;
+
+            if(!empty($this->servers[$name]['skip']))
+                $this->filesToIgnore[$name] = array_merge($this->globalFilesToIgnore, $this->servers[$name]['skip']);
+            
         }
     }
 
@@ -456,6 +472,7 @@ class PHPloy
         $tmpFile = tmpfile();
         $filesToUpload = array();
         $filesToDelete = array();
+        $filesToSkip = array();
         $output = array();
 
         if ($this->currentSubmoduleName) {
@@ -500,12 +517,21 @@ class PHPloy
         } else {
             $filesToUpload = $output;
         }
+        
+        foreach($filesToUpload as $file) {
+            foreach($this->filesToIgnore[$this->currentlyDeploying] as $pattern) {
+                if($this->patternMatch($pattern, $file)) {
+                    $filesToSkip[] = $file;
+                }
+            }
+        }
 
-        $filesToUpload = array_diff($filesToUpload, $this->filesToIgnore);
+        $filesToUpload[$this->currentlyDeploying] = array_values(array_diff($filesToUpload, $filesToSkip));
 
         return array(
             'upload' => $filesToUpload,
-            'delete' => $filesToDelete
+            'delete' => $filesToDelete,
+            'skip' => $filesToSkip,
         );
     }
 
@@ -525,6 +551,8 @@ class PHPloy
         // Loop through all the servers in deploy.ini
         foreach ($this->servers as $name => $server) {
             
+            $this->currentlyDeploying = $name;
+
             // Deploys to ALL servers by default
             // If a server is specified, we skip all servers that don't match the one specified
             if ($this->server != '' && $this->server != $name) continue;
@@ -590,6 +618,16 @@ class PHPloy
         $sz = 'BKMGTP';
         $factor = floor((strlen($bytes) - 1) / 3);
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
+    }
+
+    /**
+     * Glob the file path
+     * 
+     * @param string $pattern
+     * @param string $string
+     */
+    function patternMatch($pattern, $string) {
+        return preg_match("#^".strtr(preg_quote($pattern, '#'), array('\*' => '.*', '\?' => '.'))."$#i", $string);
     }
 
     /**
@@ -677,9 +715,9 @@ class PHPloy
             $this->gitCommand('checkout '.$this->revision);
         }
 
-        $filesToUpload = $files['upload'];
+        $filesToUpload = $files['upload'][$this->currentlyDeploying];
         $filesToDelete = $files['delete'];
-        $numberOfFiles = count($files['upload']) + count($files['delete']);
+        $numberOfFiles = count($files['upload'][$this->currentlyDeploying]) + count($files['delete']);
         unset($files);
 
         foreach ($filesToUpload as $fileNo => $file) {
@@ -804,7 +842,7 @@ class PHPloy
         }
         
         $temp = tempnam(sys_get_temp_dir(), 'gitRevision');
-        file_put_contents($temp, $localRevision);
+        //file_put_contents($temp, $localRevision);
 
         $consoleMessage = "Updating remote revision file to ".
                 ($isHeadRevision ? 'current HEAD ('.$localRevision.')' : $localRevision);
