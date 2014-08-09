@@ -526,12 +526,14 @@ class PHPloy
             }
         }
 
-        $filesToUpload[$this->currentlyDeploying] = array_values(array_diff($filesToUpload, $filesToSkip));
+        $filesToUpload = array_values(array_diff($filesToUpload, $filesToSkip));
 
         return array(
-            'upload' => $filesToUpload,
-            'delete' => $filesToDelete,
-            'skip' => $filesToSkip,
+            $this->currentlyDeploying => array(
+                'upload' => $filesToUpload,
+                'delete' => $filesToDelete,
+                'skip' => $filesToSkip,
+            )
         );
     }
 
@@ -573,7 +575,7 @@ class PHPloy
 
             $this->output("\r\n<white>SERVER: ".$name);
             if ($this->listFiles === true) {
-                $this->listFiles($files);
+                $this->listFiles($files[$this->currentlyDeploying]);
             } else {
                 $this->push($files);
             }
@@ -588,7 +590,7 @@ class PHPloy
                     $files = $this->compare($revision);
 
                     if ($this->listFiles === true) {
-                        $this->listFiles($files);
+                        $this->listFiles($files[$this->currentlyDeploying]);
                     } else {
                         $this->push($files);
                     } 
@@ -715,9 +717,9 @@ class PHPloy
             $this->gitCommand('checkout '.$this->revision);
         }
 
-        $filesToUpload = $files['upload'][$this->currentlyDeploying];
-        $filesToDelete = $files['delete'];
-        $numberOfFiles = count($files['upload'][$this->currentlyDeploying]) + count($files['delete']);
+        $filesToUpload = $files[$this->currentlyDeploying]['upload'];
+        $filesToDelete = $files[$this->currentlyDeploying]['delete'];
+        $numberOfFiles = count($files[$this->currentlyDeploying]['upload']) + count($files[$this->currentlyDeploying]['delete']);
         unset($files);
 
         foreach ($filesToUpload as $fileNo => $file) {
