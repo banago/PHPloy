@@ -15,7 +15,7 @@ $phar->addFile('phploy.php');
 
 // Create a stub and add the shebang
 $default = $phar->createDefaultStub('phploy.php');
-$stub = "#!/usr/bin/env php \r\n" . $default;
+$stub = "#!/usr/bin/env php \n" . $default;
 $phar->setStub($stub);
 
 $phar->compressFiles(Phar::GZ);
