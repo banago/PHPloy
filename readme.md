@@ -1,5 +1,5 @@
 # PHPloy
-**Version 2.0.0-beta3**
+**Version 3.0.1-alpha**
 
 PHPloy is a incremental Git FTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
@@ -9,7 +9,6 @@ PHPloy is a incremental Git FTP deployment tool. By keeping track of the state o
 
 Windows users can optionally [download AnsiCon](https://github.com/adoxa/ansicon/releases) to enable the display of colors in the command prompt.  Install it by running `ansicon -i` from a command prompt or "Run" window.
 
-
 ## Usage 
 
 As any script, you can use PHPloy globally, from your `bin` directory or locally, from your project directory:
@@ -17,14 +16,14 @@ As any script, you can use PHPloy globally, from your `bin` directory or locally
 
 ### Using PHPloy locally (per project)
 
-1. Drop `phploy` into your project.
+1. Drop `phploy.phar` into your project.
 2. Create the `deploy.ini` file.
-3. Run `php phploy` in terminal.
+3. Run `php phploy.phar` in terminal.
 
 
 ### Using PHPloy globally in Linux
 
-1. Drop `phploy` into `/usr/local/bin` and make it executable by running `sudo chmod +x phploy`.
+1. Drop `phploy.phar` into `/usr/local/bin` and make it executable by running `sudo chmod +x phploy`.
 2. Create the `deploy.ini` file inside your project folder.
 3. Run `phploy` in terminal.
 
@@ -164,6 +163,13 @@ The people that have brought PHPloy to you are:
 
 
 ## Version history
+
+v3.0.0-alpha (9 August 2014)
+
+* Added SFTP support
+* Composer package
+* Phar file added
+
 
 v2.0.0-beta3 (26 May 2014)
 
