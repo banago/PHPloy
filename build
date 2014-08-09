@@ -12,7 +12,11 @@ $phar->buildFromDirectory(dirname(__FILE__), '/(src|vendor)\/.*$/');
 
 // Adding main file
 $phar->addFile('phploy.php');
-$phar->setStub($phar->createDefaultStub('phploy.php'));
+
+// Create a stub and add the shebang
+$default = $phar->createDefaultStub('phploy.php');
+$stub = "#!/usr/bin/env php \r\n" . $default;
+$phar->setStub($stub);
 
 $phar->compressFiles(Phar::GZ);
 $phar->stopBuffering();
