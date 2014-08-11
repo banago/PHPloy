@@ -664,17 +664,9 @@ class PHPloy
                     $origin = $this->connection->pwd();
 
                     if (! $this->connection->exists($path)) {
-
-                        if (! $this->connection->mkdir($path)) {
-                            $ret = false;
-                            
-                            $this->output("<red>Directory could not be created. Please check if a file with the same name exists in the server and delete it.");
-                            
-                            return;
-                        } else {
-                            $this->output("Created directory '$path'.");
-                            $pathsThatExist[$path] = true;
-                        }
+                        $this->connection->mkdir($path);
+                        $this->output("Created directory '$path'.");
+                        $pathsThatExist[$path] = true;                     
                     } else {
                         $this->connection->cd($path);
                         $pathsThatExist[$path] = true;
