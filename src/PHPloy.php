@@ -369,7 +369,7 @@ class PHPloy
             if (! $servers) {
                  throw new \Exception("'$deploy' is not a valid .ini file.");
             } else {
-                $this->filesToIgnore[] = $deploy;
+                $this->globalFilesToIgnore[] = $deploy;
                 return $servers;
             }
         }
