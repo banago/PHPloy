@@ -26,7 +26,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '2.0.0-beta3';
+    protected $phployVersion = '3.0.4-alpha';
 
     /**
      * @var string $revision
@@ -561,9 +561,8 @@ class PHPloy
                 $this->repo = $this->mainRepo;
                 $this->currentSubmoduleName = false;
             }
-            if (!$this->listFiles) {
-                $this->output("\r\n<darkGreen>------ Deployment complete ------");
-                $this->output("<darkGreen>------ Deployment size: ".$this->humanFilesize($this->deploymentSize)." ------");
+            if (! $this->listFiles) {
+                $this->output("<green>---------[ Deployment of ".$this->humanFilesize($this->deploymentSize)." complete ]---------");
                 $this->deploymentSize = 0;
             }
         }         
@@ -700,7 +699,7 @@ class PHPloy
             }
             
             $fileNo = str_pad(++$fileNo, strlen($numberOfFiles), ' ', STR_PAD_LEFT);
-            $this->output("<green>uploaded $fileNo of $numberOfFiles <white>{$file}");
+            $this->output("<green>^ $fileNo of $numberOfFiles <white>{$file}");
         }
 
         // todo: perhaps detect whether file is actually present, and whether delete is successful/skipped/failed
