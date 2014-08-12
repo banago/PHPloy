@@ -34,13 +34,25 @@ class PHPloy
     public $revision;
 
     /**
-     * A list of files that should NOT be uploaded to the remote server
-     * (must match the absolute path in its entirety)
+     * Keep track of which server we are currently deploying to
      *
-     * @todo - implement the ability to specify entire folders (or use wildcards?) here
+     * @var string $currentlyDeploying
+     */
+    public $currentlyDeploying = '';
+
+    /**
+     * A list of files that should NOT be uploaded to the remote server
+     *
      * @var array $filesToIgnore
      */
-    public $filesToIgnore = array(
+    public $filesToIgnore = array();
+    
+    /**
+     * A list of files that should NOT be uploaded to the any defined server
+     *
+     * @var array $globalFilesToIgnore
+     */
+    public $globalFilesToIgnore = array(
         '.gitignore',
         '.gitmodules',
     );
@@ -397,6 +409,9 @@ class PHPloy
             //$options = array_merge($defaults, $options);
 
             $this->servers[$name] = $options;
+
+            if(!empty($this->servers[$name]['skip']))
+                $this->filesToIgnore[$name] = array_merge($this->globalFilesToIgnore, $this->servers[$name]['skip']);
         }
     }
 
@@ -452,6 +467,7 @@ class PHPloy
         $tmpFile = tmpfile();
         $filesToUpload = array();
         $filesToDelete = array();
+        $filesToSkip = array();
         $output = array();
 
         if ($this->currentSubmoduleName) {
@@ -496,11 +512,22 @@ class PHPloy
 		    $filesToUpload = $output;
 		}
 
-        $filesToUpload = array_diff($filesToUpload, $this->filesToIgnore);
+        foreach($filesToUpload as $file) {
+            foreach($this->filesToIgnore[$this->currentlyDeploying] as $pattern) {
+                if($this->patternMatch($pattern, $file)) {
+                    $filesToSkip[] = $file;
+                }
+            }
+        }
+
+        $filesToUpload = array_values(array_diff($filesToUpload, $filesToSkip));
 
         return array(
-            'upload' => $filesToUpload,
-            'delete' => $filesToDelete
+            $this->currentlyDeploying => array(
+                'upload' => $filesToUpload,
+                'delete' => $filesToDelete,
+                'skip' => $filesToSkip,
+            )
         );
     }
 
@@ -519,6 +546,8 @@ class PHPloy
 
         // Loop through all the servers in deploy.ini
         foreach ($this->servers as $name => $server) {
+
+            $this->currentlyDeploying = $name;
             
             // Deploys to ALL servers by default
             // If a server is specified, we skip all servers that don't match the one specified
@@ -537,9 +566,9 @@ class PHPloy
 
             $this->output("\r\n<white>SERVER: ".$name);
             if ($this->listFiles === true) {
-                $this->listFiles($files);
+                $this->listFiles($files[$this->currentlyDeploying]);
             } else {
-                $this->push($files);
+                $this->push($files[$this->currentlyDeploying]);
             }
 
             if (count($this->submodules) > 0) {
@@ -552,7 +581,7 @@ class PHPloy
                     $files = $this->compare($revision);
 
                     if ($this->listFiles === true) {
-                        $this->listFiles($files);
+                        $this->listFiles($files[$this->currentlyDeploying]);
                     } else {
                         $this->push($files);
                     } 
@@ -578,6 +607,16 @@ class PHPloy
         $sz = 'BKMGTP';
         $factor = floor((strlen($bytes) - 1) / 3);
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
+    }
+
+    /**
+     * Glob the file path
+     * 
+     * @param string $pattern
+     * @param string $string
+     */
+    function patternMatch($pattern, $string) {
+        return preg_match("#^".strtr(preg_quote($pattern, '#'), array('\*' => '.*', '\?' => '.'))."$#i", $string);
     }
 
     /**
