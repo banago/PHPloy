@@ -185,7 +185,7 @@ class PHPloy
     {
         $this->parseOptions();
 
-        $this->output("\r\n-------------- phploy v{$this->phployVersion} ----------------\r\n");
+        $this->output("\r\n<green>--------------[ PHPloy v{$this->phployVersion} ]----------------\r\n");
 
         if ($this->displayHelp) {
             $this->displayHelp();
@@ -524,7 +524,7 @@ class PHPloy
             // If a server is specified, we skip all servers that don't match the one specified
             if ($this->server != '' && $this->server != $name) continue;
 
-            $this->output("|--------------[ $name ]--------------|");
+            $this->output("--------------[ $name ]--------------");
             $this->connect($server);
             
             if( $this->sync ) {
