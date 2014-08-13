@@ -76,9 +76,11 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
     
     [quickmode]
     ; If that seemed too long for you, you can use quickmode instead
-    staging = ftp://example:password@staging-example.com:21/path/to/installation
-    production = ftp://example:password@production-example.com:21/path/to/installation
+    staging = ftp://user:password@staging-example.com:21/path/to/installation
+    production = ftp://user:password@production-example.com:21/path/to/installation
 
+
+Quickmode will *not* work if your username contains `:`, `/`, or if your password contains `/`.  In these cases specify each item individually.
 
 The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload ALL the files of your project.  If the remote server already has a copy of the files, you can specify which revision it is on using the `--sync` command (see below).
 
