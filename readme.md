@@ -1,5 +1,5 @@
 # PHPloy
-**Version 2.0.0-beta3**
+**Version 2.0.0-beta4**
 
 PHPloy is a incremental Git FTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
@@ -166,6 +166,13 @@ The people that have brought PHPloy to you are:
 
 
 ## Version history
+
+v2.0.0-beta4 (13 Aug 2014)
+
+* Feature: Log deployment size and show on deploy completion
+* Bugfix: phploy would ignore any environments *after* quickmode
+* Bugfix: file upload counter sometimes incorrect
+* More informative error messages in several cases
 
 v2.0.0-beta3 (26 May 2014)
 
