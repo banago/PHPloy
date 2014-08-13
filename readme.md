@@ -162,6 +162,7 @@ The people that have brought PHPloy to you are:
 * [Baki Goxhaj](https://twitter.com/banago) - lead developer
 * [Bruno De Barros](https://twitter.com/terraduo) - initial inspiration
 * [Fadion Dashi](https://twitter.com/jonidashi) - contributor
+* Mark Beech - contributor
 * [Simon East](https://twitter.com/SimoEast) - contributor, Windows support 
 
 
@@ -169,6 +170,7 @@ The people that have brought PHPloy to you are:
 
 v2.0.0-beta4 (13 Aug 2014)
 
+* Feature: PHPloy version header more prominent - makes it easier to see where deployments started when scrolling back through long console output
 * Feature: Log deployment size and show on deploy completion
 * Bugfix: phploy would ignore any environments *after* quickmode
 * Bugfix: file upload counter sometimes incorrect
