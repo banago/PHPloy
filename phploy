@@ -946,12 +946,26 @@ class Ansi {
 
         if (!static::$enabled) {
             // Strip tags (replace them with an empty string)
-            return str_replace(array_keys(static::$tags), '', $string);
+            return static::stripTags($string);
         }
 
         // We always add a <reset> at the end of each string so that any output following doesn't continue the same styling
         $string .= '<reset>';
         return str_replace(array_keys(static::$tags), static::$tags, $string);
+    }
+
+    /**
+     * Removes all occurances of ANSI tags from a string
+     * (used when static::$enabled == false or can be called directly if outputting strings to a text file)
+     *
+     * Note: the reason we don't use PHP's strip_tags() here is so that we only remove the ANSI-related ones
+     *
+     * @param string $string Text possibly containing ANSI tags such as <red>, <bold> etc.
+     * @return string Stripped of all valid ANSI tags
+     */
+    public static function stripTags($string)
+    {
+        return str_replace(array_keys(static::$tags), '', $string);
     }
 
     public static function isWindows() 
