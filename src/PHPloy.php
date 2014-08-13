@@ -26,7 +26,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.5-alpha';
+    protected $phployVersion = '3.0.6-alpha';
 
     /**
      * @var string $revision
@@ -560,7 +560,7 @@ class PHPloy
                 $this->currentSubmoduleName = false;
             }
             if (! $this->listFiles) {
-                $this->output("<green>---------[ Deployment of ".$this->humanFilesize($this->deploymentSize)." complete ]---------");
+                $this->output("\r\n<green>-----------[ ".$this->humanFilesize($this->deploymentSize)." Deployed ]-----------");
                 $this->deploymentSize = 0;
             }
         }         
@@ -653,24 +653,27 @@ class PHPloy
             $path = "";
             $ret = true;
             
-            // Loop through each folder in the path /a/b/c/d.txt to ensure that it exists
-            for ($i = 0, $count = count($dir); $i < $count; $i++) {
-                $path .= $dir[$i].'/';
-
-                if (! isset($pathsThatExist[$path])) {
-                    $origin = $this->connection->pwd();
-
-                    if (! $this->connection->exists($path)) {
-                        $this->connection->mkdir($path);
-                        $this->output("Created directory '$path'.");
-                        $pathsThatExist[$path] = true;                     
-                    } else {
-                        $this->connection->cd($path);
-                        $pathsThatExist[$path] = true;
+            // Skip mkdir if dir is basedir
+            if( $dir[0] !== '.' ) {
+                // Loop through each folder in the path /a/b/c/d.txt to ensure that it exists
+                for ($i = 0, $count = count($dir); $i < $count; $i++) {
+                    $path .= $dir[$i].'/';
+    
+                    if (! isset($pathsThatExist[$path])) {
+                        $origin = $this->connection->pwd();
+    
+                        if (! $this->connection->exists($path)) {
+                            $this->connection->mkdir($path);
+                            $this->output("Created directory '$path'.");
+                            $pathsThatExist[$path] = true;                     
+                        } else {
+                            $this->connection->cd($path);
+                            $pathsThatExist[$path] = true;
+                        }
+                        
+                        // Go home
+                        $this->connection->cd($origin);
                     }
-                    
-                    // Go home
-                    $this->connection->cd($origin);
                 }
             }
 
@@ -697,7 +700,7 @@ class PHPloy
             }
             
             $fileNo = str_pad(++$fileNo, strlen($numberOfFiles), ' ', STR_PAD_LEFT);
-            $this->output("<green>^ $fileNo of $numberOfFiles <white>{$file}");
+            $this->output("<green> ^ $fileNo of $numberOfFiles <white>{$file}");
         }
 
         // todo: perhaps detect whether file is actually present, and whether delete is successful/skipped/failed
