@@ -198,18 +198,17 @@ class PHPloy
             return;
         }
 
-        if (file_exists("$this->repo/.git")) {
-
-            if ($this->listFiles)
-                $this->output("<yellow>phploy is running in LIST mode.  No remote files will be modified.\r\n");
-
-            $this->output('Scanning repository...');
-            $this->checkSubmodules($this->repo);
-            $this->deploy($this->revision);
-
-        } else {
+        if (!file_exists("$this->repo/.git"))
             throw new Exception("'{$this->repo}' is not Git repository.");
-        }
+
+        if ($this->listFiles)
+            $this->output("<yellow>phploy is running in LIST mode.  No remote files will be modified.\r\n");
+
+        $this->prepareServers();
+        $this->output('Scanning repository...');
+        $this->checkSubmodules($this->repo);
+        $this->deploy($this->revision);
+
     }
 
     /**
@@ -515,8 +514,6 @@ class PHPloy
      */
     public function deploy($revision = 'HEAD') 
     {
-        $this->prepareServers();
-
         // Exit with an error if the specified server does not exist in deploy.ini
         if ($this->server != '' && !array_key_exists($this->server, $this->servers))
             throw new Exception("The server \"{$this->server}\" is not defined in {$this->deployIniFilename}.");
