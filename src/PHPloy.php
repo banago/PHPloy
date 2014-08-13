@@ -26,7 +26,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.4-alpha';
+    protected $phployVersion = '3.0.5-alpha';
 
     /**
      * @var string $revision
@@ -371,6 +371,7 @@ class PHPloy
     public function prepareServers()
     {
         $defaults = array(
+            'scheme' => 'ftp',
             'host' => '',
             'user' => '',
             'pass' => '',
@@ -386,17 +387,14 @@ class PHPloy
         foreach ($servers as $name => $options) {
             if ($name == 'quickmode') {
                 foreach ($options as $env => $creds) {
-                    //$options = parse_url($creds);
-                    //$options = array_merge($defaults, $options);
-                    //$this->servers[$env] = $options;
                     $this->servers[$env] = $creds;
                 }
-                break;
+                continue;
             }
+            $options = array_merge($defaults, $options);
 
-            //$options = array_merge($defaults, $options);
-
-            $this->servers[$name] = $options;
+            // Turn options into an URL so that Bridge can accept it.
+            $this->servers[$name] = http_build_url('', $options);
         }
     }
 
