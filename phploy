@@ -387,8 +387,12 @@ class PHPloy
             if ($name == 'quickmode') {
                 foreach ($options as $env => $creds) {
                     $options = parse_url($creds);
-                    $options = array_merge($defaults, $options);
-                    $this->servers[$env] = $options;
+                    if ($options) {
+                        $options = array_merge($defaults, $options);
+                        $this->servers[$env] = $options;
+                    } else {
+                        $this->output("<yellow>Warning! The \"$env\" environment (\"$creds\") does not appear to be a valid URL.\r\nIf your username or password contain special characters, avoid using quickmode and specify each setting individually instead.");
+                    }
                 }
                 continue;
             }
@@ -411,7 +415,10 @@ class PHPloy
 
         $this->debug("<yellow>CONSOLE:<darkYellow> $command");
 
-        exec($command, $output);
+        exec($command, $output, $returnStatus);
+
+        if ($returnStatus != 0)
+            throw new Exception("PHPloy attempted to run the following console command but it failed:\r\n$command");
 
         $this->debug('<darkYellow>' . implode("\r\n<darkYellow>", $output));
 
