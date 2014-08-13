@@ -134,6 +134,9 @@ class PHPloy
     protected $mainRepo;
 
     /**
+     * When deploying the main (parent) repository, this is false.
+     * When deploying submodules, this gets set to the current submodule being deployed.
+     * 
      * @var bool|string $currentSubmoduleName
      */
     protected $currentSubmoduleName = false;
@@ -202,18 +205,17 @@ class PHPloy
             return;
         }
 
-        if (file_exists("$this->repo/.git")) {
-
-            if ($this->listFiles)
-                $this->output("<yellow>phploy is running in LIST mode.  No remote files will be modified.\r\n");
-
-            $this->output('Scanning repository...');
-            $this->checkSubmodules($this->repo);
-            $this->deploy($this->revision);
-
-        } else {
+        if (!file_exists("$this->repo/.git"))
             throw new Exception("'{$this->repo}' is not Git repository.");
-        }
+
+        if ($this->listFiles)
+            $this->output("<yellow>phploy is running in LIST mode.  No remote files will be modified.\r\n");
+
+        $this->prepareServers();
+        $this->output('Scanning repository...');
+        $this->checkSubmodules($this->repo);
+        $this->deploy($this->revision);
+
     }
 
     /**
@@ -392,10 +394,14 @@ class PHPloy
             if ($name == 'quickmode') {
                 foreach ($options as $env => $creds) {
                     $options = parse_url($creds);
-                    $options = array_merge($defaults, $options);
-                    $this->servers[$env] = $options;
+                    if ($options) {
+                        $options = array_merge($defaults, $options);
+                        $this->servers[$env] = $options;
+                    } else {
+                        $this->output("<yellow>Warning! The \"$env\" environment (\"$creds\") does not appear to be a valid URL.\r\nIf your username or password contain special characters, avoid using quickmode and specify each setting individually instead.");
+                    }
                 }
-                break;
+                continue;
             }
 
             $options = array_merge($defaults, $options);
@@ -416,7 +422,10 @@ class PHPloy
 
         $this->debug("<yellow>CONSOLE:<darkYellow> $command");
 
-        exec($command, $output);
+        exec($command, $output, $returnStatus);
+
+        if ($returnStatus != 0)
+            throw new Exception("PHPloy attempted to run the following console command but it failed:\r\n$command");
 
         $this->debug('<darkYellow>' . implode("\r\n<darkYellow>", $output));
 
@@ -439,12 +448,18 @@ class PHPloy
     }
 
     /**
-     * Compare revisions and returns array of files to upload:
+     * Generates an array of changed files by comparing the remote revision hash
+     * with the local revision hash (via a `git diff`)
      *
+     * Returns an array in the following format:
+     * 
      *      array(
      *          'upload' => $filesToUpload,
      *          'delete' => $filesToDelete
      *      );
+     *
+     * If $this->currentSubmoduleName is set, the diff is performed on the appropriate submodule
+     * otherwise it's performed on the main parent repo.
      *
      * @param string $localRevision
      * @return array
@@ -480,19 +495,29 @@ class PHPloy
         } else if ($localRevision == 'HEAD') {
             $command = 'diff --name-status '.$remoteRevision.'...'.$localRevision;
         } else {
+            // Question: should there really be a space after ... here?  Is that valid?
             $command = 'diff --name-status '.$remoteRevision.'... '.$localRevision;
         }
 
-        $output = $this->gitCommand($command);
+        try {
+            $output = $this->gitCommand($command);            
+        } catch (Exception $e) {
+            $this->debug($e->getMessage());
+            throw new Exception("The git diff command failed. This is probably because the git revision found on the server is not present in your repository.\r\nTry doing a 'git pull' before deploying.\r\n<reset>If performing a 'pull' doesn't resolve the problem, then it may be that another developer has deployed a commit without pushing to your repository. You need access to this commit to be able to correctly deploy changed files.\r\n\r\nA workaround is to reset the revision hash stored on the server using:\r\nphploy --sync=\"your-revision-hash-here\" HOWEVER this will leave your server files in an inconsistent state unless you manually update the appropriate files.");
+        }
 
 		if (! empty($remoteRevision)) {
 	        foreach ($output as $line) {
-	            if ($line[0] == 'A' or $line[0] == 'C' or $line[0] == 'M') {
-	                // Added (A), Modified (C), Unmerged (M)
+
+	            // Added (A), Modified (C), Unmerged (M)
+                if ($line[0] == 'A' or $line[0] == 'C' or $line[0] == 'M') {
 	                $filesToUpload[] = trim(substr($line, 1));
+                    // TODO: we could possibly calculate & sum the file sizes here to display the proper upload progress later on
+
+                // Deleted (D)
 	            } elseif ($line[0] == 'D') {
-	                // Deleted (D)
 	                $filesToDelete[] = trim(substr($line, 1));
+
 	            } else {
 	                throw new Exception("Unknown git-diff status: {$line[0]}");
 	            }
@@ -501,7 +526,10 @@ class PHPloy
 		    $filesToUpload = $output;
 		}
 
-        $filesToUpload = array_diff($filesToUpload, $this->filesToIgnore);
+        // Skip any files in the $this->filesToIgnore array
+        // (the array_values() call then ensures we have a numeric 0-based array with no gaps, 
+        //  so that file numbers display correctly)
+        $filesToUpload = array_values(array_diff($filesToUpload, $this->filesToIgnore));
 
         return array(
             'upload' => $filesToUpload,
@@ -516,8 +544,6 @@ class PHPloy
      */
     public function deploy($revision = 'HEAD') 
     {
-        $this->prepareServers();
-
         // Exit with an error if the specified server does not exist in deploy.ini
         if ($this->server != '' && !array_key_exists($this->server, $this->servers))
             throw new Exception("The server \"{$this->server}\" is not defined in {$this->deployIniFilename}.");
@@ -698,14 +724,18 @@ class PHPloy
                     
                     $this->ftpDebug("Changing directory to $path (to test if exists)");
                     if (! @ftp_chdir($this->connection, $path)) {
+                        
                         $this->ftpDebug('Could not change to remote directory.  Will now attempt to create it...');
                         if (! ftp_mkdir($this->connection, $path)) {
                             $ret = false;
                             
+                            // Should this possibly raise an exception?  
+                            // Currently just exits the function and proceeds onto next server (if deploying to multiple)
                             $this->output("   <red>Failed to create '$path'.");
                             $this->output("   <red>Directory could not be created. Please check if a file with the same name exists in the server and delete it.");
                             
                             return;
+
                         } else {
                             $this->output("   Created directory '$path'.");
                             $pathsThatExist[$path] = true;
@@ -964,12 +994,26 @@ class Ansi {
 
         if (!static::$enabled) {
             // Strip tags (replace them with an empty string)
-            return str_replace(array_keys(static::$tags), '', $string);
+            return static::stripTags($string);
         }
 
         // We always add a <reset> at the end of each string so that any output following doesn't continue the same styling
         $string .= '<reset>';
         return str_replace(array_keys(static::$tags), static::$tags, $string);
+    }
+
+    /**
+     * Removes all occurances of ANSI tags from a string
+     * (used when static::$enabled == false or can be called directly if outputting strings to a text file)
+     *
+     * Note: the reason we don't use PHP's strip_tags() here is so that we only remove the ANSI-related ones
+     *
+     * @param string $string Text possibly containing ANSI tags such as <red>, <bold> etc.
+     * @return string Stripped of all valid ANSI tags
+     */
+    public static function stripTags($string)
+    {
+        return str_replace(array_keys(static::$tags), '', $string);
     }
 
     public static function isWindows() 
