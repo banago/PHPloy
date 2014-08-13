@@ -195,7 +195,10 @@ class PHPloy
     {
         $this->parseOptions();
 
-        $this->output("\r\n-------------- phploy v{$this->phployVersion} ----------------\r\n");
+        $this->output("\r\n<bgGreen>---------------------------------------------------");
+        $this->output("<bgGreen>|              phploy v{$this->phployVersion}                |");
+        $this->output("<bgGreen>---------------------------------------------------<reset>\r\n");
+
 
         if ($this->displayHelp) {
             $this->displayHelp();
@@ -598,7 +601,7 @@ class PHPloy
             }
             if (!$this->listFiles) {
                 $this->output("\r\n<darkGreen>------ Deployment complete ------");
-                $this->output("<darkGreen>------ Deployment size: ".$this->humanFilesize($this->deploymentSize)." ------");
+                $this->output("<darkGreen>------ Deployment size: ".$this->humanFilesize($this->deploymentSize)." ------\r\n");
                 $this->deploymentSize = 0;
             }
 
