@@ -391,7 +391,7 @@ class PHPloy
                     $options = array_merge($defaults, $options);
                     $this->servers[$env] = $options;
                 }
-                break;
+                continue;
             }
 
             $options = array_merge($defaults, $options);
