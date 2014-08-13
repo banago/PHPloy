@@ -1,5 +1,5 @@
 # PHPloy
-**Version 2.0.0-beta3**
+**Version 2.0.0-beta4**
 
 PHPloy is a incremental Git FTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
@@ -78,9 +78,11 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
     
     [quickmode]
     ; If that seemed too long for you, you can use quickmode instead
-    staging = ftp://example:password@staging-example.com:21/path/to/installation
-    production = ftp://example:password@production-example.com:21/path/to/installation
+    staging = ftp://user:password@staging-example.com:21/path/to/installation
+    production = ftp://user:password@production-example.com:21/path/to/installation
 
+
+Quickmode will *not* work if your username contains `:`, `/`, or if your password contains `/`.  In these cases specify each item individually.
 
 The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload ALL the files of your project.  If the remote server already has a copy of the files, you can specify which revision it is on using the `--sync` command (see below).
 
@@ -160,10 +162,19 @@ The people that have brought PHPloy to you are:
 * [Baki Goxhaj](https://twitter.com/banago) - lead developer
 * [Bruno De Barros](https://twitter.com/terraduo) - initial inspiration
 * [Fadion Dashi](https://twitter.com/jonidashi) - contributor
+* Mark Beech - contributor
 * [Simon East](https://twitter.com/SimoEast) - contributor, Windows support 
 
 
 ## Version history
+
+v2.0.0-beta4 (13 Aug 2014)
+
+* Feature: PHPloy version header more prominent - makes it easier to see where deployments started when scrolling back through long console output
+* Feature: Log deployment size and show on deploy completion
+* Bugfix: phploy would ignore any environments *after* quickmode
+* Bugfix: file upload counter sometimes incorrect
+* More informative error messages in several cases
 
 v2.0.0-beta3 (26 May 2014)
 
