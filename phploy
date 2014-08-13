@@ -20,7 +20,7 @@ try {
     $phploy = new PHPloy();
 } catch (Exception $e) {
     // Display the error in red
-    echo Ansi::tagsToColors("\r\n<red>Oh Snap: {$e->getMessage()}");
+    echo Ansi::tagsToColors("\r\n<red>Oh Snap: {$e->getMessage()}\r\n");
 }
 
 /**
@@ -134,6 +134,9 @@ class PHPloy
     protected $mainRepo;
 
     /**
+     * When deploying the main (parent) repository, this is false.
+     * When deploying submodules, this gets set to the current submodule being deployed.
+     * 
      * @var bool|string $currentSubmoduleName
      */
     protected $currentSubmoduleName = false;
@@ -441,12 +444,18 @@ class PHPloy
     }
 
     /**
-     * Compare revisions and returns array of files to upload:
+     * Generates an array of changed files by comparing the remote revision hash
+     * with the local revision hash (via a `git diff`)
      *
+     * Returns an array in the following format:
+     * 
      *      array(
      *          'upload' => $filesToUpload,
      *          'delete' => $filesToDelete
      *      );
+     *
+     * If $this->currentSubmoduleName is set, the diff is performed on the appropriate submodule
+     * otherwise it's performed on the main parent repo.
      *
      * @param string $localRevision
      * @return array
@@ -482,19 +491,29 @@ class PHPloy
         } else if ($localRevision == 'HEAD') {
             $command = 'diff --name-status '.$remoteRevision.'...'.$localRevision;
         } else {
+            // Question: should there really be a space after ... here?  Is that valid?
             $command = 'diff --name-status '.$remoteRevision.'... '.$localRevision;
         }
 
-        $output = $this->gitCommand($command);
+        try {
+            $output = $this->gitCommand($command);            
+        } catch (Exception $e) {
+            $this->debug($e->getMessage());
+            throw new Exception("The git diff command failed. This is probably because the git revision found on the server is not present in your repository.\r\nTry doing a 'git pull' before deploying.\r\n<reset>If performing a 'pull' doesn't resolve the problem, then it may be that another developer has deployed a commit without pushing to your repository. You need access to this commit to be able to correctly deploy changed files.\r\n\r\nA workaround is to reset the revision hash stored on the server using:\r\nphploy --sync=\"your-revision-hash-here\" HOWEVER this will leave your server files in an inconsistent state unless you manually update the appropriate files.");
+        }
 
 		if (! empty($remoteRevision)) {
 	        foreach ($output as $line) {
-	            if ($line[0] == 'A' or $line[0] == 'C' or $line[0] == 'M') {
-	                // Added (A), Modified (C), Unmerged (M)
+
+	            // Added (A), Modified (C), Unmerged (M)
+                if ($line[0] == 'A' or $line[0] == 'C' or $line[0] == 'M') {
 	                $filesToUpload[] = trim(substr($line, 1));
+                    // TODO: we could possibly calculate & sum the file sizes here to display the proper upload progress later on
+
+                // Deleted (D)
 	            } elseif ($line[0] == 'D') {
-	                // Deleted (D)
 	                $filesToDelete[] = trim(substr($line, 1));
+
 	            } else {
 	                throw new Exception("Unknown git-diff status: {$line[0]}");
 	            }
@@ -687,14 +706,18 @@ class PHPloy
                     
                     $this->ftpDebug("Changing directory to $path (to test if exists)");
                     if (! @ftp_chdir($this->connection, $path)) {
+                        
                         $this->ftpDebug('Could not change to remote directory.  Will now attempt to create it...');
                         if (! ftp_mkdir($this->connection, $path)) {
                             $ret = false;
                             
+                            // Should this possibly raise an exception?  
+                            // Currently just exits the function and proceeds onto next server (if deploying to multiple)
                             $this->output("   <red>Failed to create '$path'.");
                             $this->output("   <red>Directory could not be created. Please check if a file with the same name exists in the server and delete it.");
                             
                             return;
+
                         } else {
                             $this->output("   Created directory '$path'.");
                             $pathsThatExist[$path] = true;
