@@ -10,7 +10,7 @@
  * @author Mark Beech <mbeech@mark-beech.co.uk>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 3.0.6-alpha
+ * @version 3.0.7-alpha
  */
  
 namespace Banago\PHPloy;
@@ -27,7 +27,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.6-alpha';
+    protected $phployVersion = '3.0.7-alpha';
 
     /**
      * @var string $revision
@@ -199,7 +199,7 @@ class PHPloy
         $this->parseOptions();
 
         $this->output("\r\n<bgGreen>---------------------------------------------------");
-        $this->output("<bgGreen>|              phploy v{$this->phployVersion}                |");
+        $this->output("<bgGreen>|              PHPloy v{$this->phployVersion}                |");
         $this->output("<bgGreen>---------------------------------------------------<reset>\r\n");
 
         if ($this->displayHelp) {
@@ -399,10 +399,8 @@ class PHPloy
         $servers = $this->parseCredentials($ini);
 
         foreach ($servers as $name => $options) {
-            if ($name == 'quickmode') {
-                foreach ($options as $env => $creds) {
-                    $this->servers[$env] = $creds;
-                }
+            if ( isset( $options['quickmode'] ) ) {
+                $this->servers[$name] = $options['quickmode'];
                 continue;
             }
 
@@ -415,7 +413,6 @@ class PHPloy
 
             // Turn options into an URL so that Bridge can accept it.
             $this->servers[$name] = http_build_url('', $options);
-
         }
     }
 
@@ -557,7 +554,6 @@ class PHPloy
             // If a server is specified, we skip all servers that don't match the one specified
             if ($this->server != '' && $this->server != $name) continue;
 
-            $this->output("--------------[ $name ]--------------");
             $this->connect($server);
             
             if( $this->sync ) {
@@ -595,7 +591,7 @@ class PHPloy
                 $this->currentSubmoduleName = false;
             }
             if (! $this->listFiles) {
-                $this->output("\r\n<green>-----------[ ".$this->humanFilesize($this->deploymentSize)." Deployed ]-----------");
+                $this->output("\r\n<green>----------------[ ".$this->humanFilesize($this->deploymentSize)." Deployed ]----------------");
                 $this->deploymentSize = 0;
             }
         }         
