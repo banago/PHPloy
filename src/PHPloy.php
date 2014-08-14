@@ -87,7 +87,7 @@ class PHPloy
      * 
      * @var string $deplyIniFilename
      */
-    public $deployIniFilename = '';
+    public $deployIniFilename = 'deploy.ini';
     
     /**
      * List of available "short" command line options, prefixed by a single hyphen
@@ -393,7 +393,7 @@ class PHPloy
             'clean_directories' => array()
         );
         
-        $ini = getcwd() . DIRECTORY_SEPARATOR . 'deploy.ini';
+        $ini = getcwd() . DIRECTORY_SEPARATOR . $this->deployIniFilename;
         $servers = $this->parseCredentials($ini);
 
         foreach ($servers as $name => $options) {
