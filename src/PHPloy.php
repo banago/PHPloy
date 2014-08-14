@@ -7,6 +7,7 @@
  * @author Bruno De Barros <bruno@terraduo.com>
  * @author Fadion Dashi <jonidashi@gmail.com>
  * @author Simon East <simon+github@yump.com.au>
+ * @author Mark Beech <mbeech@mark-beech.co.uk>
  * @link http://wplancer.com
  * @licence MIT Licence
  * @version 3.0.6-alpha
