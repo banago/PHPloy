@@ -369,7 +369,6 @@ class PHPloy
             if (! $servers) {
                  throw new \Exception("'$deploy' is not a valid .ini file.");
             } else {
-                $this->globalFilesToIgnore[] = $deploy;
                 return $servers;
             }
         }
@@ -404,6 +403,8 @@ class PHPloy
                 continue;
             }
             $options = array_merge($defaults, $options);
+
+            $this->filesToIgnore[$name][] = $this->deployIniFilename;
 
             // Turn options into an URL so that Bridge can accept it.
             $this->servers[$name] = http_build_url('', $options);
