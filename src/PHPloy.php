@@ -402,15 +402,17 @@ class PHPloy
                 }
                 continue;
             }
+
             $options = array_merge($defaults, $options);
+
+            if(!empty($servers[$name]['skip']))
+                $this->filesToIgnore[$name] = array_merge($this->globalFilesToIgnore, $servers[$name]['skip']);
 
             $this->filesToIgnore[$name][] = $this->deployIniFilename;
 
             // Turn options into an URL so that Bridge can accept it.
             $this->servers[$name] = http_build_url('', $options);
 
-            if(!empty($this->servers[$name]['skip']))
-                $this->filesToIgnore[$name] = array_merge($this->globalFilesToIgnore, $this->servers[$name]['skip']);
         }
     }
 
