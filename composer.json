@@ -10,7 +10,8 @@
         }
     ],   
     "require": {
-        "banago/bridge": "dev-master"
+        "banago/bridge": "dev-master",
+        "jakeasmith/http_build_url": "dev-master"
     },
     "require-dev": {},
     "autoload": {
