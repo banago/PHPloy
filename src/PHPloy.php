@@ -9,7 +9,7 @@
  * @author Simon East <simon+github@yump.com.au>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 2.0.0-beta3
+ * @version 3.0.6-alpha
  */
  
 namespace Banago\PHPloy;
