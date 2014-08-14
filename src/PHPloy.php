@@ -198,7 +198,9 @@ class PHPloy
     {
         $this->parseOptions();
 
-        $this->output("\r\n<green>--------------[ PHPloy v{$this->phployVersion} ]----------------\r\n");
+        $this->output("\r\n<bgGreen>---------------------------------------------------");
+        $this->output("<bgGreen>|              phploy v{$this->phployVersion}                |");
+        $this->output("<bgGreen>---------------------------------------------------<reset>\r\n");
 
         if ($this->displayHelp) {
             $this->displayHelp();
