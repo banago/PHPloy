@@ -51,35 +51,32 @@ Adding folders to your *system path* means that you can execute an application f
 
 The `deploy.ini` file hold your credentials and it must be in the root directory of your project. Use as many servers as you need and whichever configuration type you prefer.
 
-    ; This is a sample deploy.ini file.
-    ; You can specify as many servers as you need
-    ; and use whichever configuration way you like.
-    ; 
-    ; NOTE: If you run phploy without specifying which server to deploy to, it will deploy to ALL servers by default
-    ;
-    ; NOTE: If a value in the ini file contains any non-alphanumeric characters it needs to be enclosed in double-quotes (").
+```ini
+; This is a sample deploy.ini file. You can specify as many
+; servers as you need and use normal or quickmode configuration.
+;
+; NOTE: If a value in the .ini file contains any non-alphanumeric 
+; characters it needs to be enclosed in double-quotes (").
 
-    [staging]
+[staging]
     user = example
     pass = password
     host = staging-example.com
     path = /path/to/installation
     port = 21
     passive = true
-    
-    [production]
-    user = example
-    pass = password
-    host = production-example.com
-    path = /path/to/installation
-    port = 21
-    passive = true
-    
-    [quickmode]
-    ; If that seemed too long for you, you can use quickmode instead
-    staging = ftp://example:password@staging-example.com:21/path/to/installation
-    production = ftp://example:password@production-example.com:21/path/to/installation
+    ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
+    skip[] = 'src/*.scss'
+    skip[] = '*.ini'
 
+[production]
+    quickmode = ftp://example:password@production-example.com:21/path/to/installation
+    passive = true
+    ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
+    skip[] = 'libs/*'
+    skip[] = 'config/*'
+    skip[] = 'src/*.scss'
+```
 
 The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload ALL the files of your project.  If the remote server already has a copy of the files, you can specify which revision it is on using the `--sync` command (see below).
 
