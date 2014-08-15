@@ -517,6 +517,7 @@ class PHPloy
             foreach($this->filesToIgnore[$this->currentlyDeploying] as $pattern) {
                 if($this->patternMatch($pattern, $file)) {
                     $filesToSkip[] = $file;
+                    break;
                 }
             }
         }
