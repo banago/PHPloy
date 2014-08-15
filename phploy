@@ -11,7 +11,7 @@
  * @author Mark Beech <mbeech@mark-beech.co.uk>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 2.0.0-beta4
+ * @version 2.0.0
  */
 
 /**
@@ -33,7 +33,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '2.0.0-beta4';
+    protected $phployVersion = '2.0.0';
 
     /**
      * @var string $revision
