@@ -10,7 +10,7 @@
  * @author Mark Beech <mbeech@mark-beech.co.uk>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 3.0.7-alpha
+ * @version 3.0.8-alpha
  */
  
 namespace Banago\PHPloy;
@@ -27,7 +27,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.7-alpha';
+    protected $phployVersion = '3.0.8-alpha';
 
     /**
      * @var string $revision
@@ -313,7 +313,7 @@ class PHPloy
                 $this->filesToIgnore[] = $line[1];
                 $this->output(sprintf('   Found submodule %s. %s', 
                     $line[1],
-                    $this->scanForSubSubmodules ? 'Scanning for sub-submodules...' : null
+                    $this->scanForSubSubmodules ? PHP_EOL . '      Scanning for sub-submodules...' : null
                 ));
                 // The call to checkSubSubmodules also calls a git foreach
                 // So perhaps it should be *outside* the loop here?
@@ -392,17 +392,14 @@ class PHPloy
             'port' => 21,
             'path' => '/',
             'passive' => true,
-            'clean_directories' => array()
+            'skip' => array(),
+            'clean' => array()
         );
         
         $ini = getcwd() . DIRECTORY_SEPARATOR . $this->deployIniFilename;
         $servers = $this->parseCredentials($ini);
 
         foreach ($servers as $name => $options) {
-            if ( isset( $options['quickmode'] ) ) {
-                $this->servers[$name] = $options['quickmode'];
-                continue;
-            }
 
             $options = array_merge($defaults, $options);
 
@@ -412,7 +409,7 @@ class PHPloy
             $this->filesToIgnore[$name][] = $this->deployIniFilename;
 
             // Turn options into an URL so that Bridge can accept it.
-            $this->servers[$name] = http_build_url('', $options);
+            $this->servers[$name] = isset( $options['quickmode'] ) ? $options['quickmode'] : http_build_url('', $options);
         }
     }
 
@@ -584,7 +581,7 @@ class PHPloy
                     if ($this->listFiles === true) {
                         $this->listFiles($files[$this->currentlyDeploying]);
                     } else {
-                        $this->push($files);
+                        $this->push($files[$this->currentlyDeploying]);
                     } 
                 }
                 // We've finished deploying submodules, reset settings for the next server
@@ -685,6 +682,7 @@ class PHPloy
         $filesToUpload = $files['upload'];
         $filesToDelete = $files['delete'];
         $numberOfFiles = count($files['upload']) + count($files['delete']);
+        
         unset($files);
 
         foreach ($filesToUpload as $fileNo => $file) {
