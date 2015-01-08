@@ -52,7 +52,7 @@ Adding folders to your *system path* means that you can execute an application f
 
 ## deploy.ini
 
-The `deploy.ini` file hold your credentials and it must be in the root directory of your project. Use as many servers as you need and whichever configuration type you prefer.
+The `deploy.ini` file hold your credentials and it must be in the root directory of your project. Set your usernames and passwords in system environment variables if you want to add this file to your VCS. Use as many servers as you need and whichever configuration type you prefer.
 
     ; This is a sample deploy.ini file.
     ; You can specify as many servers as you need
@@ -61,27 +61,29 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
     ; NOTE: If you run phploy without specifying which server to deploy to, it will deploy to ALL servers by default
     ;
     ; NOTE: If a value in the ini file contains any non-alphanumeric characters it needs to be enclosed in double-quotes (").
-
+    
     [staging]
-    user = example
-    pass = password
+    user = ${STAGING_USERNAME}
+    pass = ${STAGING_PASSWORD}
     host = staging-example.com
     path = /path/to/installation
     port = 21
     passive = true
-    
+
     [production]
-    user = example
-    pass = password
+   
+    user = ${PRODUCTION_USERNAME}
+    pass = ${PRODUCTION_PASSSWORD}
     host = production-example.com
     path = /path/to/installation
     port = 21
     passive = true
-    
+
+    ; If that seemed too long for you, you can use quickmode instead:
     [quickmode]
-    ; If that seemed too long for you, you can use quickmode instead
-    staging = ftp://user:password@staging-example.com:21/path/to/installation
-    production = ftp://user:password@production-example.com:21/path/to/installation
+    staging = ftp://${STAGING_USERNAME}:${STAGING_PASSWORD}@staging-example.com:21/path/to/installation
+    production = ftp://${PRODUCTION_USERNAME}:${PRODUCTION_USERNAME}@production-example.com:21/path/to/installation
+
 
 
 Quickmode will *not* work if your username contains `:`, `/`, or if your password contains `/`.  In these cases specify each item individually.
