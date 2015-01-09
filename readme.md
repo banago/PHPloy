@@ -12,7 +12,7 @@ PHPloy is a incremental Git FTP deployment tool. By keeping track of the state o
 Windows users can optionally [download AnsiCon](https://github.com/adoxa/ansicon/releases) to enable the display of colors in the command prompt.  Install it by running `ansicon -i` from a command prompt or "Run" window.
 
 
-## Usage 
+## Usage
 
 As any script, you can use PHPloy globally, from your `bin` directory or locally, from your project directory:
 
@@ -52,38 +52,46 @@ Adding folders to your *system path* means that you can execute an application f
 
 ## deploy.ini
 
-The `deploy.ini` file hold your credentials and it must be in the root directory of your project. Set your usernames and passwords in system environment variables if you want to add this file to your VCS. Use as many servers as you need and whichever configuration type you prefer.
+The `deploy.ini` file hold your credentials and it must be in the root directory of your project. Use as many servers as you need and whichever configuration type you prefer.
 
     ; This is a sample deploy.ini file.
     ; You can specify as many servers as you need
     ; and use whichever configuration way you like.
-    ; 
+    ; You can use system environment variables for user name and password:
+    ; user = ${STAGING_USER}
+    ; pass = ${STAGING_PASSWORD}
+    ;
     ; NOTE: If you run phploy without specifying which server to deploy to, it will deploy to ALL servers by default
     ;
     ; NOTE: If a value in the ini file contains any non-alphanumeric characters it needs to be enclosed in double-quotes (").
-    
+
     [staging]
-    user = ${STAGING_USERNAME}
-    pass = ${STAGING_PASSWORD}
+    user = example
+    pass = password
     host = staging-example.com
     path = /path/to/installation
     port = 21
     passive = true
 
     [production]
-   
-    user = ${PRODUCTION_USERNAME}
-    pass = ${PRODUCTION_PASSSWORD}
+    user = example
+    pass = password
     host = production-example.com
     path = /path/to/installation
     port = 21
     passive = true
 
-    ; If that seemed too long for you, you can use quickmode instead:
     [quickmode]
-    staging = ftp://${STAGING_USERNAME}:${STAGING_PASSWORD}@staging-example.com:21/path/to/installation
-    production = ftp://${PRODUCTION_USERNAME}:${PRODUCTION_USERNAME}@production-example.com:21/path/to/installation
+    ; If that seemed too long for you, you can use quickmode instead
+    staging = ftp://user:password@staging-example.com:21/path/to/installation
+    production = ftp://user:password@production-example.com:21/path/to/installation
 
+If you want to add this file to your VCS, and still keep your user name and passord private (_you should_) set the user and password as system environment variables. On linux you usually set system environment variables in `~/.bashrc` with the following line `export VARIABLE_NAME=VALUE`  and on Windows:
+
+1. Press WINDOWS + PAUSE to open Control Panel > System screen
+2. Click "Advanced System Settings"
+3. Click "Environment Variables"
+4. Click "New...". User variables are ok if you run phploy as current user only. Otherwise set system environment variable.
 
 
 Quickmode will *not* work if your username contains `:`, `/`, or if your password contains `/`.  In these cases specify each item individually.
@@ -93,7 +101,7 @@ The first time it's executed, PHPloy will assume that your deployment server is 
 
 ## Multiple servers
 
-PHPloy allows you to configure multiple servers in the deploy file and deploy to any of them with ease. 
+PHPloy allows you to configure multiple servers in the deploy file and deploy to any of them with ease.
 
 By default PHPloy will deploy to *ALL* specified servers.  To specify one single server, run:
 
@@ -102,7 +110,7 @@ By default PHPloy will deploy to *ALL* specified servers.  To specify one single
 or:
 
     phploy --server servername
-    
+
 `servername` stands for the name you have given to the server in the `deploy.ini` configuration file.
 
 
@@ -110,7 +118,7 @@ or:
 
 **Warning: the --rollback option does not currently update your submodules correctly.  Until this is fixed, we recommend that you checkout the revision that you would like to deploy, update your submodules, and *then* run phploy.**
 
-PHPloy allows you to roll back to an earlier version when you need to. Rolling back is very easy. 
+PHPloy allows you to roll back to an earlier version when you need to. Rolling back is very easy.
 
 To roll back to the previous commit, you just run:
 
@@ -127,7 +135,7 @@ Note that there is not a short version of `--rollback`.
 
 ## Listing changed files
 
-PHPloy allows you to check out what are going to be uploaded/deleted before you actually push them. Just run: 
+PHPloy allows you to check out what are going to be uploaded/deleted before you actually push them. Just run:
 
     phploy -l
 
@@ -156,7 +164,7 @@ PHPloy also stores a `.revision` file for each submodule in your repository.
 
 ## Contribute
 
-If you've got any suggestions, questions, or anything else about PHPloy, [you should create an issue here](https://github.com/banago/PHPloy/issues). 
+If you've got any suggestions, questions, or anything else about PHPloy, [you should create an issue here](https://github.com/banago/PHPloy/issues).
 
 
 ## Credits
@@ -167,7 +175,7 @@ The people that have brought PHPloy to you are:
 * [Bruno De Barros](https://twitter.com/terraduo) - initial inspiration
 * [Fadion Dashi](https://twitter.com/jonidashi) - contributor
 * [Mark Beech](https://twitter.com/JayBird1979) - contributor
-* [Simon East](https://twitter.com/SimoEast) - contributor, Windows support 
+* [Simon East](https://twitter.com/SimoEast) - contributor, Windows support
 
 
 ## Version history
