@@ -98,7 +98,7 @@ class PHPloy
      *
      * @var string $shortops
      */
-    protected $shortopts = 'ls:';
+    protected $shortopts = 'los:';
 
     /**
      * List of available "long" command line options, prefixed by double-hyphen
@@ -114,11 +114,12 @@ class PHPloy
      *      --sync                            Updates the remote .revision file with the hash of the current HEAD
      *      --sync="[revision hash]"          Updates the remove .revision file with the provided hash
      *      --skip-subsubmodules              Skips the scanning of sub-submodules which is currently quite slow
+     *      --others                          Uploads files even if they are excluded in .gitignore
      *      --debug                           Displays extra messages including git and FTP commands
      * 
      * @var array $longopts
      */
-    protected $longopts  = array('no-colors', 'help', 'list', 'rollback::', 'server:', 'sync::', 'skip-subsubmodules', 'debug', 'version');
+    protected $longopts  = array('no-colors', 'help', 'list', 'rollback::', 'server:', 'sync::', 'skip-subsubmodules', 'others', 'debug', 'version');
 
     /**
      * @var bool|resource $connection
@@ -177,6 +178,12 @@ class PHPloy
      * @var bool $sync
      */
     protected $sync = false;
+
+    /**
+     * Whether phploy should ignore .gitignore (--others or -o commands)
+     * @var bool $others
+     */
+    protected $others = false;
 
     /**
      * Whether to print extra debugging info to the console, especially for git & FTP commands
@@ -275,6 +282,10 @@ class PHPloy
 
         if (isset($options['s']) or isset($options['server'])) {
             $this->server = isset($options['s']) ? $options['s'] : $options['server'];
+        }
+
+        if (isset($options['o']) or isset($options['others'])) {
+            $this->others = true;
         }
 
         if (isset($options['sync'])) {
@@ -484,7 +495,9 @@ class PHPloy
         }
 
         // Use git to list the changed files between $remoteRevision and $localRevision
-        if (empty($remoteRevision)) {
+        if($this->others){
+            $command = 'ls-files -o';
+        } elseif (empty($remoteRevision)) {
             $command = 'ls-files';
         } else if ($localRevision == 'HEAD') {
             $command = 'diff --name-status '.$remoteRevision.'...'.$localRevision;

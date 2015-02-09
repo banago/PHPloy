@@ -125,6 +125,18 @@ Or:
 
     phploy --list
 
+## Upload other files
+
+To upload all files, even the ones not tracked by git (e.g. the Composer vendor directory), run:
+
+    phploy -o
+
+Or:
+
+    phploy --others
+
+Please keep in mind that **all** files not excluded in your deploy.ini will be uploaded.
+
 
 ## Updating or "syncing" the remote revision
 
