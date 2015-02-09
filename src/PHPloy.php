@@ -10,7 +10,7 @@
  * @author Mark Beech <mbeech@mark-beech.co.uk>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 3.0.8-alpha
+ * @version 3.0.9-alpha
  */
  
 namespace Banago\PHPloy;
@@ -27,7 +27,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.8-alpha';
+    protected $phployVersion = '3.0.9-alpha';
 
     /**
      * @var string $revision
