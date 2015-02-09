@@ -10,7 +10,7 @@
  * @author Mark Beech <mbeech@mark-beech.co.uk>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 3.0.9-alpha
+ * @version 3.0.10-alpha
  */
  
 namespace Banago\PHPloy;
@@ -27,7 +27,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.9-alpha';
+    protected $phployVersion = '3.0.10-alpha';
 
     /**
      * @var string $revision
@@ -59,12 +59,19 @@ class PHPloy
     );
 
     /**
+     * To activate submodule deployment use the --submodules argument
+     * 
+     * @var bool $scanSubmodules
+     */
+    public $scanSubmodules = false;
+
+    /**
      * If you need support for sub-submodules, ensure this is set to TRUE
      * Set to false when the --skip-subsubmodules command line option is used
      * 
-     * @var bool $scanForSubSubmodules
+     * @var bool $scanSubSubmodules
      */
-    public $scanForSubSubmodules = true;
+    public $scanSubSubmodules = true;
 
     /**
      * @var array $servers
@@ -113,13 +120,14 @@ class PHPloy
      *        or -s [server name]
      *      --sync                            Updates the remote .revision file with the hash of the current HEAD
      *      --sync="[revision hash]"          Updates the remove .revision file with the provided hash
+     *      --submodules                      Deploy submodules; turned off by default
      *      --skip-subsubmodules              Skips the scanning of sub-submodules which is currently quite slow
      *      --others                          Uploads files even if they are excluded in .gitignore
      *      --debug                           Displays extra messages including git and FTP commands
      * 
      * @var array $longopts
      */
-    protected $longopts  = array('no-colors', 'help', 'list', 'rollback::', 'server:', 'sync::', 'skip-subsubmodules', 'others', 'debug', 'version');
+    protected $longopts  = array('no-colors', 'help', 'list', 'rollback::', 'server:', 'sync::', 'submodules', 'skip-subsubmodules', 'others', 'debug', 'version');
 
     /**
      * @var bool|resource $connection
@@ -221,10 +229,12 @@ class PHPloy
         if (file_exists("$this->repo/.git")) {
 
             if ($this->listFiles)
-                $this->output("<yellow>phploy is running in LIST mode.  No remote files will be modified.\r\n");
+                $this->output("<yellow>PHPloy is running in LIST mode. No remote files will be modified.\r\n");
 
-            $this->output('Scanning repository...');
-            $this->checkSubmodules($this->repo);
+            // Submodules are turned off by default
+            if( $this->scanSubmodules ) {
+                $this->checkSubmodules($this->repo);
+            }
             $this->deploy($this->revision);
 
         } else {
@@ -298,8 +308,12 @@ class PHPloy
             $this->revision = 'HEAD';
         }
 
+        if (isset($options['submodules'])) {
+            $this->scanSubmodules = true;
+        }
+
         if (isset($options['skip-subsubmodules'])) {
-            $this->scanForSubSubmodules = false;
+            $this->scanSubSubmodules = false;
         }
 
         $this->repo = isset($opts['repo']) ? rtrim($opts['repo'], '/') : getcwd();
@@ -314,6 +328,8 @@ class PHPloy
      */
     public function checkSubmodules($repo)
     {
+        $this->output('Scanning repository...');
+            
         $output = $this->gitCommand('submodule status', $repo);
 
         $this->output('   Found '.count($output).' submodules.');
@@ -324,14 +340,14 @@ class PHPloy
                 $this->filesToIgnore[] = $line[1];
                 $this->output(sprintf('   Found submodule %s. %s', 
                     $line[1],
-                    $this->scanForSubSubmodules ? PHP_EOL . '      Scanning for sub-submodules...' : null
+                    $this->scanSubSubmodules ? PHP_EOL . '      Scanning for sub-submodules...' : null
                 ));
                 // The call to checkSubSubmodules also calls a git foreach
                 // So perhaps it should be *outside* the loop here?
-                if ($this->scanForSubSubmodules)
+                if ($this->scanSubSubmodules)
                     $this->checkSubSubmodules($repo, $line[1]);
             }
-            if (!$this->scanForSubSubmodules)
+            if (!$this->scanSubSubmodules)
                 $this->output('   Skipping search for sub-submodules.');
         }
     }
@@ -408,6 +424,7 @@ class PHPloy
         );
         
         $ini = getcwd() . DIRECTORY_SEPARATOR . $this->deployIniFilename;
+        
         $servers = $this->parseCredentials($ini);
 
         foreach ($servers as $name => $options) {
@@ -582,7 +599,7 @@ class PHPloy
                 $this->push($files[$this->currentlyDeploying]);
             }
 
-            if (count($this->submodules) > 0) {
+            if ( $this->scanSubmodules && count($this->submodules) > 0) {
                 foreach ($this->submodules as $submodule) {
                     $this->repo = $submodule['path'];
                     $this->currentSubmoduleName = $submodule['name'];
@@ -671,6 +688,8 @@ class PHPloy
             $this->connection = $connection;            
         } catch (\Exception $e) {
             echo Ansi::tagsToColors("\r\n<red>Oh Snap: {$e->getMessage()}\r\n");
+            // If we could not connect, what's the point of existing
+            die();
         }        
     }
 

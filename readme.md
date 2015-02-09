@@ -1,5 +1,5 @@
 # PHPloy
-**Version 3.0.8-alpha**
+**Version 3.0.10-alpha**
 
 PHPloy is a incremental Git FTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
@@ -59,11 +59,12 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
 ; characters it needs to be enclosed in double-quotes (").
 
 [staging]
+    scheme = sftp
     user = example
     pass = password
     host = staging-example.com
     path = /path/to/installation
-    port = 21
+    port = 22
     passive = true
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
     skip[] = 'src/*.scss'
@@ -148,6 +149,11 @@ If you want to set it to another previous commit revision, you just specify the 
 
     phploy --sync="your-revision-hash-here"
 
+## Submodules
+
+Submodules are supported, but are turned off by default since you don't expect them to change very often and you only update them once in a while. To run a deployment with submodule scanning, add the `--submodules` paramenter to the command:
+
+    phploy --submodules
 
 ## How it works
 
