@@ -10,7 +10,7 @@
  * @author Mark Beech <mbeech@mark-beech.co.uk>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 3.0.10-alpha
+ * @version 3.0.11-alpha
  */
  
 namespace Banago\PHPloy;
@@ -27,12 +27,17 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.10-alpha';
+    protected $phployVersion = '3.0.11-alpha';
 
     /**
      * @var string $revision
      */
     public $revision;
+    
+    /**
+     * @var string $revision
+     */
+    public $localRevision;
 
     /**
      * Keep track of which server we are currently deploying to
@@ -214,7 +219,7 @@ class PHPloy
         $this->parseOptions();
 
         $this->output("\r\n<bgGreen>---------------------------------------------------");
-        $this->output("<bgGreen>|              PHPloy v{$this->phployVersion}                |");
+        $this->output("<bgGreen>|              PHPloy v{$this->phployVersion}               |");
         $this->output("<bgGreen>---------------------------------------------------<reset>\r\n");
 
         if ($this->displayHelp) {
@@ -228,13 +233,20 @@ class PHPloy
 
         if (file_exists("$this->repo/.git")) {
 
-            if ($this->listFiles)
+            if ($this->listFiles) {
                 $this->output("<yellow>PHPloy is running in LIST mode. No remote files will be modified.\r\n");
-
+            }
+            
             // Submodules are turned off by default
             if( $this->scanSubmodules ) {
                 $this->checkSubmodules($this->repo);
             }
+
+            // Find the revision number of HEAD at this point so that if 
+            // you make commit during deployment, the rev will be right.
+            $localRevision = $this->gitCommand('rev-parse HEAD');
+            $this->localRevision = $localRevision[0];
+            
             $this->deploy($this->revision);
 
         } else {
@@ -826,10 +838,7 @@ class PHPloy
         // unless the sync command was called with a specific revision
         $isHeadRevision = $this->sync == 'sync' || $this->sync == false;
         if ( $isHeadRevision ) {
-            // Find the revision number of HEAD
-            $localRevision = $this->gitCommand('rev-parse HEAD');
-            // exec(escapeshellcmd($command), );
-            $localRevision = $localRevision[0];
+            $localRevision = $this->localRevision;
         } else {
             $localRevision = $this->sync;
         }
