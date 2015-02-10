@@ -1,7 +1,8 @@
-# PHPloy
+# PHPloy Legacy
+
 **Version 2.0.0**
 
-PHPloy v3 is in the making on [feature/secure](https://github.com/banago/PHPloy/tree/feature/secure) branch which adds support for SFTP - please use that.
+This is PHPloy Legacy. To use the latest and greatest version of PHPloy, please switch [master](https://github.com/banago/PHPloy) branch.
 
 PHPloy is a incremental Git FTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
