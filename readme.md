@@ -177,6 +177,7 @@ The people that have brought PHPloy to you are:
 * [Bruno De Barros](https://twitter.com/terraduo) - initial inspiration
 * [Fadion Dashi](https://twitter.com/jonidashi) - contributor
 * [Simon East](https://twitter.com/SimoEast) - contributor, Windows support 
+* [Dean Eigenmann](https://twitter.com/DeanEigenmann) - contributor
 
 
 ## Version history
