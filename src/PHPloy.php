@@ -8,6 +8,7 @@
  * @author Fadion Dashi <jonidashi@gmail.com>
  * @author Simon East <simon+github@yump.com.au>
  * @author Mark Beech <mbeech@mark-beech.co.uk>
+ * @author Dean Eigenmann <dean.eigenmann@icloud.com>
  * @link http://wplancer.com
  * @licence MIT Licence
  * @version 3.0.11-beta
@@ -52,6 +53,14 @@ class PHPloy
      * @var array $filesToIgnore
      */
     public $filesToIgnore = array();
+
+    /**
+     * A list of files that should be renamed on Upload.
+     * Key = local name, Value = Filename for server
+     *
+     * @var array $filesToRename
+     */
+    public $filesToRename = array();
     
     /**
      * A list of files that should NOT be uploaded to the any defined server
@@ -446,6 +455,12 @@ class PHPloy
             if(!empty($servers[$name]['skip']))
                 $this->filesToIgnore[$name] = array_merge($this->globalFilesToIgnore, $servers[$name]['skip']);
 
+            if (!empty($servers[$name]['localName']) && !empty($servers[$name]['remoteName'])) {
+                foreach ($servers[$name]['localName'] as $index => $fileName) {
+                    $this->filesToRename[$name][$fileName] = $servers[$name]['remoteName'][$index];
+                }
+            }
+
             $this->filesToIgnore[$name][] = $this->deployIniFilename;
 
             // Turn options into an URL so that Bridge can accept it.
@@ -771,7 +786,13 @@ class PHPloy
                 }
 
                 $data = file_get_contents($file);
-                $remoteFile = $file;         
+                $remoteFile = $file;
+
+                // Check if file has different remoteName
+                if (array_key_exists($file, $this->filesToRename)) {
+                    $remoteFile = $this->filesToRename[$file];
+                }
+
                 $uploaded = $this->connection->put($data, $remoteFile);
 
                 if (! $uploaded) {
