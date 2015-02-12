@@ -69,6 +69,8 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
     skip[] = 'src/*.scss'
     skip[] = '*.ini'
+   localName[] = system.stage.ini
+   remoteName[] = system.ini
 
 [production]
     quickmode = ftp://example:password@production-example.com:21/path/to/installation
