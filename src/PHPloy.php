@@ -10,7 +10,7 @@
  * @author Mark Beech <mbeech@mark-beech.co.uk>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 3.0.12-beta
+ * @version 3.0.13-beta
  */
  
 namespace Banago\PHPloy;
@@ -27,7 +27,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.12-beta';
+    protected $phployVersion = '3.0.13-beta';
 
     /**
      * @var string $revision
@@ -500,9 +500,12 @@ class PHPloy
      */
     public function gitCommand($command, $repoPath = null)
     {
-        if (! $repoPath)
+        if (! $repoPath){
             $repoPath = $this->repo;
+        }
+        
         $command = 'git --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
+
         return $this->runCommand($command);
     }
 
@@ -543,14 +546,15 @@ class PHPloy
         }
 
         // Use git to list the changed files between $remoteRevision and $localRevision
+        // "-c core.quotepath=false" in command fixes special chars issue like ë, ä or ü in file names
         if($this->others){
-            $command = 'ls-files -o';
+            $command = '-c core.quotepath=false ls-files -o';
         } elseif (empty($remoteRevision)) {
-            $command = 'ls-files';
+            $command = '-c core.quotepath=false ls-files';
         } else if ($localRevision == 'HEAD') {
-            $command = 'diff --name-status '.$remoteRevision.'...'.$localRevision;
+            $command = '-c core.quotepath=false diff --name-status '.$remoteRevision.'...'.$localRevision;
         } else {
-            $command = 'diff --name-status '.$remoteRevision.'... '.$localRevision;
+            $command = '-c core.quotepath=false diff --name-status '.$remoteRevision.'... '.$localRevision;
         }
 
         $output = $this->gitCommand($command);
