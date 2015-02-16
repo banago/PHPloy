@@ -10,7 +10,7 @@
  * @author Mark Beech <mbeech@mark-beech.co.uk>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 3.0.13-beta
+ * @version 3.0.14-beta
  */
  
 namespace Banago\PHPloy;
@@ -27,7 +27,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.13-beta';
+    protected $phployVersion = '3.0.14-beta';
 
     /**
      * @var string $revision
@@ -219,7 +219,7 @@ class PHPloy
         $this->parseOptions();
 
         $this->output("\r\n<bgGreen>---------------------------------------------------");
-        $this->output("<bgGreen>|              PHPloy v{$this->phployVersion}               |");
+        $this->output("<bgGreen>|              PHPloy v{$this->phployVersion}                |");
         $this->output("<bgGreen>---------------------------------------------------<reset>\r\n");
 
         if ($this->displayHelp) {
@@ -559,16 +559,27 @@ class PHPloy
 
         $output = $this->gitCommand($command);
 
+        /**
+         * Git Status Codes
+         *
+         * A: addition of a file
+         * C: copy of a file into a new one
+         * D: deletion of a file
+         * M: modification of the contents or mode of a file
+         * R: renaming of a file
+         * T: change in the type of the file
+         * U: file is unmerged (you must complete the merge before it can be committed)
+         * X: "unknown" change type (most probably a bug, please report it)
+        */
+
 		if (! empty($remoteRevision)) {
 	        foreach ($output as $line) {
-	            if ($line[0] == 'A' or $line[0] == 'C' or $line[0] == 'M') {
-	                // Added (A), Modified (C), Unmerged (M)
+	            if ($line[0] === 'A' or $line[0] === 'C' or $line[0] === 'M' or $line[0] === 'T') {
 	                $filesToUpload[] = trim(substr($line, 1));
-	            } elseif ($line[0] == 'D') {
-	                // Deleted (D)
+	            } elseif ($line[0] == 'D' or $line[0] === 'T') {
 	                $filesToDelete[] = trim(substr($line, 1));
 	            } else {
-	                throw new \Exception("Unknown git-diff status: {$line[0]}");
+	                throw new \Exception("Unsupported git-diff status: {$line[0]}");
 	            }
 	        }
         } else {
@@ -588,8 +599,8 @@ class PHPloy
 
         return array(
             $this->currentlyDeploying => array(
-                'upload' => $filesToUpload,
                 'delete' => $filesToDelete,
+                'upload' => $filesToUpload,
                 'skip' => $filesToSkip,
             )
         );
@@ -693,19 +704,19 @@ class PHPloy
             $this->output("   No files to upload.");
         }
 
-        if (count($files['upload']) > 0) {
-            $this->output("   <green>Files that will be uploaded in next deployment:");
-
-            foreach ($files['upload'] as $file_to_upload) {
-                $this->output("      ".$file_to_upload);
-            }
-        }
-
         if (count($files['delete']) > 0) {
             $this->output("   <red>Files that will be deleted in next deployment:");
 
             foreach ($files['delete'] as $file_to_delete) {
                 $this->output("      ".$file_to_delete);
+            }
+        }
+        
+        if (count($files['upload']) > 0) {
+            $this->output("   <green>Files that will be uploaded in next deployment:");
+
+            foreach ($files['upload'] as $file_to_upload) {
+                $this->output("      ".$file_to_upload);
             }
         }
     }
@@ -746,12 +757,20 @@ class PHPloy
             $this->gitCommand('checkout '.$this->revision);
         }
 
-        $filesToUpload = $files['upload'];
         $filesToDelete = $files['delete'];
+        $filesToUpload = $files['upload'];
         $numberOfFiles = count($files['upload']) + count($files['delete']);
         
         unset($files);
 
+        // TODO: perhaps detect whether file is actually present, and whether delete is successful/skipped/failed
+        foreach ($filesToDelete as $i => $file) {
+            $this->connection->rm($file);
+            $fileNo = str_pad(++$fileNo, strlen($numberOfFiles), ' ', STR_PAD_LEFT);
+            $this->output("<red>removed $fileNo of $numberOfFiles <white>{$file}");
+        }
+
+        // Upload Files
         foreach ($filesToUpload as $fileNo => $file) {
             if ($this->currentSubmoduleName) $file = $this->currentSubmoduleName.'/'.$file;
 
@@ -808,13 +827,6 @@ class PHPloy
             
             $fileNo = str_pad(++$fileNo, strlen($numberOfFiles), ' ', STR_PAD_LEFT);
             $this->output("<green> ^ $fileNo of $numberOfFiles <white>{$file}");
-        }
-
-        // todo: perhaps detect whether file is actually present, and whether delete is successful/skipped/failed
-        foreach ($filesToDelete as $i => $file) {
-            $this->connection->rm($file);
-            $fileNo = str_pad(++$fileNo, strlen($numberOfFiles), ' ', STR_PAD_LEFT);
-            $this->output("<red>removed $fileNo of $numberOfFiles <white>{$file}");
         }
 
         // If deploy.ini specifies some directories to "clean", wipe all files within
