@@ -1,5 +1,5 @@
 # PHPloy
-**Version 3.0.11-beta**
+**Version 3.0.12-beta**
 
 PHPloy is a incremental Git FTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
@@ -78,6 +78,8 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
     skip[] = 'config/*'
     skip[] = 'src/*.scss'
 ```
+
+If your password is missing in the `deploy.ini` file, PHPloy will interactively ask you for your password.
 
 The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload ALL the files of your project.  If the remote server already has a copy of the files, you can specify which revision it is on using the `--sync` command (see below).
 

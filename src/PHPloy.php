@@ -10,7 +10,7 @@
  * @author Mark Beech <mbeech@mark-beech.co.uk>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 3.0.11-beta
+ * @version 3.0.12-beta
  */
  
 namespace Banago\PHPloy;
@@ -27,7 +27,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.11-beta';
+    protected $phployVersion = '3.0.12-beta';
 
     /**
      * @var string $revision
@@ -428,7 +428,7 @@ class PHPloy
             'host' => '',
             'user' => '',
             'pass' => '',
-            'port' => 21,
+            'port' => '',
             'path' => '/',
             'passive' => true,
             'skip' => array(),
@@ -442,14 +442,33 @@ class PHPloy
         foreach ($servers as $name => $options) {
 
             $options = array_merge($defaults, $options);
+            
+            // Re-merge parsed url in quickmode
+            if( isset( $options['quickmode'] ) ) {
+                $options = array_merge($options, parse_url($options['quickmode']));
+            }
 
-            if(!empty($servers[$name]['skip']))
+            if(!empty($servers[$name]['skip'])){
                 $this->filesToIgnore[$name] = array_merge($this->globalFilesToIgnore, $servers[$name]['skip']);
-
+            }
+            
             $this->filesToIgnore[$name][] = $this->deployIniFilename;
-
-            // Turn options into an URL so that Bridge can accept it.
-            $this->servers[$name] = isset( $options['quickmode'] ) ? $options['quickmode'] : http_build_url('', $options);
+            
+            // Ask user a password if it empty
+            if( $options['pass'] === '' ) {
+                fputs(STDOUT, 'You have not provided a password for user "'. $options['user'] .'". Please enter a password:' . "\n");
+                $input = trim(fgets(STDIN));
+             
+                if( $input == '' ) {
+                    $this->output("\r\n<green>You entered an empty password. All good, continuing deployment ...");                    
+                } else {
+                    $options['pass'] = $input;
+                    $this->output("\r\n<green>We got your password, thanks. Continuing deployment ...");
+                }
+            }
+            
+            // Turn options into an URL so that Bridge can work with it.
+            $this->servers[$name] = http_build_url('', $options);
         }
     }
 
