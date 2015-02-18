@@ -59,24 +59,24 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
 ; characters it needs to be enclosed in double-quotes (").
 
 [staging]
-    scheme = sftp
-    user = example
-    pass = password
-    host = staging-example.com
-    path = /path/to/installation
-    port = 22
-    passive = true
-    ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
-    skip[] = 'src/*.scss'
-    skip[] = '*.ini'
+scheme = sftp
+user = example
+pass = password
+host = staging-example.com
+path = /path/to/installation
+port = 22
+passive = true
+; Files that should be ignored and not uploaded to your server, but still tracked in your repository
+skip[] = 'src/*.scss'
+skip[] = '*.ini'
 
 [production]
-    quickmode = ftp://example:password@production-example.com:21/path/to/installation
-    passive = true
-    ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
-    skip[] = 'libs/*'
-    skip[] = 'config/*'
-    skip[] = 'src/*.scss'
+quickmode = ftp://example:password@production-example.com:21/path/to/installation
+passive = true
+; Files that should be ignored and not uploaded to your server, but still tracked in your repository
+skip[] = 'libs/*'
+skip[] = 'config/*'
+skip[] = 'src/*.scss'
 ```
 
 If your password is missing in the `deploy.ini` file, PHPloy will interactively ask you for your password.
