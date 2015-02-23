@@ -917,7 +917,7 @@ class PHPloy
 
             print_r($tmpFiles);
 
-            $this->output("<red>Puring <white> ...");
+            $this->output("<red>Purging <white> ...");
             
             foreach ($tmpFiles as $file) {               
                 $this->connection->rm($file);
