@@ -910,13 +910,6 @@ class PHPloy
                 continue;
             }
 
-            if( count($tmpFiles) > 0 ){
-                $this->output("Nothing to purge in {$dir}"); 
-                continue;           
-            }                       
-
-            print_r($tmpFiles);
-
             $this->output("<red>Purging <white> ...");
             
             foreach ($tmpFiles as $file) {               
