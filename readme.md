@@ -109,7 +109,7 @@ To roll back to the previous commit, you just run:
 
     phploy --rollback
 
-To roll back to whatever commit you want to, you run:
+To roll back to whatever commit you want, you run:
 
     phploy --rollback="commit-hash-goes-here"
 
@@ -120,7 +120,7 @@ Note that there is not a short version of `--rollback`.
 
 ## Listing changed files
 
-PHPloy allows you to check out what are going to be uploaded/deleted before you actually push them. Just run: 
+PHPloy allows you to see what files are going to be uploaded/deleted before you actually push them. Just run: 
 
     phploy -l
 
@@ -147,7 +147,7 @@ If you want to update the `.revision` file on the server to match your current l
 
     phploy --sync
 
-If you want to set it to another previous commit revision, you just specify the revision like this:
+If you want to set it to a previous commit revision, just specify the revision like this:
 
     phploy --sync="your-revision-hash-here"
 
@@ -159,7 +159,7 @@ Submodules are supported, but are turned off by default since you don't expect t
     
 ## Purging
 
-In many cases we need to purge one more many directory contents after a deployment. This can be achieved by specifing the directories in `deploy.ini` like this:
+In many cases, we need to purge the contents of a directory after a deployment. This can be achieved by specifing the directories in `deploy.ini` like this:
 
     ; relative to the deployment path
     purge[] = "cache/"
