@@ -915,8 +915,6 @@ class PHPloy
                 continue;           
             }                       
 
-            print_r($tmpFiles);
-
             $this->output("<red>Puring <white> ...");
             
             foreach ($tmpFiles as $file) {               
