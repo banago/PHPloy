@@ -10,7 +10,7 @@
  * @author Mark Beech <mbeech@mark-beech.co.uk>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 3.0.14-beta
+ * @version 3.0.15-stable
  */
  
 namespace Banago\PHPloy;
@@ -27,7 +27,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.14-beta';
+    protected $phployVersion = '3.0.15-stable';
 
     /**
      * @var string $revision
@@ -87,6 +87,12 @@ class PHPloy
      * @var array $submodules
      */
     public $submodules = array();
+
+
+    /**
+     * @var array $purgeDirs
+     */
+    public $purgeDirs = array();
 
     /**
      * The name of the file on remote servers that stores the current revision hash
@@ -219,7 +225,7 @@ class PHPloy
         $this->parseOptions();
 
         $this->output("\r\n<bgGreen>---------------------------------------------------");
-        $this->output("<bgGreen>|              PHPloy v{$this->phployVersion}                |");
+        $this->output("<bgGreen>|              PHPloy v{$this->phployVersion}              |");
         $this->output("<bgGreen>---------------------------------------------------<reset>\r\n");
 
         if ($this->displayHelp) {
@@ -432,7 +438,7 @@ class PHPloy
             'path' => '/',
             'passive' => true,
             'skip' => array(),
-            'clean' => array()
+            'purge' => array()
         );
         
         $ini = getcwd() . DIRECTORY_SEPARATOR . $this->deployIniFilename;
@@ -448,9 +454,13 @@ class PHPloy
                 $options = array_merge($options, parse_url($options['quickmode']));
             }
 
-            if(!empty($servers[$name]['skip'])){
+            if(! empty($servers[$name]['skip'])){
                 $this->filesToIgnore[$name] = array_merge($this->globalFilesToIgnore, $servers[$name]['skip']);
             }
+
+            if(! empty($servers[$name]['purge'])){
+                $this->purgeDirs[$name] = $servers[$name]['purge'];
+            }            
             
             $this->filesToIgnore[$name][] = $this->deployIniFilename;
             
@@ -643,6 +653,10 @@ class PHPloy
                 $this->listFiles($files[$this->currentlyDeploying]);
             } else {
                 $this->push($files[$this->currentlyDeploying]);
+                // Purge
+                if( isset( $this->purgeDirs[$name] ) && count($this->purgeDirs[$name]) > 0 ) {
+                    $this->purge($this->purgeDirs[$name]);
+                }
             }
 
             if ( $this->scanSubmodules && count($this->submodules) > 0) {
@@ -663,7 +677,9 @@ class PHPloy
                 // We've finished deploying submodules, reset settings for the next server
                 $this->repo = $this->mainRepo;
                 $this->currentSubmoduleName = false;
-            }
+            }          
+            
+            // Done
             if (! $this->listFiles) {
                 $this->output("\r\n<green>----------------[ ".$this->humanFilesize($this->deploymentSize)." Deployed ]----------------");
                 $this->deploymentSize = 0;
@@ -829,30 +845,13 @@ class PHPloy
             $this->output("<green> ^ $fileNo of $numberOfFiles <white>{$file}");
         }
 
-        // If deploy.ini specifies some directories to "clean", wipe all files within
-        if (! empty($server['clean_directories'])) {
-            foreach ($server['clean_directories'] as $dir) {
-                $this->debug("Now cleaning $dir");
-                if (! $tmpFiles = $this->connection->ls($dir)) {
-                    $this->output("{$dir} already empty");
-                    continue;
-                }
-
-                foreach ($tmpFiles as $file) {
-                    $this->connection->rm($file);
-                }
-
-                $this->output("   <red>emptied <white>{$dir}");
-            }
-        }
-
         if (count($filesToUpload) > 0 or count($filesToDelete) > 0) {            
             // Set revision on server
             $this->setRevision();              
         } else {
             $this->output("   <gray>No files to upload.");
         }
-
+        
         // If $this->revision is not HEAD, it means the rollback command was provided
         // The working copy was rolled back earlier to run the deployment, and we now want to return the working copy
         // back to its original state, but this is BUGGY (see below)
@@ -894,6 +893,41 @@ class PHPloy
         }                
     }
 
+    /**
+     * Purge given directory's contents
+     * 
+     * @var string $purgeDirs
+     */
+    public function purge($purgeDirs) 
+    {
+        foreach ($purgeDirs as $dir) {
+            
+            $origin = $this->connection->pwd();
+            $this->connection->cd($dir);
+
+            if (! $tmpFiles = $this->connection->ls()) {
+                $this->output("Nothing to purge in {$dir}");
+                continue;
+            }
+
+            if( count($tmpFiles) > 0 ){
+                $this->output("Nothing to purge in {$dir}"); 
+                continue;           
+            }                       
+
+            print_r($tmpFiles);
+
+            $this->output("<red>Puring <white> ...");
+            
+            foreach ($tmpFiles as $file) {               
+                $this->connection->rm($file);
+            }
+
+            $this->output("<red>Purged <white>{$dir}");            
+            $this->connection->cd($origin);
+        }
+    }
+    
     /**
      * Helper method to display messages on the screen.
      * 

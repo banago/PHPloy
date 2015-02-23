@@ -1,5 +1,5 @@
 # PHPloy
-**Version 3.0.14-beta**
+**Version 3.0.15-stable**
 
 PHPloy is a incremental Git FTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
@@ -156,6 +156,15 @@ If you want to set it to another previous commit revision, you just specify the 
 Submodules are supported, but are turned off by default since you don't expect them to change very often and you only update them once in a while. To run a deployment with submodule scanning, add the `--submodules` paramenter to the command:
 
     phploy --submodules
+    
+## Purging
+
+In many cases we need to purge one more many directory contents after a deployment. This can be achieved by specifing the directories in `deploy.ini` like this:
+
+    ; relative to the deployment path
+    purge[] = "cache/"
+    ; absolute path
+    purge[] = "/public_html/wp-content/themes/base/cache/"
 
 ## How it works
 
