@@ -466,8 +466,8 @@ class PHPloy
             
             // Ask user a password if it empty
             if( $options['pass'] === '' ) {
-                fputs(STDOUT, 'You have not provided a password for user "'. $options['user'] .'". Please enter a password:' . "\n");
-                $input = trim(fgets(STDIN));
+                fputs(STDOUT, 'You have not provided a password for user "'. $options['user'] .'". Please enter a password: ');
+                $input = $this->getPassword();
              
                 if( $input == '' ) {
                     $this->output("\r\n<green>You entered an empty password. All good, continuing deployment ...");                    
@@ -479,6 +479,19 @@ class PHPloy
             
             // Turn options into an URL so that Bridge can work with it.
             $this->servers[$name] = http_build_url('', $options);
+        }
+    }
+    
+    private function getPassword() {
+        $this->setShowUserInput(false);
+        $password = urlencode(trim(fgets(STDIN)));
+        $this->setShowUserInput(true);
+        
+        return $password;
+    }
+    private function setShowUserInput($show) {
+        if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
+            system('stty '.($show ? '' : '-').'echo');
         }
     }
 
