@@ -780,7 +780,7 @@ class PHPloy
         unset($files);
 
         // TODO: perhaps detect whether file is actually present, and whether delete is successful/skipped/failed
-        foreach ($filesToDelete as $i => $file) {
+        foreach ($filesToDelete as $fileNo => $file) {
             $this->connection->rm($file);
             $fileNo = str_pad(++$fileNo, strlen($numberOfFiles), ' ', STR_PAD_LEFT);
             $this->output("<red>removed $fileNo of $numberOfFiles <white>{$file}");
