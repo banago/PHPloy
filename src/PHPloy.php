@@ -35,7 +35,7 @@ class PHPloy
     public $revision;
     
     /**
-     * @var string $revision
+     * @var string $localRevision
      */
     public $localRevision;
 
@@ -807,6 +807,8 @@ class PHPloy
      */
     public function push($files)
     {
+        $initialBranch = $this->currentBranch();
+        
         // If revision is not HEAD, the current one, it means this is a rollback.
         // So, we have to revert the files the the state they were in that revision.
         if ($this->revision != 'HEAD') {
@@ -901,13 +903,23 @@ class PHPloy
         
         // If $this->revision is not HEAD, it means the rollback command was provided
         // The working copy was rolled back earlier to run the deployment, and we now want to return the working copy
-        // back to its original state, but this is BUGGY (see below)
+        // back to its original state
         if ($this->revision != 'HEAD') {
-            // BUG: What if the original deployment was not done from the master branch?  This will return the working copy to the wrong branch
-            //      Perhaps we need to detect (and store) the branch at the beginning and reset it here
-            //      This also may be different for each submodule
-            $this->gitCommand('checkout master');
+            $this->gitCommand('checkout '.($initialBranch ?: 'master'));
         }
+    }
+    
+    /**
+     * Gets the current branch name.
+     *
+     * @return string - current branch name or false if not in branch
+     */
+    private function currentBranch() {
+        $currentBranch = $this->gitCommand('rev-parse --abbrev-ref HEAD')[0];
+        if ($currentBranch != 'HEAD') {
+            return $currentBranch;
+        }
+        return false;
     }
 
     /**
