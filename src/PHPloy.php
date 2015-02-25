@@ -259,6 +259,16 @@ class PHPloy
             throw new \Exception("'{$this->repo}' is not Git repository.");
         }
     }
+    
+    /**
+     * Get current revision
+     *
+     * @return string with current revision hash
+     */
+    private function currentRevision() {
+        $currentRevision = $this->gitCommand('rev-parse HEAD');
+        return $currentRevision[0];
+    }
 
     /**
      * Displays the various command line options
@@ -805,6 +815,9 @@ class PHPloy
             // BUG: This does NOT work correctly for submodules & subsubmodules (and leaves them in an incorrect state)
             //      It technically should do a submodule update in the parent, not a checkout inside the submodule
             $this->gitCommand('checkout '.$this->revision);
+            
+            // Updating local revision - so the right revision will be set to server after rolling back
+            $this->localRevision = $this->currentRevision();
         }
 
         $filesToDelete = $files['delete'];
@@ -902,17 +915,13 @@ class PHPloy
      */
     public function setRevision()
     {
-        // By default we update the revision file to the HEAD commit, 
+        // By default we update the revision file to the local revision, 
         // unless the sync command was called with a specific revision
-        $isHeadRevision = $this->sync == 'sync' || $this->sync == false;
-        if ( $isHeadRevision ) {
-            $localRevision = $this->localRevision;
-        } else {
+        $localRevision = $this->localRevision;
+        if ($this->sync && $this->sync != 'sync') {
             $localRevision = $this->sync;
         }
-        
-        $consoleMessage = "Updating remote revision file to ".
-                ($isHeadRevision ? 'current HEAD ('.$localRevision.')' : $localRevision);
+        $consoleMessage = "Updating remote revision file to ".$localRevision;
 
         if ( $this->sync ) {
             $this->output("\r\n<yellow>SYNC: $consoleMessage");
