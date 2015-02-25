@@ -824,15 +824,17 @@ class PHPloy
 
         $filesToDelete = $files['delete'];
         $filesToUpload = $files['upload'];
-        $numberOfFiles = count($files['upload']) + count($files['delete']);
         
         unset($files);
 
         // TODO: perhaps detect whether file is actually present, and whether delete is successful/skipped/failed
         foreach ($filesToDelete as $fileNo => $file) {
+            
+            $numberOfFilesToDelete = count($filesToDelete);
+            
             $this->connection->rm($file);
-            $fileNo = str_pad(++$fileNo, strlen($numberOfFiles), ' ', STR_PAD_LEFT);
-            $this->output("<red>removed $fileNo of $numberOfFiles <white>{$file}");
+            $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
+            $this->output("<red>removed $fileNo of $numberOfFilesToDelete <white>{$file}");
         }
 
         // Upload Files
@@ -890,8 +892,10 @@ class PHPloy
                 }
             }
             
-            $fileNo = str_pad(++$fileNo, strlen($numberOfFiles), ' ', STR_PAD_LEFT);
-            $this->output("<green> ^ $fileNo of $numberOfFiles <white>{$file}");
+            $numberOfFilesToUpdate = count($filesToUpload);
+            
+            $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToUpdate), ' ', STR_PAD_LEFT);
+            $this->output("<green> ^ $fileNo of $numberOfFilesToUpdate <white>{$file}");
         }
 
         if (count($filesToUpload) > 0 or count($filesToDelete) > 0) {            
