@@ -467,7 +467,7 @@ class PHPloy
             // Ask user a password if it empty
             if( $options['pass'] === '' ) {
                 fputs(STDOUT, 'You have not provided a password for user "'. $options['user'] .'". Please enter a password: ');
-                $input = $this->getPassword();
+                $input = urlencode($this->getPassword());
              
                 if( $input == '' ) {
                     $this->output("\r\n<green>You entered an empty password. All good, continuing deployment ...");                    
@@ -482,17 +482,38 @@ class PHPloy
         }
     }
     
+    /**
+     * Gets the password from user input, hiding password and replaces it
+     * with stars (*) if user users Unix / Mac.
+     * 
+     * @return string the user entered
+     */
     private function getPassword() {
-        $this->setShowUserInput(false);
-        $password = urlencode(trim(fgets(STDIN)));
-        $this->setShowUserInput(true);
-        
-        return $password;
-    }
-    private function setShowUserInput($show) {
-        if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
-            system('stty '.($show ? '' : '-').'echo');
+        if (strtoupper(substr(PHP_OS, 0, 3)) == 'WIN') {
+            return trim(fgets(STDIN));
         }
+        
+        $oldStyle = shell_exec('stty -g');
+        $password = '';
+        
+        shell_exec('stty -icanon -echo min 1 time 0');
+        while (true) {
+            $char = fgetc(STDIN);
+            if ($char === "\n") {
+                break;
+            } else if (ord($char) === 127) {
+                if (strlen($password) > 0) {
+                    fwrite(STDOUT, "\x08 \x08");
+                    $password = substr($password, 0, -1);
+                }
+            } else {
+                fwrite(STDOUT, "*");
+                $password .= $char;
+            }
+        }
+        
+        shell_exec('stty ' . $oldStyle);
+        return $password;
     }
 
     /**
