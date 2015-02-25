@@ -250,8 +250,7 @@ class PHPloy
 
             // Find the revision number of HEAD at this point so that if 
             // you make commit during deployment, the rev will be right.
-            $localRevision = $this->gitCommand('rev-parse HEAD');
-            $this->localRevision = $localRevision[0];
+            $localRevision = $this->currentRevision();
             
             $this->deploy($this->revision);
 
