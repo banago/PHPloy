@@ -639,16 +639,13 @@ class PHPloy
 		    $filesToUpload = $output;
 		}
 
-        foreach($filesToUpload as $file) {
-            foreach($this->filesToIgnore[$this->currentlyDeploying] as $pattern) {
-                if($this->patternMatch($pattern, $file)) {
-                    $filesToSkip[] = $file;
-                    break;
-                }
-            }
-        }
-
-        $filesToUpload = array_values(array_diff($filesToUpload, $filesToSkip));
+        $filteredFilesToUpload = $this->filterIgnoredFiles($filesToUpload);
+        $filteredFilesToDelete = $this->filterIgnoredFiles($filesToDelete);
+        
+        $filesToUpload = $filteredFilesToUpload['files'];
+        $filesToDelete = $filteredFilesToDelete['files'];
+        
+        $filesToSkip = array_merge($filteredFilesToUpload['filesToSkip'], $filteredFilesToDelete['filesToSkip']);
 
         return array(
             $this->currentlyDeploying => array(
@@ -656,6 +653,33 @@ class PHPloy
                 'upload' => $filesToUpload,
                 'skip' => $filesToSkip,
             )
+        );
+    }
+    
+    /**
+     * Filter ignore files
+     * 
+     * @param array $files Array of files which needed to be filtered
+     * @return Array with `files` (filtered) and `filesToSkip`
+     */
+    private function filterIgnoredFiles($files) {
+        $filesToSkip = array();
+        
+        foreach($files as $i => $file) {
+            foreach($this->filesToIgnore[$this->currentlyDeploying] as $pattern) {
+                if($this->patternMatch($pattern, $file)) {
+                    unset($files[$i]);
+                    $filesToSkip[] = $file;
+                    break;
+                }
+            }
+        }
+        
+        $files = array_values($files);
+        
+        return array(
+            'files' => $files,
+            'filesToSkip' => $filesToSkip
         );
     }
 
