@@ -8,9 +8,10 @@
  * @author Fadion Dashi <jonidashi@gmail.com>
  * @author Simon East <simon+github@yump.com.au>
  * @author Mark Beech <mbeech@mark-beech.co.uk>
- * @link http://wplancer.com
+ * @author Guido Hendriks 
+ * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.0.15-stable
+ * @version 3.0.16-stable
  */
  
 namespace Banago\PHPloy;
@@ -27,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.15-stable';
+    protected $phployVersion = '3.0.16-stable';
 
     /**
      * @var string $revision
