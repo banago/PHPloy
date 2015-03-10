@@ -88,7 +88,7 @@ The first time it's executed, PHPloy will assume that your deployment server is 
 
 PHPloy allows you to configure multiple servers in the deploy file and deploy to any of them with ease. 
 
-By default PHPloy will deploy to *ALL* specified servers.  To specify one single server, run:
+By default PHPloy will deploy to *ALL* specified servers.  Alternatively, if an entry named 'default' exists in your server configuration, PHPloy will default to that server configuration. To specify one single server, run:
 
     phploy -s servername
 
@@ -98,6 +98,9 @@ or:
     
 `servername` stands for the name you have given to the server in the `deploy.ini` configuration file.
 
+If you have a 'default' server configured, you can specify to deploy to all configured servers by running:
+
+    phploy --all
 
 ## Rollbacks
 
