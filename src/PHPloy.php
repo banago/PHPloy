@@ -136,10 +136,11 @@ class PHPloy
      *      --skip-subsubmodules              Skips the scanning of sub-submodules which is currently quite slow
      *      --others                          Uploads files even if they are excluded in .gitignore
      *      --debug                           Displays extra messages including git and FTP commands
+     *      --all                             Deploys to all configured servers (unless one was specified in the command line)
      * 
      * @var array $longopts
      */
-    protected $longopts  = array('no-colors', 'help', 'list', 'rollback::', 'server:', 'sync::', 'submodules', 'skip-subsubmodules', 'others', 'debug', 'version');
+    protected $longopts  = array('no-colors', 'help', 'list', 'rollback::', 'server:', 'sync::', 'submodules', 'skip-subsubmodules', 'others', 'debug', 'version', 'all');
 
     /**
      * @var bool|resource $connection
@@ -217,6 +218,18 @@ class PHPloy
      * @var int $deploymentSize
      */
     protected $deploymentSize = 0;
+    
+    /**
+     * Keep track of if a default server has been configured
+     * @var bool $defaultServer
+     */
+    protected $defaultServer = false;
+
+    /**
+     * Weather the --all command line option was given
+     * @var bool deployAll
+     */
+    protected $deployAll = false;
 
     /**
      * Constructor
@@ -292,7 +305,6 @@ class PHPloy
     public function parseOptions()
     {
         $options = getopt($this->shortopts, $this->longopts);
-
         $this->debug('Command line options detected: ' . print_r($options, true));
 
         if (isset($options['no-colors'])) {
@@ -342,6 +354,10 @@ class PHPloy
 
         if (isset($options['skip-subsubmodules'])) {
             $this->scanSubSubmodules = false;
+        }
+
+        if (isset($options['all'])) {
+            $this->deployAll = true;
         }
 
         $this->repo = isset($opts['repo']) ? rtrim($opts['repo'], '/') : getcwd();
@@ -458,6 +474,11 @@ class PHPloy
         foreach ($servers as $name => $options) {
 
             $options = array_merge($defaults, $options);
+
+            // Determine if a default server is configured
+            if ($name == 'default')  {
+                $this->defaultServer = true;
+            }
             
             // Re-merge parsed url in quickmode
             if( isset( $options['quickmode'] ) ) {
@@ -705,6 +726,9 @@ class PHPloy
             // Deploys to ALL servers by default
             // If a server is specified, we skip all servers that don't match the one specified
             if ($this->server != '' && $this->server != $name) continue;
+
+            // If no server was specified in the command line but a default server configuration exists, we'll use that (as long as --all was not specified)
+            elseif ($this->server == '' && $this->defaultServer == true && $name != 'default' && $this->deployAll == false) continue;
 
             $this->connect($server);
             
