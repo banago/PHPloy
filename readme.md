@@ -61,7 +61,13 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
 [staging]
 scheme = sftp
 user = example
+; When connecting via SFTP, you can opt for password-based authentication:
 pass = password
+; Or private key-based authentication:
+pubkey  = /path/to/public/key
+privkey = /path/to/private/key
+; If the private key is encrypted, you must also provide the passphrase:
+keypass = passphrase
 host = staging-example.com
 path = /path/to/installation
 port = 22

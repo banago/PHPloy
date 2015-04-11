@@ -460,6 +460,9 @@ class PHPloy
             'host' => '',
             'user' => '',
             'pass' => '',
+            'pubkey'  => '',
+            'privkey' => '',
+            'keypass' => '',
             'port' => '',
             'path' => '/',
             'passive' => true,
@@ -495,8 +498,8 @@ class PHPloy
             
             $this->filesToIgnore[$name][] = $this->deployIniFilename;
             
-            // Ask user a password if it empty
-            if( $options['pass'] === '' ) {
+            // Ask user a password if it is empty, and if a public or private key is not defined
+            if( $options['pass'] === '' && $options['pubkey'] === '' && $options['privkey'] === '' ) {
                 fputs(STDOUT, 'You have not provided a password for user "'. $options['user'] .'". Please enter a password: ');
                 $input = urlencode($this->getPassword());
              
@@ -508,8 +511,37 @@ class PHPloy
                 }
             }
             
-            // Turn options into an URL so that Bridge can work with it.
-            $this->servers[$name] = http_build_url('', $options);
+            $bridgeOptions = array();
+
+            if ( $options['pubkey'] !== '' || $options['privkey'] !== '' ) {
+                $key = array(
+                    'pubkeyfile'  => false,
+                    'privkeyfile' => false,
+                    'user'        => $options['user'],
+                    'passphrase'  => false
+                );
+
+                if ( $options['pubkey'] == '' || !is_readable($options['pubkey']) ) {
+                    throw new \Exception("Cannot read SSH public key file: {$options['pubkey']}");
+                }
+                $key['pubkeyfile'] = $options['pubkey'];
+
+                if ( $options['privkey'] == '' || !is_readable($options['privkey']) ) {
+                    throw new \Exception("Cannot read SSH private key file: {$options['pubkey']}");
+                }
+                $key['privkeyfile'] = $options['privkey'];
+
+                if ( $options['keypass'] !== '' ) {
+                    $key['passphrase'] = $options['keypass'];
+                }
+
+                $bridgeOptions['pubkey'] = $key;
+            }
+
+            $this->servers[$name] = array(
+                'url'     => http_build_url('', $options), // Turn options into an URL so that Bridge can work with it.
+                'options' => $bridgeOptions
+            );
         }
     }
     
@@ -838,7 +870,7 @@ class PHPloy
     public function connect($server)
     {
         try {
-            $connection = new Bridge($server);
+            $connection = new Bridge($server['url'], $server['options']);
             $this->connection = $connection;            
         } catch (\Exception $e) {
             echo Ansi::tagsToColors("\r\n<red>Oh Snap: {$e->getMessage()}\r\n");
