@@ -911,10 +911,14 @@ class PHPloy
         foreach ($filesToDelete as $fileNo => $file) {
             
             $numberOfFilesToDelete = count($filesToDelete);
-            
-            $this->connection->rm($file);
-            $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
-            $this->output("<red>removed $fileNo of $numberOfFilesToDelete <white>{$file}");
+            if($this->connection->exists($file)){
+                $this->connection->rm($file);
+                $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
+                $this->output("<red>removed $fileNo of $numberOfFilesToDelete <white>{$file}");
+            }else{
+                $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
+                $this->output("<red>not found $fileNo of $numberOfFilesToDelete <white>{$file}");
+            }
         }
 
         // Upload Files
