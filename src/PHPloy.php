@@ -11,7 +11,7 @@
  * @author Guido Hendriks 
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.0.18-stable
+ * @version 3.0.19-stable
  */
  
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.18-stable';
+    protected $phployVersion = '3.0.19-stable';
 
     /**
      * @var string $revision
@@ -505,7 +505,7 @@ class PHPloy
             $this->filesToIgnore[$name][] = $this->iniFilename;
             
             if(! empty($servers[$name]['skip'])){
-                $this->filesToIgnore[$name] = $servers[$name]['skip'];
+                $this->filesToIgnore[$name] = array_merge($this->filesToIgnore[$name], $servers[$name]['skip']);
             }
 
             if(! empty($servers[$name]['purge'])){
