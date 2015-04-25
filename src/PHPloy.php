@@ -11,7 +11,7 @@
  * @author Guido Hendriks 
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.0.16-stable
+ * @version 3.0.17-stable
  */
  
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.16-stable';
+    protected $phployVersion = '3.0.17-stable';
 
     /**
      * @var string $revision
