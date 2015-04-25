@@ -11,7 +11,7 @@
  * @author Guido Hendriks 
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.0.17-stable
+ * @version 3.0.18-stable
  */
  
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.17-stable';
+    protected $phployVersion = '3.0.18-stable';
 
     /**
      * @var string $revision
@@ -107,7 +107,7 @@ class PHPloy
      * 
      * @var string $deplyIniFilename
      */
-    public $deployIniFilename = 'deploy.ini';
+    public $iniFilename = 'deploy.ini';
     
     /**
      * List of available "short" command line options, prefixed by a single hyphen
@@ -257,10 +257,7 @@ class PHPloy
                 $this->output("<yellow>PHPloy is running in LIST mode. No remote files will be modified.\r\n");
             }
             
-            // Submodules are turned off by default
-            if( $this->scanSubmodules ) {
-                $this->checkSubmodules($this->repo);
-            }
+            $this->checkSubmodules($this->repo);
 
             // Find the revision number of HEAD at this point so that if 
             // you make commit during deployment, the rev will be right.
@@ -372,27 +369,36 @@ class PHPloy
      */
     public function checkSubmodules($repo)
     {
-        $this->output('Scanning repository...');
-            
+        if ($this->scanSubmodules) {
+            $this->output('Scanning repository...');
+        }
+        
         $output = $this->gitCommand('submodule status', $repo);
 
-        $this->output('   Found '.count($output).' submodules.');
+        if ($this->scanSubmodules) {
+            $this->output('   Found ' . count($output) . ' submodules.');
+        }
+        
         if (count($output) > 0) {
             foreach ($output as $line) {
                 $line = explode(' ', trim($line));
-                $this->submodules[] = array('revision' => $line[0], 'name' => $line[1], 'path' => $repo.'/'.$line[1]);
-                $this->filesToIgnore[] = $line[1];
-                $this->output(sprintf('   Found submodule %s. %s', 
-                    $line[1],
-                    $this->scanSubSubmodules ? PHP_EOL . '      Scanning for sub-submodules...' : null
-                ));
-                // The call to checkSubSubmodules also calls a git foreach
-                // So perhaps it should be *outside* the loop here?
-                if ($this->scanSubSubmodules)
-                    $this->checkSubSubmodules($repo, $line[1]);
+
+                // If submodules are turned off, don't add them to queue
+                if ($this->scanSubmodules) {
+                    $this->submodules[] = array('revision' => $line[0], 'name' => $line[1], 'path' => $repo.'/'.$line[1]);                    
+                    $this->output(sprintf('   Found submodule %s. %s', 
+                        $line[1],
+                        $this->scanSubSubmodules ? PHP_EOL . '      Scanning for sub-submodules...' : null
+                    ));
+                }
+
+                $this->globalFilesToIgnore[] = $line[1];
+
+                $this->checkSubSubmodules($repo, $line[1]);
             }
-            if (!$this->scanSubSubmodules)
+            if (! $this->scanSubSubmodules){
                 $this->output('   Skipping search for sub-submodules.');
+            }
         }
     }
 
@@ -414,15 +420,21 @@ class PHPloy
             foreach ($output as $line) {
                 $line = explode(' ', trim($line));
 
+                // Skip if string start with 'Entering'
                 if (trim($line[0]) == 'Entering') continue;
+
+                // If sub-submodules are turned off, don't add them to queue
+                if ($this->scanSubmodules && $this->scanSubSubmodules){
+                    $this->submodules[] = array(
+                        'revision' => $line[0], 
+                        'name' => $name.'/'.$line[1], 
+                        'path' => $repo.'/'.$name.'/'.$line[1]
+                    );
+                    $this->output(sprintf('      Found sub-submodule %s.', "$name/$line[1]"));
+                }
                 
-                $this->submodules[] = array(
-                    'revision' => $line[0], 
-                    'name' => $name.'/'.$line[1], 
-                    'path' => $repo.'/'.$name.'/'.$line[1]
-                );
-                $this->filesToIgnore[] = $line[1];
-                $this->output(sprintf('      Found sub-submodule %s.', "$name/$line[1]"));
+                // But ignore them nonetheless
+                $this->globalFilesToIgnore[] = $line[1];
             }
         }
     }
@@ -430,7 +442,7 @@ class PHPloy
     /**
      * Parse Credentials
      * 
-     * @param string $deploy The filename to obtain the list of servers from, normally $this->deployIniFilename
+     * @param string $deploy The filename to obtain the list of servers from, normally $this->iniFilename
      * @return array of servers listed in the file $deploy
      */
     public function parseCredentials($deploy)
@@ -470,7 +482,7 @@ class PHPloy
             'purge' => array()
         );
         
-        $ini = getcwd() . DIRECTORY_SEPARATOR . $this->deployIniFilename;
+        $ini = getcwd() . DIRECTORY_SEPARATOR . $this->iniFilename;
         
         $servers = $this->parseCredentials($ini);
 
@@ -488,15 +500,17 @@ class PHPloy
                 $options = array_merge($options, parse_url($options['quickmode']));
             }
 
+            // Ignoring for the win
+            $this->filesToIgnore[$name] = $this->globalFilesToIgnore;
+            $this->filesToIgnore[$name][] = $this->iniFilename;
+            
             if(! empty($servers[$name]['skip'])){
-                $this->filesToIgnore[$name] = array_merge($this->globalFilesToIgnore, $servers[$name]['skip']);
+                $this->filesToIgnore[$name] = $servers[$name]['skip'];
             }
 
             if(! empty($servers[$name]['purge'])){
                 $this->purgeDirs[$name] = $servers[$name]['purge'];
             }            
-            
-            $this->filesToIgnore[$name][] = $this->deployIniFilename;
             
             // Ask user a password if it is empty, and if a public or private key is not defined
             if( $options['pass'] === '' && $options['pubkey'] === '' && $options['privkey'] === '' ) {
@@ -748,7 +762,7 @@ class PHPloy
 
         // Exit with an error if the specified server does not exist in deploy.ini
         if ($this->server != '' && !array_key_exists($this->server, $this->servers))
-            throw new \Exception("The server \"{$this->server}\" is not defined in {$this->deployIniFilename}.");
+            throw new \Exception("The server \"{$this->server}\" is not defined in {$this->iniFilename}.");
 
         // Loop through all the servers in deploy.ini
         foreach ($this->servers as $name => $server) {
