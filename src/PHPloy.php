@@ -11,7 +11,7 @@
  * @author Guido Hendriks 
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.0.19-stable
+ * @version 3.1.0-stable
  */
  
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.0.19-stable';
+    protected $phployVersion = '3.1.0-stable';
 
     /**
      * @var string $revision
@@ -258,10 +258,6 @@ class PHPloy
             }
             
             $this->checkSubmodules($this->repo);
-
-            // Find the revision number of HEAD at this point so that if 
-            // you make commit during deployment, the rev will be right.
-            $this->localRevision = $this->currentRevision();
             
             $this->deploy($this->revision);
 
@@ -658,7 +654,7 @@ class PHPloy
         }
 
         // Fetch the .revision file from the server and write it to $tmpFile
-        $this->ftpDebug("Fetching {$this->dotRevision} file");
+        $this->debug("Fetching {$this->dotRevision} file");
         
         if ( $this->connection->exists($this->dotRevision) ) {
             $remoteRevision = $this->connection->get($this->dotRevision);
@@ -672,7 +668,7 @@ class PHPloy
             $command = '-c core.quotepath=false ls-files -o';
         } elseif (empty($remoteRevision)) {
             $command = '-c core.quotepath=false ls-files';
-        } else if ($localRevision == 'HEAD') {
+        } else if ($localRevision === 'HEAD') {
             $command = '-c core.quotepath=false diff --name-status '.$remoteRevision.'...'.$localRevision;
         } else {
             $command = '-c core.quotepath=false diff --name-status '.$remoteRevision.'... '.$localRevision;
@@ -773,7 +769,8 @@ class PHPloy
             // If a server is specified, we skip all servers that don't match the one specified
             if ($this->server != '' && $this->server != $name) continue;
 
-            // If no server was specified in the command line but a default server configuration exists, we'll use that (as long as --all was not specified)
+            // If no server was specified in the command line but a default server 
+            // configuration exists, we'll use that (as long as --all was not specified)
             elseif ($this->server == '' && $this->defaultServer == true && $name != 'default' && $this->deployAll == false) continue;
 
             $this->connect($server);
@@ -901,8 +898,11 @@ class PHPloy
      */
     public function push($files)
     {
-        $initialBranch = $this->currentBranch();
+        // We will write this in the server
+        $this->localRevision = $this->currentRevision();        
         
+        $initialBranch = $this->currentBranch();
+
         // If revision is not HEAD, the current one, it means this is a rollback.
         // So, we have to revert the files the the state they were in that revision.
         if ($this->revision != 'HEAD') {
@@ -911,9 +911,6 @@ class PHPloy
             // BUG: This does NOT work correctly for submodules & subsubmodules (and leaves them in an incorrect state)
             //      It technically should do a submodule update in the parent, not a checkout inside the submodule
             $this->gitCommand('checkout '.$this->revision);
-            
-            // Updating local revision - so the right revision will be set to server after rolling back
-            $this->localRevision = $this->currentRevision();
         }
 
         $filesToDelete = $files['delete'];
@@ -998,7 +995,7 @@ class PHPloy
 
         if (count($filesToUpload) > 0 or count($filesToDelete) > 0) {            
             // Set revision on server
-            $this->setRevision();              
+            $this->setRevision();        
         } else {
             $this->output("   <gray>No files to upload.");
         }
@@ -1016,7 +1013,8 @@ class PHPloy
      *
      * @return string - current branch name or false if not in branch
      */
-    private function currentBranch() {
+    private function currentBranch() 
+    {
         $currentBranch = $this->gitCommand('rev-parse --abbrev-ref HEAD')[0];
         if ($currentBranch != 'HEAD') {
             return $currentBranch;
@@ -1040,7 +1038,7 @@ class PHPloy
         if ( $this->sync ) {
             $this->output("\r\n<yellow>SYNC: $consoleMessage");
         } else {
-            $this->ftpDebug($consoleMessage);
+            $this->debug($consoleMessage);
         }
         
         try {
@@ -1098,17 +1096,6 @@ class PHPloy
     {
         if ($this->debug)
             $this->output("$message");
-    }
-
-    /**
-     * Helper method to output messages to the console (only in debug mode)
-     * Debug mode is activated by setting $this->debug = true or using the command line option --debug
-     * 
-     * @param string $message Message to display on the console
-     */
-    public function ftpDebug($message) 
-    {
-        $this->debug("<yellow>FTP: <darkYellow>$message");
     }
 
 }
