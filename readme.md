@@ -72,9 +72,16 @@ host = staging-example.com
 path = /path/to/installation
 port = 22
 passive = true
+; You can specify a list of patterns of files to be uploaded.
+; Only files that match at least one of the patterns will be uploaded to the server.
+; If a list of include patterns is not present, all files are considered
+; by default (as if include[] = '*' was specified).
+include[] = 'public_html/*'
 ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
+; This takes precedence over include[]
 skip[] = 'src/*.scss'
 skip[] = '*.ini'
+skip[] = 'public_html/ignored/*'
 
 [production]
 quickmode = ftp://example:password@production-example.com:21/path/to/installation
