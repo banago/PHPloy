@@ -177,6 +177,11 @@ class PHPloy
     protected $dotRevision;
 
     /**
+     * Path to the directory on the server side where to store main $dotRevision file.
+     */
+    protected $dotRevisionDir = '';
+
+    /**
      * Whether phploy is running in list mode (--list or -l commands)
      * @var bool $listFiles
      */
@@ -475,7 +480,8 @@ class PHPloy
             'path' => '/',
             'passive' => true,
             'skip' => array(),
-            'purge' => array()
+            'purge' => array(),
+            'revdir' => ''
         );
         
         $ini = getcwd() . DIRECTORY_SEPARATOR . $this->iniFilename;
@@ -550,7 +556,8 @@ class PHPloy
 
             $this->servers[$name] = array(
                 'url'     => http_build_url('', $options), // Turn options into an URL so that Bridge can work with it.
-                'options' => $bridgeOptions
+                'options' => $bridgeOptions,
+                'revdir' => $options['revdir']
             );
         }
     }
@@ -650,7 +657,7 @@ class PHPloy
         if ($this->currentSubmoduleName) {
             $this->dotRevision = $this->currentSubmoduleName.'/'.$this->dotRevisionFilename;
         } else {
-            $this->dotRevision = $this->dotRevisionFilename;
+            $this->dotRevision = join('/', array(trim($this->dotRevisionDir, '/'), trim($this->dotRevisionFilename, '/')));
         }
 
         // Fetch the .revision file from the server and write it to $tmpFile
@@ -781,6 +788,7 @@ class PHPloy
                 continue;
             }
             
+            $this->dotRevisionDir = $server['revdir'];
             $files = $this->compare($revision);
 
             $this->output("\r\n<white>SERVER: ".$name);
