@@ -9,6 +9,7 @@
  * @author Simon East <simon+github@yump.com.au>
  * @author Mark Beech <mbeech@mark-beech.co.uk>
  * @author Guido Hendriks
+ * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  * @version 3.1.0-stable
@@ -28,7 +29,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.1.0-stable';
+    protected $phployVersion = '3.2.0-stable';
 
     /**
      * @var string $revision
@@ -134,13 +135,14 @@ class PHPloy
      *      --sync="[revision hash]"          Updates the remove .revision file with the provided hash
      *      --submodules                      Deploy submodules; turned off by default
      *      --skip-subsubmodules              Skips the scanning of sub-submodules which is currently quite slow
+     *      --repo="[repo path]"              Sets an external repo path
      *      --others                          Uploads files even if they are excluded in .gitignore
      *      --debug                           Displays extra messages including git and FTP commands
      *      --all                             Deploys to all configured servers (unless one was specified in the command line)
      *
      * @var array $longopts
      */
-    protected $longopts  = array('no-colors', 'help', 'list', 'rollback::', 'server:', 'sync::', 'submodules', 'skip-subsubmodules', 'others', 'debug', 'version', 'all');
+    protected $longopts  = array('no-colors', 'help', 'list', 'rollback::', 'server:', 'sync::', 'submodules', 'skip-subsubmodules', 'others', 'repo:', 'debug', 'version', 'all');
 
     /**
      * @var bool|resource $connection
@@ -358,7 +360,7 @@ class PHPloy
             $this->deployAll = true;
         }
 
-        $this->repo = isset($opts['repo']) ? rtrim($opts['repo'], '/') : getcwd();
+        $this->repo = isset($options['repo']) ? rtrim($options['repo'], '/') : getcwd();
         $this->mainRepo = $this->repo;
     }
 
@@ -484,7 +486,7 @@ class PHPloy
             'revdir' => ''
         );
 
-        $ini = getcwd() . DIRECTORY_SEPARATOR . $this->iniFilename;
+        $ini = $this->repo . DIRECTORY_SEPARATOR . $this->iniFilename;
 
         $servers = $this->parseCredentials($ini);
 
@@ -628,7 +630,7 @@ class PHPloy
             $repoPath = $this->repo;
         }
 
-        $command = 'git --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
+        $command = 'git -C ' . $repoPath . ' --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
 
         return $this->runCommand($command);
     }
@@ -982,7 +984,7 @@ class PHPloy
                     throw new \Exception("Tried to upload $file 10 times and failed. Something is wrong...");
                 }
 
-                $data = file_get_contents($file);
+                $data = file_get_contents( $this->repo . '/' . $file);
                 $remoteFile = $file;
                 $uploaded = $this->connection->put($data, $remoteFile);
 
@@ -991,7 +993,7 @@ class PHPloy
                     $this->output("<darkRed>Failed to upload {$file}. Retrying (attempt $attempts/10)... ");
                 }
                 else {
-                    $this->deploymentSize += filesize(getcwd() . '/' .$file);
+                    $this->deploymentSize += filesize( $this->repo . '/' .$file);
                 }
             }
 
