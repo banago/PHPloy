@@ -8,12 +8,13 @@
  * @author Fadion Dashi <jonidashi@gmail.com>
  * @author Simon East <simon+github@yump.com.au>
  * @author Mark Beech <mbeech@mark-beech.co.uk>
- * @author Guido Hendriks 
+ * @author Guido Hendriks
+ * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  * @version 3.1.0-stable
  */
- 
+
 namespace Banago\PHPloy;
 
 use Banago\PHPloy\Ansi;
@@ -28,13 +29,13 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.1.0-stable';
+    protected $phployVersion = '3.2.0-stable';
 
     /**
      * @var string $revision
      */
     public $revision;
-    
+
     /**
      * @var string $localRevision
      */
@@ -53,7 +54,7 @@ class PHPloy
      * @var array $filesToIgnore
      */
     public $filesToIgnore = array();
-    
+
     /**
      * A list of files that should NOT be uploaded to the any defined server
      *
@@ -66,7 +67,7 @@ class PHPloy
 
     /**
      * To activate submodule deployment use the --submodules argument
-     * 
+     *
      * @var bool $scanSubmodules
      */
     public $scanSubmodules = false;
@@ -74,7 +75,7 @@ class PHPloy
     /**
      * If you need support for sub-submodules, ensure this is set to TRUE
      * Set to false when the --skip-subsubmodules command line option is used
-     * 
+     *
      * @var bool $scanSubSubmodules
      */
     public $scanSubSubmodules = true;
@@ -97,18 +98,18 @@ class PHPloy
 
     /**
      * The name of the file on remote servers that stores the current revision hash
-     * 
+     *
      * @var string $dotRevisionFilename
      */
     public $dotRevisionFilename = '.revision';
 
     /**
      * The filename from which to read remote server details
-     * 
+     *
      * @var string $deplyIniFilename
      */
     public $iniFilename = 'deploy.ini';
-    
+
     /**
      * List of available "short" command line options, prefixed by a single hyphen
      * Colon suffix indicates that the option requires a value
@@ -123,7 +124,7 @@ class PHPloy
      * List of available "long" command line options, prefixed by double-hyphen
      * Colon suffix indicates that the option requires a value
      * Double-colon suffix indicates that the option *may* accept a value
-     * 
+     *
      *      --help or -?                      Displays command line options
      *      --list or -l                      Lists the files that *would* be deployed if run without this option
      *      --rollback                        Deploys the previous commit/revision
@@ -134,13 +135,14 @@ class PHPloy
      *      --sync="[revision hash]"          Updates the remove .revision file with the provided hash
      *      --submodules                      Deploy submodules; turned off by default
      *      --skip-subsubmodules              Skips the scanning of sub-submodules which is currently quite slow
+     *      --repo="[repo path]"              Sets an external repo path
      *      --others                          Uploads files even if they are excluded in .gitignore
      *      --debug                           Displays extra messages including git and FTP commands
      *      --all                             Deploys to all configured servers (unless one was specified in the command line)
-     * 
+     *
      * @var array $longopts
      */
-    protected $longopts  = array('no-colors', 'help', 'list', 'rollback::', 'server:', 'sync::', 'submodules', 'skip-subsubmodules', 'others', 'debug', 'version', 'all');
+    protected $longopts  = array('no-colors', 'help', 'list', 'rollback::', 'server:', 'sync::', 'submodules', 'skip-subsubmodules', 'others', 'repo:', 'debug', 'version', 'all');
 
     /**
      * @var bool|resource $connection
@@ -171,7 +173,7 @@ class PHPloy
      * Holds the path to the .revision file
      * For the main repository this will be the value of $dotRevisionFilename ('.revision' by default)
      * but for submodules, the submodule path will be prepended
-     * 
+     *
      * @var string $dotRevision
      */
     protected $dotRevision;
@@ -223,7 +225,7 @@ class PHPloy
      * @var int $deploymentSize
      */
     protected $deploymentSize = 0;
-    
+
     /**
      * Keep track of if a default server has been configured
      * @var bool $defaultServer
@@ -261,16 +263,16 @@ class PHPloy
             if ($this->listFiles) {
                 $this->output("<yellow>PHPloy is running in LIST mode. No remote files will be modified.\r\n");
             }
-            
+
             $this->checkSubmodules($this->repo);
-            
+
             $this->deploy($this->revision);
 
         } else {
             throw new \Exception("'{$this->repo}' is not Git repository.");
         }
     }
-    
+
     /**
      * Get current revision
      *
@@ -358,13 +360,13 @@ class PHPloy
             $this->deployAll = true;
         }
 
-        $this->repo = isset($opts['repo']) ? rtrim($opts['repo'], '/') : getcwd();
+        $this->repo = isset($options['repo']) ? rtrim($options['repo'], '/') : getcwd();
         $this->mainRepo = $this->repo;
     }
 
     /**
      * Check for submodules
-     * 
+     *
      * @param string $repo
      * @return null
      */
@@ -373,21 +375,21 @@ class PHPloy
         if ($this->scanSubmodules) {
             $this->output('Scanning repository...');
         }
-        
+
         $output = $this->gitCommand('submodule status', $repo);
 
         if ($this->scanSubmodules) {
             $this->output('   Found ' . count($output) . ' submodules.');
         }
-        
+
         if (count($output) > 0) {
             foreach ($output as $line) {
                 $line = explode(' ', trim($line));
 
                 // If submodules are turned off, don't add them to queue
                 if ($this->scanSubmodules) {
-                    $this->submodules[] = array('revision' => $line[0], 'name' => $line[1], 'path' => $repo.'/'.$line[1]);                    
-                    $this->output(sprintf('   Found submodule %s. %s', 
+                    $this->submodules[] = array('revision' => $line[0], 'name' => $line[1], 'path' => $repo.'/'.$line[1]);
+                    $this->output(sprintf('   Found submodule %s. %s',
                         $line[1],
                         $this->scanSubSubmodules ? PHP_EOL . '      Scanning for sub-submodules...' : null
                     ));
@@ -427,13 +429,13 @@ class PHPloy
                 // If sub-submodules are turned off, don't add them to queue
                 if ($this->scanSubmodules && $this->scanSubSubmodules){
                     $this->submodules[] = array(
-                        'revision' => $line[0], 
-                        'name' => $name.'/'.$line[1], 
+                        'revision' => $line[0],
+                        'name' => $name.'/'.$line[1],
                         'path' => $repo.'/'.$name.'/'.$line[1]
                     );
                     $this->output(sprintf('      Found sub-submodule %s.', "$name/$line[1]"));
                 }
-                
+
                 // But ignore them nonetheless
                 $this->globalFilesToIgnore[] = $line[1];
             }
@@ -442,7 +444,7 @@ class PHPloy
 
     /**
      * Parse Credentials
-     * 
+     *
      * @param string $deploy The filename to obtain the list of servers from, normally $this->iniFilename
      * @return array of servers listed in the file $deploy
      */
@@ -483,9 +485,9 @@ class PHPloy
             'purge' => array(),
             'revdir' => ''
         );
-        
-        $ini = getcwd() . DIRECTORY_SEPARATOR . $this->iniFilename;
-        
+
+        $ini = $this->repo . DIRECTORY_SEPARATOR . $this->iniFilename;
+
         $servers = $this->parseCredentials($ini);
 
         foreach ($servers as $name => $options) {
@@ -496,7 +498,7 @@ class PHPloy
             if ($name == 'default')  {
                 $this->defaultServer = true;
             }
-            
+
             // Re-merge parsed url in quickmode
             if( isset( $options['quickmode'] ) ) {
                 $options = array_merge($options, parse_url($options['quickmode']));
@@ -505,28 +507,28 @@ class PHPloy
             // Ignoring for the win
             $this->filesToIgnore[$name] = $this->globalFilesToIgnore;
             $this->filesToIgnore[$name][] = $this->iniFilename;
-            
+
             if(! empty($servers[$name]['skip'])){
                 $this->filesToIgnore[$name] = array_merge($this->filesToIgnore[$name], $servers[$name]['skip']);
             }
 
             if(! empty($servers[$name]['purge'])){
                 $this->purgeDirs[$name] = $servers[$name]['purge'];
-            }            
-            
+            }
+
             // Ask user a password if it is empty, and if a public or private key is not defined
             if( $options['pass'] === '' && $options['pubkey'] === '' && $options['privkey'] === '' ) {
                 fputs(STDOUT, 'You have not provided a password for user "'. $options['user'] .'". Please enter a password: ');
                 $input = urlencode($this->getPassword());
-             
+
                 if( $input == '' ) {
-                    $this->output("\r\n<green>You entered an empty password. All good, continuing deployment ...");                    
+                    $this->output("\r\n<green>You entered an empty password. All good, continuing deployment ...");
                 } else {
                     $options['pass'] = $input;
                     $this->output("\r\n<green>We got your password, thanks. Continuing deployment ...");
                 }
             }
-            
+
             $bridgeOptions = array();
 
             if ( $options['pubkey'] !== '' || $options['privkey'] !== '' ) {
@@ -561,21 +563,21 @@ class PHPloy
             );
         }
     }
-    
+
     /**
      * Gets the password from user input, hiding password and replaces it
      * with stars (*) if user users Unix / Mac.
-     * 
+     *
      * @return string the user entered
      */
     private function getPassword() {
         if (strtoupper(substr(PHP_OS, 0, 3)) == 'WIN') {
             return trim(fgets(STDIN));
         }
-        
+
         $oldStyle = shell_exec('stty -g');
         $password = '';
-        
+
         shell_exec('stty -icanon -echo min 1 time 0');
         while (true) {
             $char = fgetc(STDIN);
@@ -591,14 +593,14 @@ class PHPloy
                 $password .= $char;
             }
         }
-        
+
         shell_exec('stty ' . $oldStyle);
         return $password;
     }
 
     /**
      * Executes a console command and returns the output (as an array)
-     * 
+     *
      * @return array of all lines that were output to the console during the command (STDOUT)
      */
     public function runCommand($command)
@@ -617,7 +619,7 @@ class PHPloy
 
     /**
      * Runs a git command and returns the output (as an array)
-     * 
+     *
      * @param string $command "git [your-command-here]"
      * @param string $repoPath Defaults to $this->repo
      * @return array Lines of the output
@@ -627,8 +629,8 @@ class PHPloy
         if (! $repoPath){
             $repoPath = $this->repo;
         }
-        
-        $command = 'git --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
+
+        $command = 'git -C ' . $repoPath . ' --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
 
         return $this->runCommand($command);
     }
@@ -662,7 +664,7 @@ class PHPloy
 
         // Fetch the .revision file from the server and write it to $tmpFile
         $this->debug("Fetching {$this->dotRevision} file");
-        
+
         if ( $this->connection->exists($this->dotRevision) ) {
             $remoteRevision = $this->connection->get($this->dotRevision);
         } else {
@@ -712,10 +714,10 @@ class PHPloy
 
         $filteredFilesToUpload = $this->filterIgnoredFiles($filesToUpload);
         $filteredFilesToDelete = $this->filterIgnoredFiles($filesToDelete);
-        
+
         $filesToUpload = $filteredFilesToUpload['files'];
         $filesToDelete = $filteredFilesToDelete['files'];
-        
+
         $filesToSkip = array_merge($filteredFilesToUpload['filesToSkip'], $filteredFilesToDelete['filesToSkip']);
 
         return array(
@@ -726,16 +728,16 @@ class PHPloy
             )
         );
     }
-    
+
     /**
      * Filter ignore files
-     * 
+     *
      * @param array $files Array of files which needed to be filtered
      * @return Array with `files` (filtered) and `filesToSkip`
      */
     private function filterIgnoredFiles($files) {
         $filesToSkip = array();
-        
+
         foreach($files as $i => $file) {
             foreach($this->filesToIgnore[$this->currentlyDeploying] as $pattern) {
                 if($this->patternMatch($pattern, $file)) {
@@ -745,9 +747,9 @@ class PHPloy
                 }
             }
         }
-        
+
         $files = array_values($files);
-        
+
         return array(
             'files' => $files,
             'filesToSkip' => $filesToSkip
@@ -756,10 +758,10 @@ class PHPloy
 
     /**
      * Deploy (or list) changed files
-     * 
+     *
      * @param string $revision
      */
-    public function deploy($revision = 'HEAD') 
+    public function deploy($revision = 'HEAD')
     {
         $this->prepareServers();
 
@@ -771,23 +773,23 @@ class PHPloy
         foreach ($this->servers as $name => $server) {
 
             $this->currentlyDeploying = $name;
-            
+
             // Deploys to ALL servers by default
             // If a server is specified, we skip all servers that don't match the one specified
             if ($this->server != '' && $this->server != $name) continue;
 
-            // If no server was specified in the command line but a default server 
+            // If no server was specified in the command line but a default server
             // configuration exists, we'll use that (as long as --all was not specified)
             elseif ($this->server == '' && $this->defaultServer == true && $name != 'default' && $this->deployAll == false) continue;
 
             $this->connect($server);
-            
+
             if( $this->sync ) {
                 $this->dotRevision = $this->dotRevisionFilename;
                 $this->setRevision();
                 continue;
             }
-            
+
             $this->dotRevisionDir = $server['revdir'];
             $files = $this->compare($revision);
 
@@ -806,33 +808,33 @@ class PHPloy
                 foreach ($this->submodules as $submodule) {
                     $this->repo = $submodule['path'];
                     $this->currentSubmoduleName = $submodule['name'];
-                    
+
                     $this->output("\r\n<gray>SUBMODULE: ".$this->currentSubmoduleName);
-                    
+
                     $files = $this->compare($revision);
 
                     if ($this->listFiles === true) {
                         $this->listFiles($files[$this->currentlyDeploying]);
                     } else {
                         $this->push($files[$this->currentlyDeploying]);
-                    } 
+                    }
                 }
                 // We've finished deploying submodules, reset settings for the next server
                 $this->repo = $this->mainRepo;
                 $this->currentSubmoduleName = false;
-            }          
-            
+            }
+
             // Done
             if (! $this->listFiles) {
                 $this->output("\r\n<green>----------------[ ".$this->humanFilesize($this->deploymentSize)." Deployed ]----------------");
                 $this->deploymentSize = 0;
             }
-        }         
+        }
     }
 
     /**
      * Return a human readable filesize
-     * 
+     *
      * @param int $bytes
      * @param int $decimals
      */
@@ -844,7 +846,7 @@ class PHPloy
 
     /**
      * Glob the file path
-     * 
+     *
      * @param string $pattern
      * @param string $string
      */
@@ -854,7 +856,7 @@ class PHPloy
 
     /**
      * Check what files will be uploaded/deleted
-     * 
+     *
      * @param array $files
      */
     public function listFiles($files)
@@ -870,7 +872,7 @@ class PHPloy
                 $this->output("      ".$file_to_delete);
             }
         }
-        
+
         if (count($files['upload']) > 0) {
             $this->output("   <green>Files that will be uploaded in next deployment:");
 
@@ -882,7 +884,7 @@ class PHPloy
 
     /**
      * Connect to the Server
-     * 
+     *
      * @param string $server
      * @throws Exception if it can't connect to FTP server
      */
@@ -890,12 +892,12 @@ class PHPloy
     {
         try {
             $connection = new Bridge($server['url'], $server['options']);
-            $this->connection = $connection;            
+            $this->connection = $connection;
         } catch (\Exception $e) {
             echo Ansi::tagsToColors("\r\n<red>Oh Snap: {$e->getMessage()}\r\n");
             // If we could not connect, what's the point of existing
             die();
-        }        
+        }
     }
 
     /**
@@ -907,8 +909,8 @@ class PHPloy
     public function push($files)
     {
         // We will write this in the server
-        $this->localRevision = $this->currentRevision();        
-        
+        $this->localRevision = $this->currentRevision();
+
         $initialBranch = $this->currentBranch();
 
         // If revision is not HEAD, the current one, it means this is a rollback.
@@ -923,12 +925,12 @@ class PHPloy
 
         $filesToDelete = $files['delete'];
         $filesToUpload = $files['upload'];
-        
+
         unset($files);
 
         // TODO: perhaps detect whether file is actually present, and whether delete is successful/skipped/failed
         foreach ($filesToDelete as $fileNo => $file) {
-            
+
             $numberOfFilesToDelete = count($filesToDelete);
             if($this->connection->exists($file)){
                 $this->connection->rm($file);
@@ -948,42 +950,42 @@ class PHPloy
             $dir = explode("/", dirname($file));
             $path = "";
             $ret = true;
-            
+
             // Skip mkdir if dir is basedir
             if( $dir[0] !== '.' ) {
                 // Loop through each folder in the path /a/b/c/d.txt to ensure that it exists
                 for ($i = 0, $count = count($dir); $i < $count; $i++) {
                     $path .= $dir[$i].'/';
-    
+
                     if (! isset($pathsThatExist[$path])) {
                         $origin = $this->connection->pwd();
-    
+
                         if (! $this->connection->exists($path)) {
                             $this->connection->mkdir($path);
                             $this->output("Created directory '$path'.");
-                            $pathsThatExist[$path] = true;                     
+                            $pathsThatExist[$path] = true;
                         } else {
                             $this->connection->cd($path);
                             $pathsThatExist[$path] = true;
                         }
-                        
+
                         // Go home
                         $this->connection->cd($origin);
                     }
                 }
             }
 
-            // Now upload the file, attempting 10 times 
+            // Now upload the file, attempting 10 times
             // before exiting with a failure message
             $uploaded = false;
-            $attempts = 1;            
+            $attempts = 1;
             while (! $uploaded) {
                 if ($attempts == 10) {
                     throw new \Exception("Tried to upload $file 10 times and failed. Something is wrong...");
                 }
 
-                $data = file_get_contents($file);
-                $remoteFile = $file;         
+                $data = file_get_contents( $this->repo . '/' . $file);
+                $remoteFile = $file;
                 $uploaded = $this->connection->put($data, $remoteFile);
 
                 if (! $uploaded) {
@@ -991,23 +993,23 @@ class PHPloy
                     $this->output("<darkRed>Failed to upload {$file}. Retrying (attempt $attempts/10)... ");
                 }
                 else {
-                    $this->deploymentSize += filesize(getcwd() . '/' .$file);
+                    $this->deploymentSize += filesize( $this->repo . '/' .$file);
                 }
             }
-            
+
             $numberOfFilesToUpdate = count($filesToUpload);
-            
+
             $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToUpdate), ' ', STR_PAD_LEFT);
             $this->output("<green> ^ $fileNo of $numberOfFilesToUpdate <white>{$file}");
         }
 
-        if (count($filesToUpload) > 0 or count($filesToDelete) > 0) {            
+        if (count($filesToUpload) > 0 or count($filesToDelete) > 0) {
             // Set revision on server
-            $this->setRevision();        
+            $this->setRevision();
         } else {
             $this->output("   <gray>No files to upload.");
         }
-        
+
         // If $this->revision is not HEAD, it means the rollback command was provided
         // The working copy was rolled back earlier to run the deployment, and we now want to return the working copy
         // back to its original state
@@ -1015,13 +1017,13 @@ class PHPloy
             $this->gitCommand('checkout '.($initialBranch ?: 'master'));
         }
     }
-    
+
     /**
      * Gets the current branch name.
      *
      * @return string - current branch name or false if not in branch
      */
-    private function currentBranch() 
+    private function currentBranch()
     {
         $currentBranch = $this->gitCommand('rev-parse --abbrev-ref HEAD')[0];
         if ($currentBranch != 'HEAD') {
@@ -1035,7 +1037,7 @@ class PHPloy
      */
     public function setRevision()
     {
-        // By default we update the revision file to the local revision, 
+        // By default we update the revision file to the local revision,
         // unless the sync command was called with a specific revision
         $localRevision = $this->localRevision;
         if ($this->sync && $this->sync != 'sync') {
@@ -1048,23 +1050,23 @@ class PHPloy
         } else {
             $this->debug($consoleMessage);
         }
-        
+
         try {
             $this->connection->put($localRevision, $this->dotRevision);
         } catch (\Exception $e) {
-            throw new \Exception("Could not update the revision file on server: $e->getMessage()");   
-        }                
+            throw new \Exception("Could not update the revision file on server: $e->getMessage()");
+        }
     }
 
     /**
      * Purge given directory's contents
-     * 
+     *
      * @var string $purgeDirs
      */
-    public function purge($purgeDirs) 
+    public function purge($purgeDirs)
     {
         foreach ($purgeDirs as $dir) {
-            
+
             $origin = $this->connection->pwd();
             $this->connection->cd($dir);
 
@@ -1074,22 +1076,22 @@ class PHPloy
             }
 
             $this->output("<red>Purging <white> ...");
-            
-            foreach ($tmpFiles as $file) {               
+
+            foreach ($tmpFiles as $file) {
                 $this->connection->rm($file);
             }
 
-            $this->output("<red>Purged <white>{$dir}");            
+            $this->output("<red>Purged <white>{$dir}");
             $this->connection->cd($origin);
         }
     }
-    
+
     /**
      * Helper method to display messages on the screen.
-     * 
+     *
      * @param string $message
      */
-    public function output($message) 
+    public function output($message)
     {
         echo Ansi::tagsToColors($message) . "\r\n";
     }
@@ -1097,10 +1099,10 @@ class PHPloy
     /**
      * Helper method to output messages to the console (only in debug mode)
      * Debug mode is activated by setting $this->debug = true or using the command line option --debug
-     * 
+     *
      * @param string $message Message to display on the console
      */
-    public function debug($message) 
+    public function debug($message)
     {
         if ($this->debug)
             $this->output("$message");
