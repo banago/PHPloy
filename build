@@ -7,13 +7,13 @@ $output_file = $output_dir . $filename;
 
 
 // Remove existing file, recursively create directories if needed
-@unlink( $output_file );
-@mkdir( $output_dir, 0755, true );
+@unlink($output_file);
+@mkdir($output_dir, 0755, true);
 
 
 // If vendors directory doesn't exist, try to install with composer
-if ( ! is_dir( __DIR__ . '/vendor' ) ) {
-    @shell_exec( 'composer --working-dir="' . __DIR__ . '" install' );
+if (! is_dir(__DIR__ . '/vendor')) {
+    @shell_exec('composer --working-dir="' . __DIR__ . '" install');
 }
 
 // Start phar
@@ -28,23 +28,23 @@ $phar->startBuffering();
 
 // Adding folders
 $phar->buildFromDirectory(
-    dirname( __FILE__ ),
+    dirname(__FILE__),
     '/(src|vendor)\/.*$/'
 );
 
 
 // Adding main file
-$phar->addFile( 'phploy.php' );
+$phar->addFile('phploy.php');
 
 
 // Create a stub and add the shebang
-$default = $phar->createDefaultStub( 'phploy.php' );
+$default = $phar->createDefaultStub('phploy.php');
 $stub = "#!/usr/bin/env php \n" . $default;
-$phar->setStub( $stub );
+$phar->setStub($stub);
 
-$phar->compressFiles( Phar::GZ );
+$phar->compressFiles(Phar::GZ);
 $phar->stopBuffering();
 
 
 // Set file permissions
-chmod( $output_file, 0755 );
+chmod($output_file, 0755);
