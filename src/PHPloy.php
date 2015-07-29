@@ -12,7 +12,7 @@
  * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.1.0-stable
+ * @version 3.2.0-stable
  */
 
 namespace Banago\PHPloy;
