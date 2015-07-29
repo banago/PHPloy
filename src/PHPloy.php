@@ -266,7 +266,7 @@ class PHPloy
 
             $this->deploy($this->revision);
         } else {
-            throw new \Exception("'{$this->repo}' is not Git repository.");
+            throw new \Exception("'{$this->repo}' is not a Git repository.");
         }
     }
 
