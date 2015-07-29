@@ -6,7 +6,7 @@ PHPloy is a incremental Git FTP and SFTP deployment tool. By keeping track of th
 ## Requirements
 
 * PHP 5.3+ command line interpreter (CLI)
-* SSH2 PECL extension
+* SSH2 PECL extension (if using SFTP)
 
 Windows users can optionally [download AnsiCon](https://github.com/adoxa/ansicon/releases) to enable the display of colors in the command prompt.  Install it by running `ansicon -i` from a command prompt or "Run" window.
 
