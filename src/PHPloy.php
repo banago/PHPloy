@@ -751,7 +751,7 @@ class PHPloy
     private function filterIgnoredFiles($files)
     {
         $filesToSkip = array();
-        
+
         foreach ($files as $i => $file) {
             $matched = false;
             foreach ($this->filesToInclude[$this->currentlyDeploying] as $pattern) {
@@ -765,7 +765,7 @@ class PHPloy
                 $filesToSkip[] = $file;
                 continue;
             }
-            
+
             foreach ($this->filesToIgnore[$this->currentlyDeploying] as $pattern) {
                 if ($this->patternMatch($pattern, $file)) {
                     unset($files[$i]);
