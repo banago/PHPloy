@@ -41,9 +41,9 @@
  */
 
 namespace Banago\PHPloy;
- 
-class Ansi {
 
+class Ansi
+{
     /**
      * Whether colour codes are enabled or not
      * 
@@ -113,15 +113,14 @@ class Ansi {
         return str_replace(array_keys(static::$tags), static::$tags, $string);
     }
 
-    public static function isWindows() 
+    public static function isWindows()
     {
         return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
     }
 
-    public static function isAnsiCon() 
+    public static function isAnsiCon()
     {
-        return !empty($_SERVER['ANSICON']) 
+        return !empty($_SERVER['ANSICON'])
             && substr($_SERVER['ANSICON'], 0, 1) != '0';
     }
-
 }
