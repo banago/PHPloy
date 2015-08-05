@@ -763,6 +763,7 @@ class PHPloy
             if (! $matched) {
                 unset($files[$i]);
                 $filesToSkip[] = $file;
+                continue;
             }
             
             foreach ($this->filesToIgnore[$this->currentlyDeploying] as $pattern) {
