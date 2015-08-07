@@ -65,6 +65,12 @@ class PHPloy
     );
 
     /**
+     * A list of patterns that a file MUST match to be uploaded
+     * to the remote server
+     */
+    public $filesToInclude = array();
+
+    /**
      * To activate submodule deployment use the --submodules argument
      *
      * @var bool $scanSubmodules
@@ -512,6 +518,12 @@ class PHPloy
                 $this->filesToIgnore[$name] = array_merge($this->filesToIgnore[$name], $servers[$name]['skip']);
             }
 
+            if (! empty($servers[$name]['include'])) {
+                $this->filesToInclude[$name] = $servers[$name]['include'];
+            } else {
+                $this->filesToInclude[$name] = array('*');
+            }
+
             if (! empty($servers[$name]['purge'])) {
                 $this->purgeDirs[$name] = $servers[$name]['purge'];
             }
@@ -741,6 +753,19 @@ class PHPloy
         $filesToSkip = array();
 
         foreach ($files as $i => $file) {
+            $matched = false;
+            foreach ($this->filesToInclude[$this->currentlyDeploying] as $pattern) {
+                if ($this->patternMatch($pattern, $file)) {
+                    $matched = true;
+                    break;
+                }
+            }
+            if (! $matched) {
+                unset($files[$i]);
+                $filesToSkip[] = $file;
+                continue;
+            }
+
             foreach ($this->filesToIgnore[$this->currentlyDeploying] as $pattern) {
                 if ($this->patternMatch($pattern, $file)) {
                     unset($files[$i]);
