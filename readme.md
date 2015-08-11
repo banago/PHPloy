@@ -29,6 +29,15 @@ As any script, you can use PHPloy globally, from your `bin` directory or locally
 2. Create the `deploy.ini` file inside your project folder.
 3. Run `phploy` in terminal.
 
+OR
+
+You can add the path to `phploy.phar` in your $PATH
+
+If running bash, do so by running this in terminal: `echo "export PATH=\$HOME/ PHPLOY.PHAR PATH " >> ~/.profile`<br>
+If using zsh: `echo "export PATH=\$HOME/ PHPLOY.PHAR PATH " >> ~/.zshrc`
+
+Then you can run `phploy.phar` in terminal. If you wish to run it without .phar at the end, just navigate to the file, rename the file and remove .phar and save.
+
 
 ### Installing PHPloy globally in Windows
 
