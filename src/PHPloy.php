@@ -12,7 +12,7 @@
  * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.3.0
+ * @version 3.3.1
  */
 
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.3.0';
+    protected $phployVersion = '3.3.1';
 
     /**
      * @var string $revision
@@ -184,11 +184,6 @@ class PHPloy
     protected $dotRevision;
 
     /**
-     * Path to the directory on the server side where to store main $dotRevision file.
-     */
-    protected $dotRevisionDir = '';
-
-    /**
      * Whether phploy is running in list mode (--list or -l commands)
      * @var bool $listFiles
      */
@@ -251,7 +246,7 @@ class PHPloy
         $this->parseOptions();
 
         $this->output("\r\n<bgGreen>---------------------------------------------------");
-        $this->output("<bgGreen>|              PHPloy v{$this->phployVersion}              |");
+        $this->output("<bgGreen>|                  PHPloy v{$this->phployVersion}                  |");
         $this->output("<bgGreen>---------------------------------------------------<reset>\r\n");
 
         if ($this->displayHelp) {
@@ -489,8 +484,7 @@ class PHPloy
             'path' => '/',
             'passive' => true,
             'skip' => array(),
-            'purge' => array(),
-            'revdir' => ''
+            'purge' => array()
         );
 
         $ini = $this->repo . DIRECTORY_SEPARATOR . $this->iniFilename;
@@ -570,8 +564,7 @@ class PHPloy
 
             $this->servers[$name] = array(
                 'url'     => http_build_url('', $options), // Turn options into an URL so that Bridge can work with it.
-                'options' => $bridgeOptions,
-                'revdir' => $options['revdir']
+                'options' => $bridgeOptions
             );
         }
     }
@@ -672,7 +665,7 @@ class PHPloy
         if ($this->currentSubmoduleName) {
             $this->dotRevision = $this->currentSubmoduleName.'/'.$this->dotRevisionFilename;
         } else {
-            $this->dotRevision = join('/', array(trim($this->dotRevisionDir, '/'), trim($this->dotRevisionFilename, '/')));
+            $this->dotRevision = $this->dotRevisionFilename;
         }
 
         // Fetch the .revision file from the server and write it to $tmpFile
@@ -821,7 +814,6 @@ class PHPloy
                 continue;
             }
 
-            $this->dotRevisionDir = $server['revdir'];
             $files = $this->compare($revision);
 
             $this->output("\r\n<white>SERVER: ".$name);
