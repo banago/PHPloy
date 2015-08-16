@@ -12,7 +12,7 @@
  * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.3.1
+ * @version 3.3.2
  */
 
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.3.1';
+    protected $phployVersion = '3.3.2';
 
     /**
      * @var string $revision
@@ -1064,7 +1064,7 @@ class PHPloy
     {
         // By default we update the revision file to the local revision,
         // unless the sync command was called with a specific revision
-        $localRevision = $this->localRevision;
+        $localRevision = $this->currentRevision();
         if ($this->sync && $this->sync != 'sync') {
             $localRevision = $this->sync;
         }
