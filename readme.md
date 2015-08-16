@@ -29,6 +29,16 @@ As any script, you can use PHPloy globally, from your `bin` directory or locally
 2. Create the `deploy.ini` file inside your project folder.
 3. Run `phploy` in terminal.
 
+OR
+
+You can add a symlink/symbolic link to `phploy.phar` in your `/usr/local/bin`, that way you can still update PHPloy, and you won't have to copy/paste new files everytime.
+
+You can create the symlink very easy with this command:
+`sudo ln -s ~/PHPloy/bin/phploy.phar /usr/local/bin/phploy`
+In this case, I've placed the PHPloy folder in my home directory, you can just change the path to wherever PHPloy is placed.
+
+Then you can run `phploy` in terminal. 
+
 
 ### Installing PHPloy globally in Windows
 
