@@ -12,7 +12,7 @@
  * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.3.2
+ * @version 3.3.3
  */
 
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.3.2';
+    protected $phployVersion = '3.3.3';
 
     /**
      * @var string $revision
@@ -636,7 +636,7 @@ class PHPloy
             $repoPath = $this->repo;
         }
 
-        $command = 'git -C ' . $repoPath . ' --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
+        $command = 'git -C "' . $repoPath . '" --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
 
         return $this->runCommand($command);
     }
