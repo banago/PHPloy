@@ -94,8 +94,6 @@ include[] = 'public_html/*'
 skip[] = 'src/*.scss'
 skip[] = '*.ini'
 skip[] = 'public_html/ignored/*'
-; If you want to have the .revision file in another location (relative to installation path)
-revdir = path/to/directory
 
 [production]
 quickmode = ftp://example:password@production-example.com:21/path/to/installation

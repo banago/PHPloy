@@ -684,13 +684,13 @@ class PHPloy
         } elseif (empty($remoteRevision)) {
             $command = '-c core.quotepath=false ls-files';
         } elseif ($localRevision === 'HEAD') {
-            $command = '-c core.quotepath=false diff --name-status '.$remoteRevision.'...'.$localRevision;
+            $command = '-c core.quotepath=false diff --name-status '.$remoteRevision.' '.$localRevision;
         } else {
-            $command = '-c core.quotepath=false diff --name-status '.$remoteRevision.'... '.$localRevision;
+            $command = '-c core.quotepath=false diff --name-status '.$remoteRevision.' '.$localRevision;
         }
 
         $output = $this->gitCommand($command);
-
+        
         /**
          * Git Status Codes
          *
@@ -849,7 +849,7 @@ class PHPloy
 
             // Done
             if (! $this->listFiles) {
-                $this->output("\r\n<green>----------------[ ".$this->humanFilesize($this->deploymentSize)." Deployed ]----------------");
+                $this->output("\r\n<green>|----------------[ ".$this->humanFilesize($this->deploymentSize)." Deployed ]----------------|");
                 $this->deploymentSize = 0;
             }
         }
@@ -952,17 +952,17 @@ class PHPloy
         $filesToUpload = $files['upload'];
 
         unset($files);
-
-        // TODO: perhaps detect whether file is actually present, and whether delete is successful/skipped/failed
+        
+        // Delete files
         foreach ($filesToDelete as $fileNo => $file) {
             $numberOfFilesToDelete = count($filesToDelete);
             if ($this->connection->exists($file)) {
                 $this->connection->rm($file);
                 $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
-                $this->output("<red>removed $fileNo of $numberOfFilesToDelete <white>{$file}");
+                $this->output("<red>× $fileNo of $numberOfFilesToDelete <white>{$file}");
             } else {
                 $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
-                $this->output("<red>not found $fileNo of $numberOfFilesToDelete <white>{$file}");
+                $this->output("<red>! $fileNo of $numberOfFilesToDelete <white>{$file} not found");
             }
         }
 
@@ -1016,7 +1016,7 @@ class PHPloy
 
                 if (! $uploaded) {
                     $attempts = $attempts + 1;
-                    $this->output("<darkRed>Failed to upload {$file}. Retrying (attempt $attempts/10)... ");
+                    $this->output("<darkRed>Failed to upload {$file}. Retrying (attempt $attempts/10)...");
                 } else {
                     $this->deploymentSize += filesize($this->repo . '/' .$file);
                 }
@@ -1094,18 +1094,38 @@ class PHPloy
             $origin = $this->connection->pwd();
             $this->connection->cd($dir);
 
+            $this->output("<red>Purging directory <white>{$dir}");
+ 
             if (! $tmpFiles = $this->connection->ls()) {
-                $this->output("Nothing to purge in {$dir}");
+                $this->output(" - Nothing to purge in {$dir}");
+                $this->connection->cd($origin);
                 continue;
             }
-
-            $this->output("<red>Purging <white> ...");
-
+            
+            $haveFiles = false;
+            $innerDirs = [];
             foreach ($tmpFiles as $file) {
-                $this->connection->rm($file);
+                $curr = $this->connection->pwd();
+                if ($this->connection->cd($file)) {
+    				$innerDirs[] = $file;
+    				$this->connection->cd($curr);
+    			} else {
+    			    $haveFiles = true;
+    				$this->output(" - {$file} is removed from directory");
+                    $this->connection->rm($file);
+                }
             }
-
-            $this->output("<red>Purged <white>{$dir}");
+            
+            if (! $haveFiles) {
+                $this->output(" - Nothing to purge in {$dir}");
+            } else {
+                $this->output("<red>Purged <white>{$dir}");   
+            }
+          
+            if (count($innerDirs) > 0) {
+                $this->purge($innerDirs);
+            }
+              
             $this->connection->cd($origin);
         }
     }
