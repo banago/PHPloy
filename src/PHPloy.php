@@ -1107,11 +1107,11 @@ class PHPloy
             foreach ($tmpFiles as $file) {
                 $curr = $this->connection->pwd();
                 if ($this->connection->cd($file)) {
-    				$innerDirs[] = $file;
-    				$this->connection->cd($curr);
-    			} else {
-    			    $haveFiles = true;
-    				$this->output(" - {$file} is removed from directory");
+                    $innerDirs[] = $file;
+                    $this->connection->cd($curr);
+                } else {
+                    $haveFiles = true;
+                    $this->output(" - {$file} is removed from directory");
                     $this->connection->rm($file);
                 }
             }
@@ -1119,7 +1119,7 @@ class PHPloy
             if (! $haveFiles) {
                 $this->output(" - Nothing to purge in {$dir}");
             } else {
-                $this->output("<red>Purged <white>{$dir}");   
+                $this->output("<red>Purged <white>{$dir}");
             }
           
             if (count($innerDirs) > 0) {
