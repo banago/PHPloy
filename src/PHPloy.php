@@ -12,7 +12,7 @@
  * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.3.3
+ * @version 3.4.0
  */
 
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.3.3';
+    protected $phployVersion = '3.4.0';
 
     /**
      * @var string $revision

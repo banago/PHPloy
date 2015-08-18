@@ -1,5 +1,5 @@
 # PHPloy
-**Version 3.3.3**
+**Version 3.4.0**
 
 PHPloy is a incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
@@ -218,35 +218,4 @@ The people that have brought PHPloy to you are:
 * [Guido Hendriks](https://twitter.com/GuidoHendriks) - contributor 
 
 
-## Version history
 
-v3.0.0-alpha (9 August 2014)
-
-* Added SFTP support
-* Composer package
-* Phar file added
-
-
-v2.0.0-beta3 (26 May 2014)
-
-* Colored console output is now *optional* and disabled by default on Windows unless Ansicon is detected.  (Colors can be disabled through the `--no-colors` command-line option.)
-* ANSI color functionality has been moved to a separate class, and is now also a separate project on Github
-
-v2.0.0-beta2 (11 April 2014)
-
-* Added more ANSI colours to output
-* Added --debug option which provides much more verbose output
-* Added --help option which displays the readme.md file
-* Output now clearly indicates if it's running in --list mode
-* Upload process now displays number of files in the queue (eg. "1 of 52")
-* Internal: ANSI colours are now expressed through simple HTML-like tags such as <red>, <white> etc.
-* Internal: git & console commands are now run from a central function to reduce code repetition and potential bugs
-* Fictional: phploy now makes your coffee during a long deployment
-
-v2.0.0-beta (April 2014)
-
-* Added support for Windows machines by:
-    * removing incompatible UTF characters
-    * added phploy.bat
-* Added some additional console output and reformatted some of the outputted strings for clarity
-* Added command-line option --skip-subsubmodules
