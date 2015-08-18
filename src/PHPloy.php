@@ -55,7 +55,7 @@ class PHPloy
     public $filesToIgnore = array();
 
     /**
-     * A list of files that should NOT be uploaded to the any defined server
+     * A list of files that should NOT be uploaded to any defined server
      *
      * @var array $globalFilesToIgnore
      */
