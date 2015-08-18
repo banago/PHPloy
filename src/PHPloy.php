@@ -12,7 +12,7 @@
  * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.4.0
+ * @version 3.4.1
  */
 
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.4.0';
+    protected $phployVersion = '3.4.1';
 
     /**
      * @var string $revision
@@ -1103,7 +1103,7 @@ class PHPloy
             }
             
             $haveFiles = false;
-            $innerDirs = [];
+            $innerDirs = array();
             foreach ($tmpFiles as $file) {
                 $curr = $this->connection->pwd();
                 if ($this->connection->cd($file)) {
