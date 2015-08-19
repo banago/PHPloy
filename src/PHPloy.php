@@ -1,6 +1,6 @@
 <?php
 /**
- * PHPloy - A PHP Deployment Script
+ * PHPloy - A PHP Deployment Tool
  *
  * @package PHPloy
  * @author Baki Goxhaj <banago@gmail.com>
@@ -12,7 +12,7 @@
  * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.4.1
+ * @version 3.5.0
  */
 
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.4.1';
+    protected $phployVersion = '3.5.0';
 
     /**
      * @var string $revision
@@ -947,92 +947,112 @@ class PHPloy
             //      It technically should do a submodule update in the parent, not a checkout inside the submodule
             $this->gitCommand('checkout '.$this->revision);
         }
-
+        
         $filesToDelete = $files['delete'];
+        // Add deleted directories to the list of files to delete. Git does not handle this.
+        $dirsToDelete = [];
+        if (count($filesToDelete) > 0) {
+            $dirsToDelete = $this->hasDeletedDirectories( $filesToDelete );
+        }
         $filesToUpload = $files['upload'];
 
+        // Not needed any longer
         unset($files);
         
         // Delete files
-        foreach ($filesToDelete as $fileNo => $file) {
-            $numberOfFilesToDelete = count($filesToDelete);
-            if ($this->connection->exists($file)) {
-                $this->connection->rm($file);
-                $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
-                $this->output("<red>× $fileNo of $numberOfFilesToDelete <white>{$file}");
-            } else {
-                $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
-                $this->output("<red>! $fileNo of $numberOfFilesToDelete <white>{$file} not found");
+        if (count($filesToDelete) > 0) {
+            foreach ($filesToDelete as $fileNo => $file) {
+                $numberOfFilesToDelete = count($filesToDelete);
+                if ($this->connection->exists($file)) {
+                    $this->connection->rm($file);
+                    $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
+                    $this->output("<red>× $fileNo of $numberOfFilesToDelete <white>{$file}");
+                } else {
+                    $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
+                    $this->output("<red>! $fileNo of $numberOfFilesToDelete <white>{$file} not found");
+                }
+            }
+        }
+        
+        // Delete Directories
+        if (count($dirsToDelete) > 0) {
+            foreach ($dirsToDelete as $dirNo => $dir) {
+                $numberOfdirsToDelete = count($dirsToDelete);
+                $this->connection->rmdir($dir);
+                $dirNo = str_pad(++$dirNo, strlen($numberOfdirsToDelete), ' ', STR_PAD_LEFT);
+                $this->output("<red>× $dirNo of $numberOfdirsToDelete <white>{$dir}");
             }
         }
 
         // Upload Files
-        foreach ($filesToUpload as $fileNo => $file) {
-            if ($this->currentSubmoduleName) {
-                $file = $this->currentSubmoduleName.'/'.$file;
-            }
-
-            // Make sure the folder exists in the FTP server.
-            $dir = explode("/", dirname($file));
-            $path = "";
-            $ret = true;
-
-            // Skip mkdir if dir is basedir
-            if ($dir[0] !== '.') {
-                // Loop through each folder in the path /a/b/c/d.txt to ensure that it exists
-                for ($i = 0, $count = count($dir); $i < $count; $i++) {
-                    $path .= $dir[$i].'/';
-
-                    if (! isset($pathsThatExist[$path])) {
-                        $origin = $this->connection->pwd();
-
-                        if (! $this->connection->exists($path)) {
-                            $this->connection->mkdir($path);
-                            $this->output("Created directory '$path'.");
-                            $pathsThatExist[$path] = true;
-                        } else {
-                            $this->connection->cd($path);
-                            $pathsThatExist[$path] = true;
+        if (count($filesToUpload) > 0) {
+            foreach ($filesToUpload as $fileNo => $file) {
+                if ($this->currentSubmoduleName) {
+                    $file = $this->currentSubmoduleName.'/'.$file;
+                }
+    
+                // Make sure the folder exists in the FTP server.
+                $dir = explode("/", dirname($file));
+                $path = "";
+                $ret = true;
+    
+                // Skip mkdir if dir is basedir
+                if ($dir[0] !== '.') {
+                    // Loop through each folder in the path /a/b/c/d.txt to ensure that it exists
+                    for ($i = 0, $count = count($dir); $i < $count; $i++) {
+                        $path .= $dir[$i].'/';
+    
+                        if (! isset($pathsThatExist[$path])) {
+                            $origin = $this->connection->pwd();
+    
+                            if (! $this->connection->exists($path)) {
+                                $this->connection->mkdir($path);
+                                $this->output("Created directory '$path'.");
+                                $pathsThatExist[$path] = true;
+                            } else {
+                                $this->connection->cd($path);
+                                $pathsThatExist[$path] = true;
+                            }
+    
+                            // Go home
+                            $this->connection->cd($origin);
                         }
-
-                        // Go home
-                        $this->connection->cd($origin);
                     }
                 }
-            }
-
-            // Now upload the file, attempting 10 times
-            // before exiting with a failure message
-            $uploaded = false;
-            $attempts = 1;
-            while (! $uploaded) {
-                if ($attempts == 10) {
-                    throw new \Exception("Tried to upload $file 10 times and failed. Something is wrong...");
+    
+                // Now upload the file, attempting 10 times
+                // before exiting with a failure message
+                $uploaded = false;
+                $attempts = 1;
+                while (! $uploaded) {
+                    if ($attempts == 10) {
+                        throw new \Exception("Tried to upload $file 10 times and failed. Something is wrong...");
+                    }
+    
+                    $data = file_get_contents($this->repo . '/' . $file);
+                    $remoteFile = $file;
+                    $uploaded = $this->connection->put($data, $remoteFile);
+    
+                    if (! $uploaded) {
+                        $attempts = $attempts + 1;
+                        $this->output("<darkRed>Failed to upload {$file}. Retrying (attempt $attempts/10)...");
+                    } else {
+                        $this->deploymentSize += filesize($this->repo . '/' .$file);
+                    }
                 }
-
-                $data = file_get_contents($this->repo . '/' . $file);
-                $remoteFile = $file;
-                $uploaded = $this->connection->put($data, $remoteFile);
-
-                if (! $uploaded) {
-                    $attempts = $attempts + 1;
-                    $this->output("<darkRed>Failed to upload {$file}. Retrying (attempt $attempts/10)...");
-                } else {
-                    $this->deploymentSize += filesize($this->repo . '/' .$file);
-                }
+    
+                $numberOfFilesToUpdate = count($filesToUpload);
+    
+                $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToUpdate), ' ', STR_PAD_LEFT);
+                $this->output("<green> ^ $fileNo of $numberOfFilesToUpdate <white>{$file}");
             }
-
-            $numberOfFilesToUpdate = count($filesToUpload);
-
-            $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToUpdate), ' ', STR_PAD_LEFT);
-            $this->output("<green> ^ $fileNo of $numberOfFilesToUpdate <white>{$file}");
         }
 
         if (count($filesToUpload) > 0 or count($filesToDelete) > 0) {
             // Set revision on server
             $this->setRevision();
         } else {
-            $this->output("   <gray>No files to upload.");
+            $this->output("   <gray>No files to upload or delete.");
         }
 
         // If $this->revision is not HEAD, it means the rollback command was provided
@@ -1128,6 +1148,49 @@ class PHPloy
               
             $this->connection->cd($origin);
         }
+    }
+
+    /**
+     * Checks for deleted directories. Git cares only about files.
+     *
+     * @param array $filesToDelete
+     */
+    public function hasDeletedDirectories($filesToDelete)
+    {
+        $dirsToDelete = [];
+        foreach ($filesToDelete as $file) {
+        
+            // Break directories into a list of items
+            $parts = split("/", $file);
+            
+            // Remove files name from the list
+            array_pop($parts);
+            
+            foreach($parts as $i => $part){
+                
+                $prefix = '';
+                // Add the parent directories to directory name
+                for( $x = 0; $x < $i; $x++ ) {
+                    $prefix .= $parts[$x] . '/';                
+                }
+
+                $part = $prefix . $part;
+                
+                // Check of directory exits. If it doesn't exist
+                // Add it to the list if files to delete
+                if( ! is_dir($part) ) {
+                    $dirsToDelete[] = $part;
+                }                
+            }
+        }
+        
+        // Remove duplicates
+        $dirsToDeleteUnique = array_unique( $dirsToDelete );
+        
+        // Reverse order to delete inner children before parents
+        $dirsToDeleteOrder = array_reverse( $dirsToDeleteUnique );
+        
+        return $dirsToDeleteOrder;
     }
 
     /**
