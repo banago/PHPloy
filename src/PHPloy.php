@@ -1161,8 +1161,8 @@ class PHPloy
         foreach ($filesToDelete as $file) {
         
             // Break directories into a list of items
-            $parts = split("/", $file);
             
+            $parts = explode("/", $file);
             // Remove files name from the list
             array_pop($parts);
             
@@ -1178,7 +1178,7 @@ class PHPloy
                 
                 // Check of directory exits. If it doesn't exist
                 // Add it to the list if files to delete
-                if( ! is_dir($part) ) {
+                if( is_dir($part) && count(glob($part . "/*")) === 0 ) {
                     $dirsToDelete[] = $part;
                 }                
             }
