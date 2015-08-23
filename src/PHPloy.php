@@ -12,7 +12,7 @@
  * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.5.0
+ * @version 3.5.1
  */
 
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.5.0';
+    protected $phployVersion = '3.5.1';
 
     /**
      * @var string $revision
@@ -1173,12 +1173,12 @@ class PHPloy
                 for( $x = 0; $x < $i; $x++ ) {
                     $prefix .= $parts[$x] . '/';                
                 }
-
-                $part = $prefix . $part;
                 
-                // Check of directory exits. If it doesn't exist
-                // Add it to the list if files to delete
-                if( is_dir($part) && count(glob($part . "/*")) === 0 ) {
+                // Relative path won't work consistently, thus getcwd().
+                $part = getcwd() . '/' . $prefix . $part;
+ 
+                // If directory doesn't exist, add to files to delete
+                if( ! is_dir($part) ) {
                     $dirsToDelete[] = $part;
                 }                
             }
