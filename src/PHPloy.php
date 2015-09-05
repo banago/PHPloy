@@ -305,7 +305,6 @@ class PHPloy
     public function parseOptions()
     {
         $options = getopt($this->shortopts, $this->longopts);
-        $this->debug('Command line options detected: ' . print_r($options, true));
 
         if (isset($options['no-colors'])) {
             Ansi::$enabled = false;
@@ -362,6 +361,9 @@ class PHPloy
 
         $this->repo = isset($options['repo']) ? rtrim($options['repo'], '/') : getcwd();
         $this->mainRepo = $this->repo;
+        
+        $this->debug('Command line options detected: ' . print_r($options, true));
+        
     }
 
     /**
