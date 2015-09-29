@@ -238,6 +238,8 @@ class PHPloy
      */
     protected $deployAll = false;
 
+    protected $command_txt = null;
+
     /**
      * Constructor
      */
@@ -639,7 +641,7 @@ class PHPloy
         }
 
         $command = 'git -C "' . $repoPath . '" --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
-
+        $this->command_txt =  $command;
         return $this->runCommand($command);
     }
 
@@ -653,7 +655,7 @@ class PHPloy
      *
      * @param string $localRevision
      * @return array
-     * @throws Exception if unknown git diff status
+     * @throws \Exception if unknown git diff status
      */
     public function compare($localRevision)
     {
@@ -706,14 +708,19 @@ class PHPloy
          * X: "unknown" change type (most probably a bug, please report it)
         */
 
-        if (! empty($remoteRevision)) {
+        /**
+         * skipp the following if using --others option
+         * git does not return a status code for the
+         * untracked list of files
+         */
+        if (! empty($remoteRevision) && !$this->others) {
             foreach ($output as $line) {
                 if ($line[0] === 'A' or $line[0] === 'C' or $line[0] === 'M' or $line[0] === 'T') {
                     $filesToUpload[] = trim(substr($line, 1));
                 } elseif ($line[0] == 'D' or $line[0] === 'T') {
                     $filesToDelete[] = trim(substr($line, 1));
                 } else {
-                    throw new \Exception("Unsupported git-diff status: {$line[0]}");
+                    throw new \Exception("Unsupported git-diff status: {$line[0]}, {$this->command_txt}");
                 }
             }
         } else {
@@ -782,6 +789,7 @@ class PHPloy
      * Deploy (or list) changed files
      *
      * @param string $revision
+     * @throws \Exception
      */
     public function deploy($revision = 'HEAD')
     {
@@ -795,6 +803,8 @@ class PHPloy
         // Loop through all the servers in deploy.ini
         foreach ($this->servers as $name => $server) {
             $this->currentlyDeploying = $name;
+
+            $this->output($name . '-' .$server . '-' .$this->server);
 
             // Deploys to ALL servers by default
             // If a server is specified, we skip all servers that don't match the one specified
@@ -817,6 +827,8 @@ class PHPloy
             }
 
             $files = $this->compare($revision);
+
+            $this->connect($server);
 
             $this->output("\r\n<white>SERVER: ".$name);
             if ($this->listFiles === true) {
@@ -862,6 +874,7 @@ class PHPloy
      *
      * @param int $bytes
      * @param int $decimals
+     * @return string
      */
     public function humanFilesize($bytes, $decimals = 2)
     {
@@ -875,6 +888,7 @@ class PHPloy
      *
      * @param string $pattern
      * @param string $string
+     * @return int
      */
     public function patternMatch($pattern, $string)
     {
@@ -932,6 +946,7 @@ class PHPloy
      *
      * @param array $files 2-dimensional array with 2 indices: 'upload' and 'delete'
      *                     Each of these contains an array of filenames and paths (relative to repository root)
+     * @throws \Exception
      */
     public function push($files)
     {
@@ -985,6 +1000,9 @@ class PHPloy
                 $this->output("<red>× $dirNo of $numberOfdirsToDelete <white>{$dir}");
             }
         }
+
+
+
 
         // Upload Files
         if (count($filesToUpload) > 0) {
