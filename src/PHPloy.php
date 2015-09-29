@@ -238,8 +238,6 @@ class PHPloy
      */
     protected $deployAll = false;
 
-    protected $command_txt = null;
-
     /**
      * Constructor
      */
@@ -641,7 +639,6 @@ class PHPloy
         }
 
         $command = 'git -C "' . $repoPath . '" --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
-        $this->command_txt =  $command;
         return $this->runCommand($command);
     }
 
@@ -720,7 +717,7 @@ class PHPloy
                 } elseif ($line[0] == 'D' or $line[0] === 'T') {
                     $filesToDelete[] = trim(substr($line, 1));
                 } else {
-                    throw new \Exception("Unsupported git-diff status: {$line[0]}, {$this->command_txt}");
+                    throw new \Exception("Unsupported git-diff status: {$line[0]}");
                 }
             }
         } else {
@@ -803,8 +800,6 @@ class PHPloy
         // Loop through all the servers in deploy.ini
         foreach ($this->servers as $name => $server) {
             $this->currentlyDeploying = $name;
-
-            $this->output($name . '-' .$server . '-' .$this->server);
 
             // Deploys to ALL servers by default
             // If a server is specified, we skip all servers that don't match the one specified
