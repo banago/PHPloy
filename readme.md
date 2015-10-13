@@ -1,13 +1,13 @@
 # PHPloy
-**Version 3.5.2**
+**Version 3.5.3**
 
 PHPloy is a incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
 ## Requirements
 
-* PHP 5.3+ command line interpreter (CLI)
-* SSH2 PECL extension (if using SFTP)
-   * [Installation](http://php.net/manual/en/ssh2.installation.php)
+* PHP 5.4+ command line interpreter (CLI)
+* Git 1.7.12.4+
+* SSH2 PECL extension (for SFTP) | [Installation](http://php.net/manual/en/ssh2.installation.php)
 
 Windows users can optionally [download AnsiCon](https://github.com/adoxa/ansicon/releases) to enable the display of colors in the command prompt.  Install it by running `ansicon -i` from a command prompt or "Run" window.
 
