@@ -12,6 +12,7 @@
         }
     ],   
     "require": {
+        "php": ">=5.4.0",
         "banago/bridge": "dev-master",
         "jakeasmith/http_build_url": "dev-master"
     },
