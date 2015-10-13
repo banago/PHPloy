@@ -639,7 +639,6 @@ class PHPloy
         }
 
         $command = 'git -C "' . $repoPath . '" --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
-
         return $this->runCommand($command);
     }
 
@@ -653,7 +652,7 @@ class PHPloy
      *
      * @param string $localRevision
      * @return array
-     * @throws Exception if unknown git diff status
+     * @throws \Exception if unknown git diff status
      */
     public function compare($localRevision)
     {
@@ -706,7 +705,12 @@ class PHPloy
          * X: "unknown" change type (most probably a bug, please report it)
         */
 
-        if (! empty($remoteRevision)) {
+        /**
+         * skipp the following if using --others option
+         * git does not return a status code for the
+         * untracked list of files
+         */
+        if (! empty($remoteRevision) && !$this->others) {
             foreach ($output as $line) {
                 if ($line[0] === 'A' or $line[0] === 'C' or $line[0] === 'M' or $line[0] === 'T') {
                     $filesToUpload[] = trim(substr($line, 1));
@@ -782,6 +786,7 @@ class PHPloy
      * Deploy (or list) changed files
      *
      * @param string $revision
+     * @throws \Exception
      */
     public function deploy($revision = 'HEAD')
     {
@@ -817,6 +822,8 @@ class PHPloy
             }
 
             $files = $this->compare($revision);
+
+            $this->connect($server);
 
             $this->output("\r\n<white>SERVER: ".$name);
             if ($this->listFiles === true) {
@@ -862,6 +869,7 @@ class PHPloy
      *
      * @param int $bytes
      * @param int $decimals
+     * @return string
      */
     public function humanFilesize($bytes, $decimals = 2)
     {
@@ -875,6 +883,7 @@ class PHPloy
      *
      * @param string $pattern
      * @param string $string
+     * @return int
      */
     public function patternMatch($pattern, $string)
     {
@@ -932,6 +941,7 @@ class PHPloy
      *
      * @param array $files 2-dimensional array with 2 indices: 'upload' and 'delete'
      *                     Each of these contains an array of filenames and paths (relative to repository root)
+     * @throws \Exception
      */
     public function push($files)
     {
@@ -985,6 +995,9 @@ class PHPloy
                 $this->output("<red>× $dirNo of $numberOfdirsToDelete <white>{$dir}");
             }
         }
+
+
+
 
         // Upload Files
         if (count($filesToUpload) > 0) {
