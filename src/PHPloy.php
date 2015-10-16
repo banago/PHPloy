@@ -12,7 +12,7 @@
  * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.5.4
+ * @version 3.5.5
  */
 
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.5.4';
+    protected $phployVersion = '3.5.5';
 
     /**
      * @var string $revision
@@ -964,13 +964,16 @@ class PHPloy
         // Delete files
         if (count($filesToDelete) > 0) {
             foreach ($filesToDelete as $fileNo => $file) {
+                if ($this->currentSubmoduleName) {
+                    $file = $this->currentSubmoduleName.'/'.$file;
+                }
                 $numberOfFilesToDelete = count($filesToDelete);
                 $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
                 if ($this->connection->exists($file)) {
                     $this->connection->rm($file);
-                    $this->output("<red>× $fileNo of $numberOfFilesToDelete <white>{$file}");
+                    $this->output("<red> × $fileNo of $numberOfFilesToDelete <white>{$file}");
                 } else {
-                    $this->output("<red>! $fileNo of $numberOfFilesToDelete <white>{$file} not found");
+                    $this->output("<red> ! $fileNo of $numberOfFilesToDelete <white>{$file} not found");
                 }
             }
         }
@@ -978,13 +981,16 @@ class PHPloy
         // Delete Directories
         if (count($dirsToDelete) > 0) {
             foreach ($dirsToDelete as $dirNo => $dir) {
+                if ($this->currentSubmoduleName) {
+                    $dir = $this->currentSubmoduleName.'/'.$dir;
+                }
                 $numberOfdirsToDelete = count($dirsToDelete);
                 $dirNo = str_pad(++$dirNo, strlen($numberOfdirsToDelete), ' ', STR_PAD_LEFT);
                 if ($this->connection->exists($dir)) {
                     $this->connection->rmdir($dir);
-                    $this->output("<red>× $dirNo of $numberOfdirsToDelete <white>{$dir}");
+                    $this->output("<red> × $dirNo of $numberOfdirsToDelete <white>{$dir}");
                 } else {
-                    $this->output("<red>! $dirNo of $numberOfdirsToDelete <white>{$dir} not found");
+                    $this->output("<red> ! $dirNo of $numberOfdirsToDelete <white>{$dir} not found");
                 }
             }
         }
