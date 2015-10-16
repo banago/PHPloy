@@ -12,7 +12,7 @@
  * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.5.3
+ * @version 3.5.4
  */
 
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.5.3';
+    protected $phployVersion = '3.5.4';
 
     /**
      * @var string $revision
@@ -965,12 +965,11 @@ class PHPloy
         if (count($filesToDelete) > 0) {
             foreach ($filesToDelete as $fileNo => $file) {
                 $numberOfFilesToDelete = count($filesToDelete);
+                $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
                 if ($this->connection->exists($file)) {
                     $this->connection->rm($file);
-                    $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
                     $this->output("<red>× $fileNo of $numberOfFilesToDelete <white>{$file}");
                 } else {
-                    $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
                     $this->output("<red>! $fileNo of $numberOfFilesToDelete <white>{$file} not found");
                 }
             }
@@ -980,9 +979,13 @@ class PHPloy
         if (count($dirsToDelete) > 0) {
             foreach ($dirsToDelete as $dirNo => $dir) {
                 $numberOfdirsToDelete = count($dirsToDelete);
-                $this->connection->rmdir($dir);
                 $dirNo = str_pad(++$dirNo, strlen($numberOfdirsToDelete), ' ', STR_PAD_LEFT);
-                $this->output("<red>× $dirNo of $numberOfdirsToDelete <white>{$dir}");
+                if ($this->connection->exists($dir)) {
+                    $this->connection->rmdir($dir);
+                    $this->output("<red>× $dirNo of $numberOfdirsToDelete <white>{$dir}");
+                } else {
+                    $this->output("<red>! $dirNo of $numberOfdirsToDelete <white>{$dir} not found");
+                }
             }
         }
 
@@ -1162,8 +1165,7 @@ class PHPloy
         $dirsToDelete = [];
         foreach ($filesToDelete as $file) {
         
-            // Break directories into a list of items
-            
+            // Break directories into a list of items            
             $parts = explode("/", $file);
             // Remove files name from the list
             array_pop($parts);
@@ -1176,11 +1178,11 @@ class PHPloy
                     $prefix .= $parts[$x] . '/';                
                 }
                 
-                // Relative path won't work consistently, thus getcwd().
-                $part = getcwd() . '/' . $prefix . $part;
+                $part = $prefix . $part;
  
                 // If directory doesn't exist, add to files to delete
-                if( ! is_dir($part) ) {
+                // Relative path won't work consistently, thus getcwd().
+                if( ! is_dir(getcwd() . '/' . $part) ) {
                     $dirsToDelete[] = $part;
                 }                
             }
@@ -1192,6 +1194,8 @@ class PHPloy
         // Reverse order to delete inner children before parents
         $dirsToDeleteOrder = array_reverse( $dirsToDeleteUnique );
         
+        $this->debug('Directories to be deleted: ' . print_r($dirsToDeleteOrder, true));
+                
         return $dirsToDeleteOrder;
     }
 
