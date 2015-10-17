@@ -12,7 +12,7 @@
  * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.5.5
+ * @version 3.5.6
  */
 
 namespace Banago\PHPloy;
@@ -28,7 +28,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.5.5';
+    protected $phployVersion = '3.5.6';
 
     /**
      * @var string $revision
@@ -1123,10 +1123,19 @@ class PHPloy
     {
         foreach ($purgeDirs as $dir) {
             $origin = $this->connection->pwd();
-            $this->connection->cd($dir);
-
+            
             $this->output("<red>Purging directory <white>{$dir}");
- 
+
+            // Failing to enter into the directory means should stop
+            // the script form purging. Otherwise wrong content is deleted. 
+            // @Agnis-LV lost ~8GB of important data because of this. Sorry man!
+            if (! $this->connection->cd($dir)) {
+                $this->output(" ! Could not enter into '{$dir}'. Check your directory path.");
+                $this->connection->cd($origin);
+                continue;
+            }
+
+            
             if (! $tmpFiles = $this->connection->ls()) {
                 $this->output(" - Nothing to purge in {$dir}");
                 $this->connection->cd($origin);
@@ -1154,6 +1163,7 @@ class PHPloy
             }
           
             if (count($innerDirs) > 0) {
+                // Recursive purging
                 $this->purge($innerDirs);
             }
               
