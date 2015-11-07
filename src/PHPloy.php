@@ -706,7 +706,8 @@ class PHPloy
          * X: "unknown" change type (most probably a bug, please report it)
         */
 
-        if (! empty($remoteRevision)) {
+        if (! empty($remoteRevision) && !$this->others) {
+
             foreach ($output as $line) {
                 if ($line[0] === 'A' or $line[0] === 'C' or $line[0] === 'M' or $line[0] === 'T') {
                     $filesToUpload[] = trim(substr($line, 1));
@@ -817,6 +818,8 @@ class PHPloy
             }
 
             $files = $this->compare($revision);
+            
+            $this->connect($server);
 
             $this->output("\r\n<white>SERVER: ".$name);
             if ($this->listFiles === true) {
