@@ -240,7 +240,7 @@ class PHPloy
     protected $deployAll = false;
 
     /**
-     * Weather the --init command line option was given
+     * Whether the --init command line option was given
      * @var bool init
      */
     protected $init = false;
