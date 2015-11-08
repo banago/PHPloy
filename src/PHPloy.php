@@ -290,7 +290,7 @@ class PHPloy
     public function displayHelp()
     {
         // $this->output();
-        $readMe = __DIR__ . '/readme.md';
+        $readMe = __DIR__ . '/../readme.md';
         if (file_exists($readMe)) {
             $this->output(file_get_contents($readMe));
         }
