@@ -19,14 +19,15 @@ As any script, you can use PHPloy globally, from your `bin` directory or locally
 ### Using PHPloy locally (per project)
 
 1. Drop `phploy.phar` into your project.
-2. Create the `deploy.ini` file.
+2. Run `phploy.phar --init` in the terminal to create a sample `deploy.ini` file or create one manually.
 3. Run `php phploy.phar` in terminal.
 
+Please note that the sample `deploy.ini` file does not contain all the possible options. It is ment to provide a quick setup option for a simple deployment. For the full set of options, please see the example `deploy.ini` bellow.
 
 ### Using PHPloy globally in Linux
 
 1. Drop `phploy.phar` into `/usr/local/bin` and make it executable by running `sudo chmod +x phploy`.
-2. Create the `deploy.ini` file inside your project folder.
+2. Run `phploy --init` in the terminal to create the `deploy.ini` file inside your project folder or create one manually.
 3. Run `phploy` in terminal.
 
 OR
