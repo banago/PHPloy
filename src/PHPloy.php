@@ -144,10 +144,11 @@ class PHPloy
      *      --others                          Uploads files even if they are excluded in .gitignore
      *      --debug                           Displays extra messages including git and FTP commands
      *      --all                             Deploys to all configured servers (unless one was specified in the command line)
+     *      --init                            Creates sample deploy.ini file
      *
      * @var array $longopts
      */
-    protected $longopts  = array('no-colors', 'help', 'list', 'rollback::', 'server:', 'sync::', 'submodules', 'skip-subsubmodules', 'others', 'repo:', 'debug', 'version', 'all');
+    protected $longopts  = array('no-colors', 'help', 'list', 'rollback::', 'server:', 'sync::', 'submodules', 'skip-subsubmodules', 'others', 'repo:', 'debug', 'version', 'all', 'init');
 
     /**
      * @var bool|resource $connection
@@ -239,6 +240,12 @@ class PHPloy
     protected $deployAll = false;
 
     /**
+     * Whether the --init command line option was given
+     * @var bool init
+     */
+    protected $init = false;
+
+    /**
      * Constructor
      */
     public function __construct()
@@ -255,6 +262,11 @@ class PHPloy
         }
 
         if ($this->displayVersion) {
+            return;
+        }
+
+        if ($this->init) {
+            $this->createSampleIniFile();
             return;
         }
 
@@ -293,6 +305,21 @@ class PHPloy
         $readMe = __DIR__ . '/readme.md';
         if (file_exists($readMe)) {
             $this->output(file_get_contents($readMe));
+        }
+    }
+
+    /**
+     * Creates sample ini file
+     *
+     * @return null
+     */
+    private function createSampleIniFile()
+    {
+        $sampleIniFile = __DIR__ . '/sample.ini';
+        if (file_exists($sampleIniFile)) {
+            if (copy($sampleIniFile, getcwd() . '/deploy.ini')); {
+                $this->output('Sample deploy.ini file created.');
+            }
         }
     }
 
@@ -357,6 +384,10 @@ class PHPloy
 
         if (isset($options['all'])) {
             $this->deployAll = true;
+        }
+
+        if (isset($options['init'])) {
+            $this->init = true;
         }
 
         $this->repo = isset($options['repo']) ? rtrim($options['repo'], '/') : getcwd();
