@@ -4,21 +4,16 @@
  *
  * @package PHPloy
  * @author Baki Goxhaj <banago@gmail.com>
- * @author Bruno De Barros <bruno@terraduo.com>
- * @author Fadion Dashi <jonidashi@gmail.com>
- * @author Simon East <simon+github@yump.com.au>
- * @author Mark Beech <mbeech@mark-beech.co.uk>
- * @author Guido Hendriks
- * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 3.5.6
+ * @version 4.0
  */
 
 namespace Banago\PHPloy;
 
-use Banago\PHPloy\Ansi;
-use Banago\Bridge\Bridge;
+use League\Flysystem\Filesystem;
+use League\Flysystem\Adapter\Ftp as FtpAdapter;
+use League\Flysystem\Sftp\SftpAdapter as SftpAdapter;
 
 /**
  * PHPloy Class
@@ -28,12 +23,17 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '3.5.6';
+    protected $phployVersion = '4.0';
 
     /**
      * @var string $revision
      */
     public $revision;
+
+    /**
+     * @var string $climate
+     */
+    public $msg;
 
     /**
      * @var string $localRevision
@@ -250,11 +250,16 @@ class PHPloy
      */
     public function __construct()
     {
+        // CLI Helper
+        $this->msg = new \League\CLImate\CLImate;
+        //$this->opt = new \Banago\PHPloy\Options;
+        //$this->con = new \Banago\PHPloy\Connect;
+        
         $this->parseOptions();
 
-        $this->output("\r\n<bgGreen>---------------------------------------------------");
-        $this->output("<bgGreen>|                  PHPloy v{$this->phployVersion}                  |");
-        $this->output("<bgGreen>---------------------------------------------------<reset>\r\n");
+        $this->msg->backgroundGreen()->out("---------------------------------------------------");
+        $this->msg->bold()->backgroundGreen()->out("|                   PHPloy v{$this->phployVersion}                   |");
+        $this->msg->backgroundGreen()->out("---------------------------------------------------");
 
         if ($this->displayHelp) {
             $this->displayHelp();
@@ -272,12 +277,14 @@ class PHPloy
 
         if (file_exists("$this->repo/.git")) {
             if ($this->listFiles) {
-                $this->output("<yellow>PHPloy is running in LIST mode. No remote files will be modified.\r\n");
+                $this->msg->yellow()->out("PHPloy is running in LIST mode. No remote files will be modified.\r\n");
             }
 
             $this->checkSubmodules($this->repo);
 
             $this->deploy($this->revision);
+            
+            //$deploy = new \Banago\PHPloy\Deploy(Options $opt, Connect $con);
         } else {
             throw new \Exception("'{$this->repo}' is not a Git repository.");
         }
@@ -301,10 +308,9 @@ class PHPloy
      */
     public function displayHelp()
     {
-        // $this->output();
         $readMe = __DIR__ . '/readme.md';
         if (file_exists($readMe)) {
-            $this->output(file_get_contents($readMe));
+            $this->msg->out(file_get_contents($readMe));
         }
     }
 
@@ -318,7 +324,7 @@ class PHPloy
         $sampleIniFile = __DIR__ . '/sample.ini';
         if (file_exists($sampleIniFile)) {
             if (copy($sampleIniFile, getcwd() . '/deploy.ini')); {
-                $this->output('Sample deploy.ini file created.');
+                $this->msg->out('Sample deploy.ini file created.');
             }
         }
     }
@@ -332,10 +338,6 @@ class PHPloy
     public function parseOptions()
     {
         $options = getopt($this->shortopts, $this->longopts);
-
-        if (isset($options['no-colors'])) {
-            Ansi::$enabled = false;
-        }
 
         // -? command is not correctly parsed by getopt() (at least on Windows)
         // so need to check $argv variable instead
@@ -406,13 +408,13 @@ class PHPloy
     public function checkSubmodules($repo)
     {
         if ($this->scanSubmodules) {
-            $this->output('Scanning repository...');
+            $this->msg->out('Scanning repository...');
         }
 
         $output = $this->gitCommand('submodule status', $repo);
 
         if ($this->scanSubmodules) {
-            $this->output('   Found ' . count($output) . ' submodules.');
+            $this->msg->out('   Found ' . count($output) . ' submodules.');
         }
 
         if (count($output) > 0) {
@@ -422,7 +424,7 @@ class PHPloy
                 // If submodules are turned off, don't add them to queue
                 if ($this->scanSubmodules) {
                     $this->submodules[] = array('revision' => $line[0], 'name' => $line[1], 'path' => $repo.'/'.$line[1]);
-                    $this->output(sprintf('   Found submodule %s. %s',
+                    $this->msg->out(sprintf('   Found submodule %s. %s',
                         $line[1],
                         $this->scanSubSubmodules ? PHP_EOL . '      Scanning for sub-submodules...' : null
                     ));
@@ -433,7 +435,7 @@ class PHPloy
                 $this->checkSubSubmodules($repo, $line[1]);
             }
             if (! $this->scanSubSubmodules) {
-                $this->output('   Skipping search for sub-submodules.');
+                $this->msg->out('   Skipping search for sub-submodules.');
             }
         }
     }
@@ -468,7 +470,7 @@ class PHPloy
                         'name' => $name.'/'.$line[1],
                         'path' => $repo.'/'.$name.'/'.$line[1]
                     );
-                    $this->output(sprintf('      Found sub-submodule %s.', "$name/$line[1]"));
+                    $this->msg->out(sprintf('      Found sub-submodule %s.', "$name/$line[1]"));
                 }
 
                 // But ignore them nonetheless
@@ -561,10 +563,10 @@ class PHPloy
                 $input = urlencode($this->getPassword());
 
                 if ($input == '') {
-                    $this->output("\r\n<green>You entered an empty password. All good, continuing deployment ...");
+                    $this->msg->green()->out("You entered an empty password. All good, continuing deployment ...");
                 } else {
                     $options['pass'] = $input;
-                    $this->output("\r\n<green>We got your password, thanks. Continuing deployment ...");
+                    $this->msg->green()->out("We got your password, thanks. Continuing deployment ...");
                 }
             }
 
@@ -704,10 +706,10 @@ class PHPloy
         // Fetch the .revision file from the server and write it to $tmpFile
         $this->debug("Fetching {$this->dotRevision} file");
 
-        if ($this->connection->exists($this->dotRevision)) {
-            $remoteRevision = $this->connection->get($this->dotRevision);
+        if ($this->connection->has($this->dotRevision)) {
+            $remoteRevision = $this->connection->read($this->dotRevision);
         } else {
-            $this->output('<yellow>|----[ No revision found. Fresh deployment - grab a coffee ]----|');
+            $this->msg->yellow()->out('|----[ No revision found. Fresh deployment - grab a coffee ]----|');
         }
 
         // Use git to list the changed files between $remoteRevision and $localRevision
@@ -852,7 +854,7 @@ class PHPloy
             
             $this->connect($server);
 
-            $this->output("\r\n<white>SERVER: ".$name);
+            $this->msg->white()->out("\r\nSERVER: ".$name);
             if ($this->listFiles === true) {
                 $this->listFiles($files[$this->currentlyDeploying]);
             } else {
@@ -868,7 +870,7 @@ class PHPloy
                     $this->repo = $submodule['path'];
                     $this->currentSubmoduleName = $submodule['name'];
 
-                    $this->output("\r\n<gray>SUBMODULE: ".$this->currentSubmoduleName);
+                    $this->msg->gray()->out("\r\nSUBMODULE: ".$this->currentSubmoduleName);
 
                     $files = $this->compare($revision);
 
@@ -885,7 +887,7 @@ class PHPloy
 
             // Done
             if (! $this->listFiles) {
-                $this->output("\r\n<green>|----------------[ ".$this->humanFilesize($this->deploymentSize)." Deployed ]----------------|");
+                $this->msg->lightGreen()->out("\r\n|----------------[ ".$this->humanFilesize($this->deploymentSize)." Deployed ]----------------|");
                 $this->deploymentSize = 0;
             }
         }
@@ -923,22 +925,22 @@ class PHPloy
     public function listFiles($files)
     {
         if (count($files['upload']) == 0 && count($files['delete']) == 0) {
-            $this->output("   No files to upload.");
+            $this->msg->out("   No files to upload.");
         }
 
         if (count($files['delete']) > 0) {
-            $this->output("   <red>Files that will be deleted in next deployment:");
+            $this->msg->shout("   Files that will be deleted in next deployment:");
 
             foreach ($files['delete'] as $file_to_delete) {
-                $this->output("      ".$file_to_delete);
+                $this->msg->out("      ".$file_to_delete);
             }
         }
 
         if (count($files['upload']) > 0) {
-            $this->output("   <green>Files that will be uploaded in next deployment:");
+            $this->msg->green()->out("   Files that will be uploaded in next deployment:");
 
             foreach ($files['upload'] as $file_to_upload) {
-                $this->output("      ".$file_to_upload);
+                $this->msg->out("      ".$file_to_upload);
             }
         }
     }
@@ -952,10 +954,35 @@ class PHPloy
     public function connect($server)
     {
         try {
-            $connection = new Bridge($server['url'], $server['options']);
-            $this->connection = $connection;
+            
+            $data = parse_url($server['url']);
+
+            $filesystem = new Filesystem(new FtpAdapter([
+                'host' => $data['host'],
+                'username' => $data['user'],
+                'password' => $data['pass'],
+            
+                /** optional config settings */
+                'port' => 21,
+                'root' => $data['path'],
+                'passive' => true,
+                'timeout' => 30,
+            ]));
+            
+            /*$filesystem = new Filesystem(new SftpAdapter([
+                'host' => 'example.com',
+                'port' => 21,
+                'username' => 'username',
+                'password' => 'password',
+                'privateKey' => 'path/to/or/contents/of/privatekey',
+                'root' => '/path/to/root',
+                'timeout' => 10,
+            ]));*/        
+        
+            $this->connection = $filesystem;
+
         } catch (\Exception $e) {
-            echo Ansi::tagsToColors("\r\n<red>Oh Snap: {$e->getMessage()}\r\n");
+            print("\r\n<red>Oh Snap: {$e->getMessage()}\r\n");
             // If we could not connect, what's the point of existing
             die();
         }
@@ -977,7 +1004,7 @@ class PHPloy
         // If revision is not HEAD, the current one, it means this is a rollback.
         // So, we have to revert the files the the state they were in that revision.
         if ($this->revision != 'HEAD') {
-            $this->output("   Rolling back working copy");
+            $this->msg->out("   Rolling back working copy");
 
             // BUG: This does NOT work correctly for submodules & subsubmodules (and leaves them in an incorrect state)
             //      It technically should do a submodule update in the parent, not a checkout inside the submodule
@@ -1003,11 +1030,11 @@ class PHPloy
                 }
                 $numberOfFilesToDelete = count($filesToDelete);
                 $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
-                if ($this->connection->exists($file)) {
+                if ($this->connection->has($file)) {
                     $this->connection->rm($file);
-                    $this->output("<red> × $fileNo of $numberOfFilesToDelete <white>{$file}");
+                    $this->msg->out("<red> × $fileNo of $numberOfFilesToDelete <white>{$file}");
                 } else {
-                    $this->output("<red> ! $fileNo of $numberOfFilesToDelete <white>{$file} not found");
+                    $this->msg->out("<red> ! $fileNo of $numberOfFilesToDelete <white>{$file} not found");
                 }
             }
         }
@@ -1020,11 +1047,11 @@ class PHPloy
                 }
                 $numberOfdirsToDelete = count($dirsToDelete);
                 $dirNo = str_pad(++$dirNo, strlen($numberOfdirsToDelete), ' ', STR_PAD_LEFT);
-                if ($this->connection->exists($dir)) {
+                if ($this->connection->has($dir)) {
                     $this->connection->rmdir($dir);
-                    $this->output("<red> × $dirNo of $numberOfdirsToDelete <white>{$dir}");
+                    $this->msg->out("<red> × $dirNo of $numberOfdirsToDelete <white>{$dir}");
                 } else {
-                    $this->output("<red> ! $dirNo of $numberOfdirsToDelete <white>{$dir} not found");
+                    $this->msg->out("<red> ! $dirNo of $numberOfdirsToDelete <white>{$dir} not found");
                 }
             }
         }
@@ -1048,19 +1075,19 @@ class PHPloy
                         $path .= $dir[$i].'/';
     
                         if (! isset($pathsThatExist[$path])) {
-                            $origin = $this->connection->pwd();
+                            //$origin = $this->connection->pwd();
     
-                            if (! $this->connection->exists($path)) {
-                                $this->connection->mkdir($path);
-                                $this->output("Created directory '$path'.");
+                            if (! $this->connection->has($path)) {
+                                $this->connection->createDir($path);
+                                $this->msg->out("Created directory '$path'.");
                                 $pathsThatExist[$path] = true;
                             } else {
-                                $this->connection->cd($path);
+                                //$this->connection->cd($path);
                                 $pathsThatExist[$path] = true;
                             }
     
                             // Go home
-                            $this->connection->cd($origin);
+                            //$this->connection->cd($origin);
                         }
                     }
                 }
@@ -1076,11 +1103,11 @@ class PHPloy
     
                     $data = file_get_contents($this->repo . '/' . ($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', "", $file) : $file));
                     $remoteFile = $file;
-                    $uploaded = $this->connection->put($data, $remoteFile);
+                    $uploaded = $this->connection->put($remoteFile, $data);
     
                     if (! $uploaded) {
                         $attempts = $attempts + 1;
-                        $this->output("<darkRed>Failed to upload {$file}. Retrying (attempt $attempts/10)...");
+                        $this->msg->out("<darkRed>Failed to upload {$file}. Retrying (attempt $attempts/10)...");
                     } else {
                         $this->deploymentSize += filesize($this->repo . '/' . ($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', "", $file) : $file));
                     }
@@ -1089,7 +1116,7 @@ class PHPloy
                 $numberOfFilesToUpdate = count($filesToUpload);
     
                 $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToUpdate), ' ', STR_PAD_LEFT);
-                $this->output("<green> ^ $fileNo of $numberOfFilesToUpdate <white>{$file}");
+                $this->msg->out("<green> ^ $fileNo of $numberOfFilesToUpdate <white>{$file}");
             }
         }
 
@@ -1097,7 +1124,7 @@ class PHPloy
             // Set revision on server
             $this->setRevision();
         } else {
-            $this->output("   <gray>No files to upload or delete.");
+            $this->msg->gray()->out("   No files to upload or delete.");
         }
 
         // If $this->revision is not HEAD, it means the rollback command was provided
@@ -1136,13 +1163,13 @@ class PHPloy
         $consoleMessage = "Updating remote revision file to ".$localRevision;
 
         if ($this->sync) {
-            $this->output("\r\n<yellow>SYNC: $consoleMessage");
+            $this->msg->out("\r\n<yellow>SYNC: $consoleMessage");
         } else {
             $this->debug($consoleMessage);
         }
 
         try {
-            $this->connection->put($localRevision, $this->dotRevision);
+            $this->connection->update($this->dotRevision, $localRevision);
         } catch (\Exception $e) {
             throw new \Exception("Could not update the revision file on server: $e->getMessage()");
         }
@@ -1158,20 +1185,20 @@ class PHPloy
         foreach ($purgeDirs as $dir) {
             $origin = $this->connection->pwd();
             
-            $this->output("<red>Purging directory <white>{$dir}");
+            $this->msg->out("<red>Purging directory <white>{$dir}");
 
             // Failing to enter into the directory means should stop
             // the script form purging. Otherwise wrong content is deleted. 
             // @Agnis-LV lost ~8GB of important data because of this. Sorry man!
             if (! $this->connection->cd($dir)) {
-                $this->output(" ! Could not enter into '{$dir}'. Check your directory path.");
+                $this->msg->out(" ! Could not enter into '{$dir}'. Check your directory path.");
                 $this->connection->cd($origin);
                 continue;
             }
 
             
             if (! $tmpFiles = $this->connection->ls()) {
-                $this->output(" - Nothing to purge in {$dir}");
+                $this->msg->out(" - Nothing to purge in {$dir}");
                 $this->connection->cd($origin);
                 continue;
             }
@@ -1185,15 +1212,15 @@ class PHPloy
                     $this->connection->cd($curr);
                 } else {
                     $haveFiles = true;
-                    $this->output(" - {$file} is removed from directory");
+                    $this->msg->out(" - {$file} is removed from directory");
                     $this->connection->rm($file);
                 }
             }
             
             if (! $haveFiles) {
-                $this->output(" - Nothing to purge in {$dir}");
+                $this->msg->out(" - Nothing to purge in {$dir}");
             } else {
-                $this->output("<red>Purged <white>{$dir}");
+                $this->msg->out("<red>Purged <white>{$dir}");
             }
           
             if (count($innerDirs) > 0) {
@@ -1250,16 +1277,6 @@ class PHPloy
     }
 
     /**
-     * Helper method to display messages on the screen.
-     *
-     * @param string $message
-     */
-    public function output($message)
-    {
-        echo Ansi::tagsToColors($message) . "\r\n";
-    }
-
-    /**
      * Helper method to output messages to the console (only in debug mode)
      * Debug mode is activated by setting $this->debug = true or using the command line option --debug
      *
@@ -1268,7 +1285,7 @@ class PHPloy
     public function debug($message)
     {
         if ($this->debug) {
-            $this->output("$message");
+            $this->msg->out("$message");
         }
     }
 }
