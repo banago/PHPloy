@@ -3,9 +3,9 @@
  * Simple ANSI Colors
  * Version 1.0.0
  * https://github.com/SimonEast/Simple-Ansi-Colors
- * 
+ *
  * Helper class that replaces the following tags into the appropriate
- * ANSI colour codes
+ * ANSI color codes
  *
  *      <black>
  *      <red>
@@ -34,10 +34,10 @@
  *      <bgWhite>
  *      <bold>          Not visible on Windows
  *      <italics>       Not visible on Windows
- *      <reset>         Clears all colours and styles (required)
+ *      <reset>         Clears all colors and styles (required)
  *
  * Note: we don't use commands like bold-off, underline-off as it was introduced
- * in ANSI 2.50+ and does not currently display on Windows using ansicon
+ * in ANSI 2.50+ and does not currently display on Windows using ANSICON
  */
 
 namespace Banago\PHPloy;
@@ -45,13 +45,13 @@ namespace Banago\PHPloy;
 class Ansi
 {
     /**
-     * Whether colour codes are enabled or not
-     * 
+     * Whether color codes are enabled or not
+     *
      * Valid options:
-     *     null - Auto-detected.  Color codes will be enabled on all systems except Windows, unless it
-     *            has a valid ANSICON environment variable 
-     *            (indicating that AnsiCon is installed and running)
-     *     false - will strip all tags and NOT output any ANSI colour codes
+     *     null - Auto-detected. Color codes will be enabled on all systems except Windows, unless it
+     *            has a valid ANSICON environment variable
+     *            (indicating that ANSICON is installed and running)
+     *     false - will strip all tags and NOT output any ANSI color codes
      *     true - will always output color codes
      */
     public static $enabled = null;
@@ -90,10 +90,10 @@ class Ansi
     /**
      * This is the primary function for converting tags to ANSI color codes
      * (see the class description for the supported tags)
-     * 
+     *
      * For safety, this function always appends a <reset> at the end, otherwise the console may stick
      * permanently in the colors you have used.
-     * 
+     *
      * @param string $string
      * @return string
      */
