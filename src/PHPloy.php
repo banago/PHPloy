@@ -316,7 +316,7 @@ class PHPloy
     {
         $sampleIniFile = __DIR__ . '/sample.ini';
         if (file_exists($sampleIniFile)) {
-            if (copy($sampleIniFile, getcwd() . '/deploy.ini')); {
+            if (copy($sampleIniFile, getcwd() . '/deploy.ini')) {
                 $this->output('Sample deploy.ini file created.');
             }
         }
