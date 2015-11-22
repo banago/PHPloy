@@ -11,7 +11,7 @@
  * @author Guido Hendriks
  * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
- * @licence MIT Licence
+ * @licence MIT License
  * @version 3.5.6
  */
 
