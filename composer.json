@@ -10,7 +10,7 @@
             "homepage": "http://wplancer.com",
             "role": "Developer"
         }
-    ],   
+    ],
     "require": {
         "php": ">=5.4.0",
         "banago/bridge": "dev-master",

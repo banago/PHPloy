@@ -11,7 +11,7 @@
  * @author Guido Hendriks
  * @author Travis Hyyppä <travishyyppa@gmail.com>
  * @link https://github.com/banago/PHPloy
- * @licence MIT Licence
+ * @license MIT License
  * @version 3.5.6
  */
 
@@ -94,7 +94,6 @@ class PHPloy
      * @var array $submodules
      */
     public $submodules = array();
-
 
     /**
      * @var array $purgeDirs
@@ -317,7 +316,7 @@ class PHPloy
     {
         $sampleIniFile = __DIR__ . '/sample.ini';
         if (file_exists($sampleIniFile)) {
-            if (copy($sampleIniFile, getcwd() . '/deploy.ini')); {
+            if (copy($sampleIniFile, getcwd() . '/deploy.ini')) {
                 $this->output('Sample deploy.ini file created.');
             }
         }
@@ -392,9 +391,9 @@ class PHPloy
 
         $this->repo = isset($options['repo']) ? rtrim($options['repo'], '/') : getcwd();
         $this->mainRepo = $this->repo;
-        
+
         $this->debug('Command line options detected: ' . print_r($options, true));
-        
+
     }
 
     /**
@@ -422,7 +421,8 @@ class PHPloy
                 // If submodules are turned off, don't add them to queue
                 if ($this->scanSubmodules) {
                     $this->submodules[] = array('revision' => $line[0], 'name' => $line[1], 'path' => $repo.'/'.$line[1]);
-                    $this->output(sprintf('   Found submodule %s. %s',
+                    $this->output(sprintf(
+                        '   Found submodule %s. %s',
                         $line[1],
                         $this->scanSubSubmodules ? PHP_EOL . '      Scanning for sub-submodules...' : null
                     ));
@@ -723,7 +723,7 @@ class PHPloy
         }
 
         $output = $this->gitCommand($command);
-        
+
         /**
          * Git Status Codes
          *
@@ -738,7 +738,6 @@ class PHPloy
         */
 
         if (! empty($remoteRevision) && !$this->others) {
-
             foreach ($output as $line) {
                 if ($line[0] === 'A' or $line[0] === 'C' or $line[0] === 'M' or $line[0] === 'T') {
                     $filesToUpload[] = trim(substr($line, 1));
@@ -849,7 +848,7 @@ class PHPloy
             }
 
             $files = $this->compare($revision);
-            
+
             $this->connect($server);
 
             $this->output("\r\n<white>SERVER: ".$name);
@@ -983,18 +982,18 @@ class PHPloy
             //      It technically should do a submodule update in the parent, not a checkout inside the submodule
             $this->gitCommand('checkout '.$this->revision);
         }
-        
+
         $filesToDelete = $files['delete'];
         // Add deleted directories to the list of files to delete. Git does not handle this.
         $dirsToDelete = [];
         if (count($filesToDelete) > 0) {
-            $dirsToDelete = $this->hasDeletedDirectories( $filesToDelete );
+            $dirsToDelete = $this->hasDeletedDirectories($filesToDelete);
         }
         $filesToUpload = $files['upload'];
 
         // Not needed any longer
         unset($files);
-        
+
         // Delete files
         if (count($filesToDelete) > 0) {
             foreach ($filesToDelete as $fileNo => $file) {
@@ -1011,7 +1010,7 @@ class PHPloy
                 }
             }
         }
-        
+
         // Delete Directories
         if (count($dirsToDelete) > 0) {
             foreach ($dirsToDelete as $dirNo => $dir) {
@@ -1035,21 +1034,21 @@ class PHPloy
                 if ($this->currentSubmoduleName) {
                     $file = $this->currentSubmoduleName.'/'.$file;
                 }
-    
+
                 // Make sure the folder exists in the FTP server.
                 $dir = explode("/", dirname($file));
                 $path = "";
                 $ret = true;
-    
+
                 // Skip mkdir if dir is basedir
                 if ($dir[0] !== '.') {
                     // Loop through each folder in the path /a/b/c/d.txt to ensure that it exists
                     for ($i = 0, $count = count($dir); $i < $count; $i++) {
                         $path .= $dir[$i].'/';
-    
+
                         if (! isset($pathsThatExist[$path])) {
                             $origin = $this->connection->pwd();
-    
+
                             if (! $this->connection->exists($path)) {
                                 $this->connection->mkdir($path);
                                 $this->output("Created directory '$path'.");
@@ -1058,13 +1057,13 @@ class PHPloy
                                 $this->connection->cd($path);
                                 $pathsThatExist[$path] = true;
                             }
-    
+
                             // Go home
                             $this->connection->cd($origin);
                         }
                     }
                 }
-    
+
                 // Now upload the file, attempting 10 times
                 // before exiting with a failure message
                 $uploaded = false;
@@ -1073,11 +1072,11 @@ class PHPloy
                     if ($attempts == 10) {
                         throw new \Exception("Tried to upload $file 10 times and failed. Something is wrong...");
                     }
-    
+
                     $data = file_get_contents($this->repo . '/' . ($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', "", $file) : $file));
                     $remoteFile = $file;
                     $uploaded = $this->connection->put($data, $remoteFile);
-    
+
                     if (! $uploaded) {
                         $attempts = $attempts + 1;
                         $this->output("<darkRed>Failed to upload {$file}. Retrying (attempt $attempts/10)...");
@@ -1085,9 +1084,9 @@ class PHPloy
                         $this->deploymentSize += filesize($this->repo . '/' . ($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', "", $file) : $file));
                     }
                 }
-    
+
                 $numberOfFilesToUpdate = count($filesToUpload);
-    
+
                 $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToUpdate), ' ', STR_PAD_LEFT);
                 $this->output("<green> ^ $fileNo of $numberOfFilesToUpdate <white>{$file}");
             }
@@ -1157,11 +1156,11 @@ class PHPloy
     {
         foreach ($purgeDirs as $dir) {
             $origin = $this->connection->pwd();
-            
+
             $this->output("<red>Purging directory <white>{$dir}");
 
             // Failing to enter into the directory means should stop
-            // the script form purging. Otherwise wrong content is deleted. 
+            // the script form purging. Otherwise wrong content is deleted.
             // @Agnis-LV lost ~8GB of important data because of this. Sorry man!
             if (! $this->connection->cd($dir)) {
                 $this->output(" ! Could not enter into '{$dir}'. Check your directory path.");
@@ -1169,13 +1168,12 @@ class PHPloy
                 continue;
             }
 
-            
             if (! $tmpFiles = $this->connection->ls()) {
                 $this->output(" - Nothing to purge in {$dir}");
                 $this->connection->cd($origin);
                 continue;
             }
-            
+
             $haveFiles = false;
             $innerDirs = array();
             foreach ($tmpFiles as $file) {
@@ -1189,18 +1187,18 @@ class PHPloy
                     $this->connection->rm($file);
                 }
             }
-            
+
             if (! $haveFiles) {
                 $this->output(" - Nothing to purge in {$dir}");
             } else {
                 $this->output("<red>Purged <white>{$dir}");
             }
-          
+
             if (count($innerDirs) > 0) {
                 // Recursive purging
                 $this->purge($innerDirs);
             }
-              
+
             $this->connection->cd($origin);
         }
     }
@@ -1214,38 +1212,36 @@ class PHPloy
     {
         $dirsToDelete = [];
         foreach ($filesToDelete as $file) {
-        
-            // Break directories into a list of items            
+            // Break directories into a list of items
             $parts = explode("/", $file);
             // Remove files name from the list
             array_pop($parts);
-            
-            foreach($parts as $i => $part){
-                
+
+            foreach ($parts as $i => $part) {
                 $prefix = '';
                 // Add the parent directories to directory name
-                for( $x = 0; $x < $i; $x++ ) {
-                    $prefix .= $parts[$x] . '/';                
+                for ($x = 0; $x < $i; $x++) {
+                    $prefix .= $parts[$x] . '/';
                 }
-                
+
                 $part = $prefix . $part;
- 
+
                 // If directory doesn't exist, add to files to delete
                 // Relative path won't work consistently, thus getcwd().
-                if( ! is_dir(getcwd() . '/' . $part) ) {
+                if (! is_dir(getcwd() . '/' . $part)) {
                     $dirsToDelete[] = $part;
-                }                
+                }
             }
         }
-        
+
         // Remove duplicates
-        $dirsToDeleteUnique = array_unique( $dirsToDelete );
-        
+        $dirsToDeleteUnique = array_unique($dirsToDelete);
+
         // Reverse order to delete inner children before parents
-        $dirsToDeleteOrder = array_reverse( $dirsToDeleteUnique );
-        
+        $dirsToDeleteOrder = array_reverse($dirsToDeleteUnique);
+
         $this->debug('Directories to be deleted: ' . print_r($dirsToDeleteOrder, true));
-                
+
         return $dirsToDeleteOrder;
     }
 
