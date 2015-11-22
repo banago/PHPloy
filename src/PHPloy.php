@@ -421,7 +421,8 @@ class PHPloy
                 // If submodules are turned off, don't add them to queue
                 if ($this->scanSubmodules) {
                     $this->submodules[] = array('revision' => $line[0], 'name' => $line[1], 'path' => $repo.'/'.$line[1]);
-                    $this->output(sprintf('   Found submodule %s. %s',
+                    $this->output(sprintf(
+                        '   Found submodule %s. %s',
                         $line[1],
                         $this->scanSubSubmodules ? PHP_EOL . '      Scanning for sub-submodules...' : null
                     ));
@@ -1216,10 +1217,10 @@ class PHPloy
             // Remove files name from the list
             array_pop($parts);
 
-            foreach($parts as $i => $part){
+            foreach ($parts as $i => $part) {
                 $prefix = '';
                 // Add the parent directories to directory name
-                for( $x = 0; $x < $i; $x++ ) {
+                for ($x = 0; $x < $i; $x++) {
                     $prefix .= $parts[$x] . '/';
                 }
 
@@ -1227,17 +1228,17 @@ class PHPloy
 
                 // If directory doesn't exist, add to files to delete
                 // Relative path won't work consistently, thus getcwd().
-                if( ! is_dir(getcwd() . '/' . $part) ) {
+                if (! is_dir(getcwd() . '/' . $part)) {
                     $dirsToDelete[] = $part;
                 }
             }
         }
 
         // Remove duplicates
-        $dirsToDeleteUnique = array_unique( $dirsToDelete );
+        $dirsToDeleteUnique = array_unique($dirsToDelete);
 
         // Reverse order to delete inner children before parents
-        $dirsToDeleteOrder = array_reverse( $dirsToDeleteUnique );
+        $dirsToDeleteOrder = array_reverse($dirsToDeleteUnique);
 
         $this->debug('Directories to be deleted: ' . print_r($dirsToDeleteOrder, true));
 
