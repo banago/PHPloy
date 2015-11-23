@@ -70,7 +70,7 @@ The `deploy.ini` file hold your credentials and it must be in the root directory
 
 [staging]
 scheme = sftp
-user = example
+user = username
 ; When connecting via SFTP, you can opt for password-based authentication:
 pass = password
 ; Or private key-based authentication:
@@ -94,7 +94,7 @@ skip[] = '*.ini'
 skip[] = 'public_html/ignored/*'
 
 [production]
-quickmode = ftp://example:password@production-example.com:21/path/to/installation
+quickmode = ftp://username:password@production-example.com:21/path/to/installation
 passive = true
 ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
 skip[] = 'libs/*'
