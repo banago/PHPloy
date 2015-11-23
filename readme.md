@@ -1,7 +1,7 @@
 # PHPloy
 **Version 3.5.6**
 
-PHPloy is a incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
+PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
 ## Requirements
 
@@ -31,7 +31,7 @@ Please note that the sample `deploy.ini` file does not contain all the possible 
 
 OR
 
-You can add a symlink/symbolic link to `phploy.phar` in your `/usr/local/bin`, that way you can still update PHPloy, and you won't have to copy/paste new files everytime.
+You can add a symlink/symbolic link to `phploy.phar` in your `/usr/local/bin`, that way you can still update PHPloy, and you won't have to copy/paste new files every time.
 
 You can create the symlink very easy with this command:
 `sudo ln -s ~/PHPloy/bin/phploy.phar /usr/local/bin/phploy`
@@ -176,13 +176,13 @@ If you want to set it to a previous commit revision, just specify the revision l
 
 ## Submodules
 
-Submodules are supported, but are turned off by default since you don't expect them to change very often and you only update them once in a while. To run a deployment with submodule scanning, add the `--submodules` paramenter to the command:
+Submodules are supported, but are turned off by default since you don't expect them to change very often and you only update them once in a while. To run a deployment with submodule scanning, add the `--submodules` parameter to the command:
 
     phploy --submodules
 
 ## Purging
 
-In many cases, we need to purge the contents of a directory after a deployment. This can be achieved by specifing the directories in `deploy.ini` like this:
+In many cases, we need to purge the contents of a directory after a deployment. This can be achieved by specifying the directories in `deploy.ini` like this:
 
     ; relative to the deployment path
     purge[] = "cache/"
