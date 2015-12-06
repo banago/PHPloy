@@ -1,5 +1,5 @@
 # PHPloy
-**Version 3.5.6**
+**Version 4.0.0-alpha**
 
 PHPloy is a incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
@@ -7,27 +7,24 @@ PHPloy is a incremental Git FTP and SFTP deployment tool. By keeping track of th
 
 * PHP 5.4+ command line interpreter (CLI)
 * Git 1.7.12.4+
-* SSH2 PECL extension (for SFTP) | [Installation](http://php.net/manual/en/ssh2.installation.php)
-
-Windows users can optionally [download AnsiCon](https://github.com/adoxa/ansicon/releases) to enable the display of colors in the command prompt.  Install it by running `ansicon -i` from a command prompt or "Run" window.
 
 ## Usage 
 
-As any script, you can use PHPloy globally, from your `bin` directory or locally, from your project directory:
+As any script, you can use PHPloy globally, from your `/usr/local/bin` directory or locally, from your project directory:
 
 
 ### Using PHPloy locally (per project)
 
-1. Drop `phploy.phar` into your project.
-2. Run `phploy.phar --init` in the terminal to create a sample `deploy.ini` file or create one manually.
-3. Run `php phploy.phar` in terminal.
+1. Put `phploy.phar` into your project (you can rename it to anything)
+2. Run `phploy.phar --init` in the terminal to create a sample `phploy.ini` file or create one manually
+3. Run `php phploy.phar` in terminal
 
-Please note that the sample `deploy.ini` file does not contain all the possible options. It is ment to provide a quick setup option for a simple deployment. For the full set of options, please see the example `deploy.ini` bellow.
+Please note that the sample `phploy.ini` file does not contain all the possible options. It is ment to provide a quick setup option for a simple deployment. For the full set of options, please see the example `phploy.ini` bellow.
 
 ### Using PHPloy globally in Linux
 
 1. Drop `phploy.phar` into `/usr/local/bin` and make it executable by running `sudo chmod +x phploy`.
-2. Run `phploy --init` in the terminal to create the `deploy.ini` file inside your project folder or create one manually.
+2. Run `phploy --init` in the terminal to create the `phploy.ini` file inside your project folder or create one manually.
 3. Run `phploy` in terminal.
 
 OR
@@ -60,12 +57,12 @@ Adding folders to your *system path* means that you can execute an application f
 6. Click OK
 
 
-## deploy.ini
+## phploy.ini
 
-The `deploy.ini` file hold your credentials and it must be in the root directory of your project. Use as many servers as you need and whichever configuration type you prefer.
+The `phploy.ini` file hold your credentials and it must be in the root directory of your project. Use as many servers as you need and whichever configuration type you prefer.
 
 ```ini
-; This is a sample deploy.ini file. You can specify as many
+; This is a sample phploy.ini file. You can specify as many
 ; servers as you need and use normal or quickmode configuration.
 ;
 ; NOTE: If a value in the .ini file contains any non-alphanumeric 
@@ -77,14 +74,11 @@ user = example
 ; When connecting via SFTP, you can opt for password-based authentication:
 pass = password
 ; Or private key-based authentication:
-pubkey  = /path/to/public/key
 privkey = /path/to/private/key
 ; If the private key is encrypted, you must also provide the passphrase:
-keypass = passphrase
 host = staging-example.com
 path = /path/to/installation
 port = 22
-passive = true
 ; You can specify a list of patterns of files to be uploaded.
 ; Only files that match at least one of the patterns will be uploaded to the server.
 ; If a list of include patterns is not present, all files are considered
@@ -92,20 +86,20 @@ passive = true
 include[] = 'public_html/*'
 ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
 ; This takes precedence over include[]
-skip[] = 'src/*.scss'
-skip[] = '*.ini'
-skip[] = 'public_html/ignored/*'
+exclude[] = 'src/*.scss'
+exclude[] = '*.ini'
+exclude[] = 'public_html/ignored/*'
 
 [production]
 quickmode = ftp://example:password@production-example.com:21/path/to/installation
 passive = true
 ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
-skip[] = 'libs/*'
-skip[] = 'config/*'
-skip[] = 'src/*.scss'
+exclude[] = 'libs/*'
+exclude[] = 'config/*'
+exclude[] = 'src/*.scss'
 ```
 
-If your password is missing in the `deploy.ini` file, PHPloy will interactively ask you for your password.
+If your password is missing in the `phploy.ini` file, PHPloy will interactively ask you for your password.
 
 The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload ALL the files of your project.  If the remote server already has a copy of the files, you can specify which revision it is on using the `--sync` command (see below).
 
@@ -122,7 +116,7 @@ or:
 
     phploy --server servername
     
-`servername` stands for the name you have given to the server in the `deploy.ini` configuration file.
+`servername` stands for the name you have given to the server in the `phploy.ini` configuration file.
 
 If you have a 'default' server configured, you can specify to deploy to all configured servers by running:
 
@@ -161,13 +155,13 @@ Or:
 
 To upload all files, even the ones not tracked by git (e.g. the Composer vendor directory), run:
 
-    phploy -o
+    phploy -i
 
 Or:
 
-    phploy --others
+    phploy --included
 
-Please keep in mind that **all** files not excluded in your deploy.ini will be uploaded.
+Please keep in mind that **all** files not excluded in your phploy.ini will be uploaded.
 
 
 ## Updating or "syncing" the remote revision
@@ -188,7 +182,7 @@ Submodules are supported, but are turned off by default since you don't expect t
     
 ## Purging
 
-In many cases, we need to purge the contents of a directory after a deployment. This can be achieved by specifing the directories in `deploy.ini` like this:
+In many cases, we need to purge the contents of a directory after a deployment. This can be achieved by specifing the directories in `phploy.ini` like this:
 
     ; relative to the deployment path
     purge[] = "cache/"

@@ -23,5 +23,6 @@
         "psr-4": {
             "Banago\\PHPloy\\": "src"
         }
-    }
+    },
+    "bin": ["bin/phploy"]
 }
