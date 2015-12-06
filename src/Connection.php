@@ -2,8 +2,8 @@
 
 namespace Banago\PHPloy;
 
-use League\Flysystem\Filesystem;
 use League\Flysystem\Adapter\Ftp as FtpAdapter;
+use League\Flysystem\Filesystem;
 use League\Flysystem\Sftp\SftpAdapter as SftpAdapter;
 
 class Connection
@@ -36,16 +36,16 @@ class Connection
     {
         try {
             return new Filesystem(new FtpAdapter([
-                'host' => $server['host'],
+                'host'     => $server['host'],
                 'username' => $server['user'],
                 'password' => $server['pass'],
-                'port' => ($server['port'] ?: 21),
-                'root' => $server['path'],
-                'passive' => ($server['passive'] ?: true),
-                'timeout' => ($server['timeout'] ?: 30),
+                'port'     => ($server['port'] ?: 21),
+                'root'     => $server['path'],
+                'passive'  => ($server['passive'] ?: true),
+                'timeout'  => ($server['timeout'] ?: 30),
             ]));
         } catch (\Exception $e) {
-            print("\r\nOh Snap: {$e->getMessage()}\r\n");
+            echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
     }
 
@@ -60,16 +60,16 @@ class Connection
     {
         try {
             return new Filesystem(new SftpAdapter([
-                'host' => $server['host'],
-                'username' => $server['user'],
-                'password' => $server['pass'],
-                'port' => ($server['port'] ?: 22),
-                'root' => $server['path'],
-                'timeout' => ($server['timeout'] ?: 30),
+                'host'       => $server['host'],
+                'username'   => $server['user'],
+                'password'   => $server['pass'],
+                'port'       => ($server['port'] ?: 22),
+                'root'       => $server['path'],
+                'timeout'    => ($server['timeout'] ?: 30),
                 'privateKey' => $server['privkey'],
             ]));
         } catch (\Exception $e) {
-            print("\r\nOh Snap: {$e->getMessage()}\r\n");
+            echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
     }
 }
