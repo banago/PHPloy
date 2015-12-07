@@ -51,22 +51,22 @@ class Git
         if (!$repoPath) {
             $repoPath = $this->repo;
         }
-
-        $command = 'git -C "'.$repoPath.'" --git-dir="'.$repoPath.'/.git" --work-tree="'.$repoPath.'" '.$command;
+        
+        // "-c core.quotepath=false" in fixes special characters issue like ë, ä, ü etc., in file names
+        $command = 'git -c core.quotepath=false "'.$repoPath.'" --git-dir="'.$repoPath.'/.git" --work-tree="'.$repoPath.'" '.$command;
 
         return $this->exec($command);
     }
 
     public function diff($remoteRevision, $localRevision)
     {
-        // "-c core.quotepath=false" in fixes special characters issue like ë, ä, ü etc., in file names
         if (empty($remoteRevision)) {
-            $command = '-c core.quotepath=false ls-files';
+            $command = 'ls-files';
         } elseif ($localRevision === 'HEAD') {
-            $command = '-c core.quotepath=false diff --name-status '.$remoteRevision.' '.$localRevision;
+            $command = 'diff --name-status '.$remoteRevision.' '.$localRevision;
         } else {
             // What's the point of this ELSE clause?
-            $command = '-c core.quotepath=false diff --name-status '.$remoteRevision.' '.$localRevision;
+            $command = 'diff --name-status '.$remoteRevision.' '.$localRevision;
         }
 
         return $this->command($command);
