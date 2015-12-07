@@ -313,18 +313,18 @@ class PHPloy
     public function prepareServers()
     {
         $defaults = [
-            'scheme' => 'ftp',
-            'host' => '',
-            'user' => '',
-            'pass' => '',
-            'path' => '/',
+            'scheme'  => 'ftp',
+            'host'    => '',
+            'user'    => '',
+            'pass'    => '',
+            'path'    => '/',
             'privkey' => null,
-            'port' => null,
+            'port'    => null,
             'passive' => null,
             'timeout' => null,
             'include' => [],
             'exclude' => [],
-            'purge' => [],
+            'purge'   => [],
         ];
 
         $iniFile = $this->repo.DIRECTORY_SEPARATOR.$this->iniFilename;
@@ -364,7 +364,7 @@ class PHPloy
 
             // Ask user a password if it is empty, and if a public or private key is not defined
             if ($options['pass'] === '' && $options['privkey'] === '') {
-                fputs(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
+                fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
                 $input = urlencode($this->getPassword());
 
                 if ($input == '') {
@@ -420,7 +420,7 @@ class PHPloy
      *
      * @param array $files Array of files which needed to be filtered
      *
-     * @return Array with `files` (filtered) and `filesToSkip`
+     * @return array with `files` (filtered) and `filesToSkip`
      */
     private function filterIgnoredFiles($files)
     {
@@ -452,7 +452,7 @@ class PHPloy
         $files = array_values($files);
 
         return [
-            'files' => $files,
+            'files'       => $files,
             'filesToSkip' => $filesToSkip,
         ];
     }
@@ -604,9 +604,9 @@ class PHPloy
      *
      * @param string $localRevision
      *
-     * @return array
-     *
      * @throws Exception if unknown git diff status
+     *
+     * @return array
      */
     public function compare($localRevision)
     {
@@ -674,8 +674,8 @@ class PHPloy
 
         return [
             $this->currentlyDeploying => [
-                'delete' => $filesToDelete,
-                'upload' => $filesToUpload,
+                'delete'  => $filesToDelete,
+                'upload'  => $filesToUpload,
                 'exclude' => $filesToSkip,
             ],
         ];
@@ -810,7 +810,7 @@ class PHPloy
         }
 
         // If $this->revision is not HEAD, it means the rollback command was provided
-        // The working copy was rolled back earlier to run the deployment, and we now 
+        // The working copy was rolled back earlier to run the deployment, and we now
         // want to return the working copy back to its original state.
         if ($this->revision != 'HEAD') {
             $this->git->command('checkout '.($initialBranch ?: 'master'));
@@ -889,8 +889,8 @@ class PHPloy
                 if ($this->scanSubmodules) {
                     $this->submodules[] = [
                         'revision' => $line[0],
-                        'name' => $line[1],
-                        'path' => $repo.'/'.$line[1],
+                        'name'     => $line[1],
+                        'path'     => $repo.'/'.$line[1],
                     ];
                     $this->cli->out(sprintf('   Found submodule %s. %s',
                         $line[1],
@@ -935,8 +935,8 @@ class PHPloy
                 if ($this->scanSubmodules && $this->scanSubSubmodules) {
                     $this->submodules[] = [
                         'revision' => $line[0],
-                        'name' => $name.'/'.$line[1],
-                        'path' => $repo.'/'.$name.'/'.$line[1],
+                        'name'     => $name.'/'.$line[1],
+                        'path'     => $repo.'/'.$name.'/'.$line[1],
                     ];
                     $this->cli->out(sprintf('      Found sub-submodule %s.', "$name/$line[1]"));
                 }
@@ -960,7 +960,7 @@ class PHPloy
             $this->cli->out("<red>Purging directory <white>{$dir}");
 
             // Failing to enter into the directory means should stop
-            // the script form purging. Otherwise wrong content is deleted. 
+            // the script form purging. Otherwise wrong content is deleted.
             // @Agnis-LV lost ~8GB of important data because of this. Sorry man!
             if (!$this->connection->cd($dir)) {
                 $this->cli->out(" ! Could not enter into '{$dir}'. Check your directory path.");
@@ -1013,7 +1013,7 @@ class PHPloy
         $dirsToDelete = [];
         foreach ($filesToDelete as $file) {
 
-            // Break directories into a list of items            
+            // Break directories into a list of items
             $parts = explode('/', $file);
             // Remove files name from the list
             array_pop($parts);
@@ -1074,9 +1074,9 @@ class PHPloy
     host = staging-example.com
     path = /path/to/installation
     port = 22";
-            
-            if (file_put_contents(getcwd().'/phploy.ini', $data)) {
-                $this->cli->info("\nSample phploy.ini file created.\n");
-            }
+
+        if (file_put_contents(getcwd().'/phploy.ini', $data)) {
+            $this->cli->info("\nSample phploy.ini file created.\n");
+        }
     }
 }
