@@ -45,18 +45,6 @@ class Options
                 'description' => 'Includes submodules in next deployment',
                 'noValue'     => true,
             ],
-            'included' => [
-                'prefix'      => 'i',
-                'longPrefix'  => 'included',
-                'description' => 'Includes ignored files specified in include[] in next deployment',
-                'noValue'     => true,
-            ],
-            'excluded' => [
-                'prefix'      => 'e',
-                'longPrefix'  => 'excluded',
-                'description' => 'Excludes files specified in exclude[] in next deployment',
-                'noValue'     => true,
-            ],
             'init' => [
                 'longPrefix'  => 'init',
                 'description' => 'Creates sample deploy.ini file',

@@ -10,33 +10,21 @@ PHPloy is a incremental Git FTP and SFTP deployment tool. By keeping track of th
 
 ## Usage 
 
-As any script, you can use PHPloy globally, from your `/usr/local/bin` directory or locally, from your project directory:
+You can use PHPloy globally, from your `/usr/local/bin` directory or locally, from your project directory:
 
+### Using PHPloy globally
 
-### Using PHPloy locally (per project)
-
-1. Put `phploy.phar` into your project (you can rename it to anything)
-2. Run `phploy.phar --init` in the terminal to create a sample `phploy.ini` file or create one manually
-3. Run `php phploy.phar` in terminal
-
-Please note that the sample `phploy.ini` file does not contain all the possible options. It is ment to provide a quick setup option for a simple deployment. For the full set of options, please see the example `phploy.ini` bellow.
-
-### Using PHPloy globally in Linux
-
-1. Drop `phploy.phar` into `/usr/local/bin` and make it executable by running `sudo chmod +x phploy`.
+1. Move `phploy.phar` into `/usr/local/bin` and make it executable by running `sudo chmod +x phploy`.
 2. Run `phploy --init` in the terminal to create the `phploy.ini` file inside your project folder or create one manually.
 3. Run `phploy` in terminal.
 
-OR
+### Using PHPloy locally
 
-You can add a symlink/symbolic link to `phploy.phar` in your `/usr/local/bin`, that way you can still update PHPloy, and you won't have to copy/paste new files everytime.
+1. Put `phploy.phar` into your project *(you can rename it to anything)*
+2. Run `phploy.phar --init` in the terminal to create a sample `phploy.ini` file or create one manually
+3. Run `php phploy.phar` in terminal
 
-You can create the symlink very easy with this command:
-`sudo ln -s ~/PHPloy/bin/phploy.phar /usr/local/bin/phploy`
-In this case, I've placed the PHPloy folder in my home directory, you can just change the path to wherever PHPloy is placed.
-
-Then you can run `phploy` in terminal. 
-
+Please note that the sample `phploy.ini` file does not contain all the possible options. It is meant to provide a quick setup option for a simple deployment. For the full set of options, please see the example `phploy.ini` bellow.
 
 ### Installing PHPloy globally in Windows
 
@@ -55,7 +43,6 @@ Adding folders to your *system path* means that you can execute an application f
 4. Under "System variables" there should be a variable called "Path".  Select this and click "Edit".
 5. Keep the existing paths there, add a semi-colon `;` at the end and then type the location of the appropriate folder.  Spaces are OK, and no quotes are required.
 6. Click OK
-
 
 ## phploy.ini
 
@@ -81,9 +68,10 @@ path = /path/to/installation
 port = 22
 ; You can specify a list of patterns of files to be uploaded.
 ; Only files that match at least one of the patterns will be uploaded to the server.
-; If a list of include patterns is not present, all files are considered
-; by default (as if include[] = '*' was specified).
-include[] = 'public_html/*'
+; Include any file or directories of your choice on every deploy, for example minified files that you don't track with Git.
+include[] = dist/css/app.css
+include[] = dist/js/app.js
+include[] = dist/js/img
 ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
 ; This takes precedence over include[]
 exclude[] = 'src/*.scss'
@@ -151,19 +139,6 @@ Or:
 
     phploy --list
 
-## Upload other files
-
-To upload all files, even the ones not tracked by git (e.g. the Composer vendor directory), run:
-
-    phploy -i
-
-Or:
-
-    phploy --included
-
-Please keep in mind that **all** files not excluded in your phploy.ini will be uploaded.
-
-
 ## Updating or "syncing" the remote revision
 
 If you want to update the `.revision` file on the server to match your current local revision, run:
@@ -215,4 +190,5 @@ The people that have brought PHPloy to you are:
 ## Version history
 
 Please check [release history](https://github.com/banago/PHPloy/releases) for details.
+
 

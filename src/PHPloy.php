@@ -161,13 +161,6 @@ class PHPloy
     protected $sync = false;
 
     /**
-     * Whether phploy should ignore .gitignore (--others or -o commands).
-     *
-     * @var bool
-     */
-    protected $included = false;
-
-    /**
      * Whether to print extra debugging info to the console, especially for git & FTP commands
      * Activated using --debug command line option.
      *
@@ -255,10 +248,6 @@ class PHPloy
 
         if ($this->cli->arguments->defined('server')) {
             $this->server = $this->cli->arguments->get('server');
-        }
-
-        if ($this->cli->arguments->defined('included')) {
-            $this->included = $this->cli->arguments->get('included');
         }
 
         if ($this->cli->arguments->defined('sync')) {
@@ -354,10 +343,8 @@ class PHPloy
 
             if (!empty($servers[$name]['include'])) {
                 $this->filesToInclude[$name] = $servers[$name]['include'];
-            } else {
-                $this->filesToInclude[$name] = ['*'];
             }
-
+            
             if (!empty($servers[$name]['purge'])) {
                 $this->purgeDirs[$name] = $servers[$name]['purge'];
             }
@@ -427,19 +414,6 @@ class PHPloy
         $filesToSkip = [];
 
         foreach ($files as $i => $file) {
-            $matched = false;
-            foreach ($this->filesToInclude[$this->currentlyDeploying] as $pattern) {
-                if ($this->patternMatch($pattern, $file)) {
-                    $matched = true;
-                    break;
-                }
-            }
-            if (!$matched) {
-                unset($files[$i]);
-                $filesToSkip[] = $file;
-                continue;
-            }
-
             foreach ($this->filesToExclude[$this->currentlyDeploying] as $pattern) {
                 if ($this->patternMatch($pattern, $file)) {
                     unset($files[$i]);
@@ -456,7 +430,31 @@ class PHPloy
             'filesToSkip' => $filesToSkip,
         ];
     }
+    
+    /**
+     * Filter included files.
+     *
+     * @param array $files Array of files which needed to be filtered
+     *
+     * @return array $filesToGrip
+     */
+    private function filterIncludedFiles($files)
+    {
+        $filesToGrip = [];
 
+        foreach ($files as $i => $file) { 
+        
+            $name = getcwd() . '/' . $file;
+            if( is_dir($name) ) { 
+                $filesToGrip = array_merge($filesToGrip, array_map([$this,'relPath'], $this->directoryToArray($name, false)));
+            } else {
+                $filesToGrip[] = $file;    
+            }
+        }
+
+        return $filesToGrip;
+    }    
+        
     /**
      * Deploy (or list) changed files.
      */
@@ -629,11 +627,11 @@ class PHPloy
         if ($this->connection->has($this->dotRevision)) {
             $remoteRevision = $this->connection->read($this->dotRevision);
         } else {
-            $this->cli->yellow()->out('|----[ No revision found. Fresh deployment - grab a coffee ]----|');
+            $this->cli->comment('No revision found - uploading everything...');
         }
 
         $output = $this->git->diff($remoteRevision, $localRevision);
-        $this->debug('<darkYellow>'.implode("\r\n<darkYellow>", $output));
+        $this->debug(implode("\r\n", $output));
 
         /*
          * Git Status Codes
@@ -662,12 +660,11 @@ class PHPloy
             $filesToUpload = $output;
         }
 
-        // FEATURE: Add --included files to the list
-
         $filteredFilesToUpload = $this->filterIgnoredFiles($filesToUpload);
         $filteredFilesToDelete = $this->filterIgnoredFiles($filesToDelete);
+        $filteredFilesToInclude = isset($this->filesToInclude[$this->currentlyDeploying]) ? $this->filterIncludedFiles( $this->filesToInclude[$this->currentlyDeploying] ) : [];
 
-        $filesToUpload = $filteredFilesToUpload['files'];
+        $filesToUpload =  array_merge($filteredFilesToUpload['files'], $filteredFilesToInclude);
         $filesToDelete = $filteredFilesToDelete['files'];
 
         $filesToSkip = array_merge($filteredFilesToUpload['filesToSkip'], $filteredFilesToDelete['filesToSkip']);
@@ -772,7 +769,7 @@ class PHPloy
 
                             if (!$this->connection->has($path)) {
                                 $this->connection->createDir($path);
-                                $this->cli->out("Created directory '$path'.");
+                                $this->cli->out(" + Created directory '$path'.");
                                 $pathsThatExist[$path] = true;
                             } else {
                                 //$this->connection->cd($path);
@@ -785,7 +782,15 @@ class PHPloy
                     }
                 }
 
-                $data = file_get_contents($this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file));
+                $filePath = $this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file);                
+                $data = @file_get_contents($filePath);                
+                
+                // It can happen the path is wrong, especially with included files.
+                if (!$data) {
+                    $this->cli->error(' ! File not found - please check path: '. $filePath);                    
+                    continue;
+                }
+                                
                 $remoteFile = $file;
                 $uploaded = $this->connection->put($remoteFile, $data);
 
@@ -833,10 +838,8 @@ class PHPloy
         }
 
         $this->debug('Updating remote revision file to '.$localRevision);
-
-        if (!$this->connection->update($this->dotRevision, $localRevision)) {
-            $this->cli->error('Could not update the revision file on server.');
-        }
+        
+        $this->connection->put($this->dotRevision, $localRevision);
     }
 
     /**
@@ -1055,9 +1058,61 @@ class PHPloy
     public function debug($message)
     {
         if ($this->debug) {
-            $this->cli->out("$message");
+            $this->cli->comment("$message");
         }
     }
+
+    /**
+     * Get an array that represents directory tree
+     * Credit: http://php.net/manual/en/function.scandir.php#109140
+     *
+     * @param string $directory     Directory path
+     * @param bool $recursive         Include sub directories
+     * @param bool $listDirs         Include directories on listing
+     * @param bool $listFiles         Include files on listing
+     * @param regex $exclude         Exclude paths that matches this regex
+     */
+    public function directoryToArray($directory, $recursive = true, $listDirs = false, $listFiles = true, $exclude = '') {
+        $arrayItems = array();
+        $skipByExclude = false;
+        $handle = opendir($directory);
+        if ($handle) {
+            while (false !== ($file = readdir($handle))) {
+            preg_match("/(^(([\.]){1,2})$|(\.(svn|git|md))|(Thumbs\.db|\.DS_STORE))$/iu", $file, $skip);
+            if($exclude){
+                preg_match($exclude, $file, $skipByExclude);
+            }
+            if (!$skip && !$skipByExclude) {
+                if (is_dir($directory. DIRECTORY_SEPARATOR . $file)) {
+                    if($recursive) {
+                        $arrayItems = array_merge($arrayItems, $this->directoryToArray($directory. DIRECTORY_SEPARATOR . $file, $recursive, $listDirs, $listFiles, $exclude));
+                    }
+                    if($listDirs){
+                        $file = $directory . DIRECTORY_SEPARATOR . $file;
+                        $arrayItems[] = $file;
+                    }
+                } else {
+                    if($listFiles){
+                        $file = $directory . DIRECTORY_SEPARATOR . $file;
+                        $arrayItems[] = $file;
+                    }
+                }
+            }
+        }
+        closedir($handle);
+        }
+        return $arrayItems;
+    }
+    
+    /**
+     * Strip Absolute Path
+     */
+    static function relPath($el)
+    {
+        $abs = getcwd() . '/';
+        return str_replace($abs, "", $el);
+    }    
+    
 
     /**
      * Creates sample ini file.
