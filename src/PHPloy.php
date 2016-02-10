@@ -33,6 +33,11 @@ class PHPloy
      */
     public $git;
 
+     /**
+     * @var \Banago\PHPloy\LocalCommands
+     */
+    public $localCommands;
+
     /**
      * @var string
      */
@@ -97,6 +102,16 @@ class PHPloy
      * @var array
      */
     public $purgeDirs = [];
+
+    /**
+     * @var array
+     */
+    public $preDeploy = [];
+
+    /**
+     * @var array
+     */
+    public $postDeploy = [];
 
     /**
      * The name of the file on remote servers that stores the current revision hash.
@@ -204,6 +219,8 @@ class PHPloy
         $this->opt = new \Banago\PHPloy\Options(new \League\CLImate\CLImate());
         $this->cli = $this->opt->cli;
 
+        $this->localCommands = new \Banago\PHPloy\LocalCommands();
+
         $this->cli->backgroundGreen()->out('---------------------------------------------------');
         $this->cli->backgroundGreen()->out("|                PHPloy v{$this->version}                |");
         $this->cli->backgroundGreen()->out('---------------------------------------------------');
@@ -307,13 +324,15 @@ class PHPloy
             'user'    => '',
             'pass'    => '',
             'path'    => '/',
-            'privkey' => null,
+            'privkey' => '',
             'port'    => null,
             'passive' => null,
             'timeout' => null,
             'include' => [],
             'exclude' => [],
             'purge'   => [],
+            'pre-deploy' => [],
+            'post-deploy' => [],
         ];
 
         $iniFile = $this->repo.DIRECTORY_SEPARATOR.$this->iniFilename;
@@ -344,9 +363,17 @@ class PHPloy
             if (!empty($servers[$name]['include'])) {
                 $this->filesToInclude[$name] = $servers[$name]['include'];
             }
-            
+
             if (!empty($servers[$name]['purge'])) {
                 $this->purgeDirs[$name] = $servers[$name]['purge'];
+            }
+
+            if (!empty($servers[$name]['pre-deploy'])) {
+                $this->preDeploy[$name] = $servers[$name]['pre-deploy'];
+            }
+
+            if (!empty($servers[$name]['post-deploy'])) {
+                $this->postDeploy[$name] = $servers[$name]['post-deploy'];
             }
 
             // Ask user a password if it is empty, and if a public or private key is not defined
@@ -430,7 +457,7 @@ class PHPloy
             'filesToSkip' => $filesToSkip,
         ];
     }
-    
+
     /**
      * Filter included files.
      *
@@ -442,19 +469,19 @@ class PHPloy
     {
         $filesToGrip = [];
 
-        foreach ($files as $i => $file) { 
-        
+        foreach ($files as $i => $file) {
+
             $name = getcwd() . '/' . $file;
-            if( is_dir($name) ) { 
+            if( is_dir($name) ) {
                 $filesToGrip = array_merge($filesToGrip, array_map([$this,'relPath'], $this->directoryToArray($name, false)));
             } else {
-                $filesToGrip[] = $file;    
+                $filesToGrip[] = $file;
             }
         }
 
         return $filesToGrip;
-    }    
-        
+    }
+
     /**
      * Deploy (or list) changed files.
      */
@@ -504,10 +531,18 @@ class PHPloy
             if ($this->listFiles) {
                 $this->listFiles($files[$this->currentlyDeploying]);
             } else {
+                // Pre Deploy
+                if (isset($this->preDeploy[$name]) && count($this->preDeploy[$name]) > 0) {
+                    $this->preDeploy($this->preDeploy[$name]);
+                }
                 $this->push($files[$this->currentlyDeploying]);
                 // Purge
                 if (isset($this->purgeDirs[$name]) && count($this->purgeDirs[$name]) > 0) {
                     $this->purge($this->purgeDirs[$name]);
+                }
+                // Post Deploy
+                if (isset($this->postDeploy[$name]) && count($this->postDeploy[$name]) > 0) {
+                    $this->postDeploy($this->postDeploy[$name]);
                 }
             }
 
@@ -782,15 +817,15 @@ class PHPloy
                     }
                 }
 
-                $filePath = $this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file);                
-                $data = @file_get_contents($filePath);                
-                
+                $filePath = $this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file);
+                $data = @file_get_contents($filePath);
+
                 // It can happen the path is wrong, especially with included files.
                 if (!$data) {
-                    $this->cli->error(' ! File not found - please check path: '. $filePath);                    
+                    $this->cli->error(' ! File not found - please check path: '. $filePath);
                     continue;
                 }
-                                
+
                 $remoteFile = $file;
                 $uploaded = $this->connection->put($remoteFile, $data);
 
@@ -838,7 +873,7 @@ class PHPloy
         }
 
         $this->debug('Updating remote revision file to '.$localRevision);
-        
+
         $this->connection->put($this->dotRevision, $localRevision);
     }
 
@@ -1007,6 +1042,36 @@ class PHPloy
     }
 
     /**
+     * Execute pre commands
+     *
+     * @var array
+     */
+    public function preDeploy(array $commands)
+    {
+            foreach ($commands as $command) {
+
+            $this->cli->out("Execute : <white>{$command}");
+
+            $this->localCommands->command($command);
+        }
+    }
+
+    /**
+     * Execute post commands
+     *
+     * @var array
+     */
+    public function postDeploy(array $commands)
+    {
+        foreach ($commands as $command) {
+
+            $this->cli->out("Execute : <white>{$command}");
+
+            $this->localCommands->command($command);
+        }
+    }
+
+    /**
      * Checks for deleted directories. Git cares only about files.
      *
      * @param array $filesToDelete
@@ -1103,7 +1168,7 @@ class PHPloy
         }
         return $arrayItems;
     }
-    
+
     /**
      * Strip Absolute Path
      */
@@ -1111,8 +1176,8 @@ class PHPloy
     {
         $abs = getcwd() . '/';
         return str_replace($abs, "", $el);
-    }    
-    
+    }
+
 
     /**
      * Creates sample ini file.
