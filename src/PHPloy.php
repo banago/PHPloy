@@ -104,11 +104,6 @@ class PHPloy
     public $purgeDirs = [];
 
     /**
-     * @var array
-     */
-    public $postLocalCommands = [];
-
-    /**
      * The name of the file on remote servers that stores the current revision hash.
      *
      * @var string
@@ -326,7 +321,7 @@ class PHPloy
             'include' => [],
             'exclude' => [],
             'purge'   => [],
-            'post-local-commands' => [],
+            'post-deploy' => [],
         ];
 
         $iniFile = $this->repo.DIRECTORY_SEPARATOR.$this->iniFilename;
@@ -362,8 +357,8 @@ class PHPloy
                 $this->purgeDirs[$name] = $servers[$name]['purge'];
             }
 
-            if (!empty($servers[$name]['post-local-commands'])) {
-                $this->postLocalCommands[$name] = $servers[$name]['post-local-commands'];
+            if (!empty($servers[$name]['post-deploy'])) {
+                $this->postDeploy[$name] = $servers[$name]['post-deploy'];
             }
 
             // Ask user a password if it is empty, and if a public or private key is not defined
@@ -526,9 +521,9 @@ class PHPloy
                 if (isset($this->purgeDirs[$name]) && count($this->purgeDirs[$name]) > 0) {
                     $this->purge($this->purgeDirs[$name]);
                 }
-                // Post-Local-Command
-                if (isset($this->postLocalCommands[$name]) && count($this->postLocalCommands[$name]) > 0) {
-                    $this->postLocalCommands($this->postLocalCommands[$name]);
+                // Post Deploy
+                if (isset($this->postDeploy[$name]) && count($this->postDeploy[$name]) > 0) {
+                    $this->postDeploy($this->postDeploy[$name]);
                 }
             }
 
@@ -1028,13 +1023,13 @@ class PHPloy
     }
 
     /**
-     * Execute Post-Local-Commands
+     * Execute post commands
      *
-     * @var string
+     * @var array
      */
-    public function postLocalCommands($postCommands)
+    public function postDeploy(array $commands)
     {
-        foreach ($postCommands as $command) {
+        foreach ($commands as $command) {
 
             $this->cli->out("Execute : <white>{$command}");
 
