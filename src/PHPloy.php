@@ -104,6 +104,16 @@ class PHPloy
     public $purgeDirs = [];
 
     /**
+     * @var array
+     */
+    public $preDeploy = [];
+
+    /**
+     * @var array
+     */
+    public $postDeploy = [];
+
+    /**
      * The name of the file on remote servers that stores the current revision hash.
      *
      * @var string
@@ -321,6 +331,7 @@ class PHPloy
             'include' => [],
             'exclude' => [],
             'purge'   => [],
+            'pre-deploy' => [],
             'post-deploy' => [],
         ];
 
@@ -355,6 +366,10 @@ class PHPloy
 
             if (!empty($servers[$name]['purge'])) {
                 $this->purgeDirs[$name] = $servers[$name]['purge'];
+            }
+
+            if (!empty($servers[$name]['pre-deploy'])) {
+                $this->preDeploy[$name] = $servers[$name]['pre-deploy'];
             }
 
             if (!empty($servers[$name]['post-deploy'])) {
@@ -516,6 +531,10 @@ class PHPloy
             if ($this->listFiles) {
                 $this->listFiles($files[$this->currentlyDeploying]);
             } else {
+                // Pre Deploy
+                if (isset($this->preDeploy[$name]) && count($this->preDeploy[$name]) > 0) {
+                    $this->preDeploy($this->preDeploy[$name]);
+                }
                 $this->push($files[$this->currentlyDeploying]);
                 // Purge
                 if (isset($this->purgeDirs[$name]) && count($this->purgeDirs[$name]) > 0) {
@@ -1019,6 +1038,21 @@ class PHPloy
             }
 
             $this->connection->cd($origin);
+        }
+    }
+
+    /**
+     * Execute pre commands
+     *
+     * @var array
+     */
+    public function preDeploy(array $commands)
+    {
+            foreach ($commands as $command) {
+
+            $this->cli->out("Execute : <white>{$command}");
+
+            $this->localCommands->command($command);
         }
     }
 
