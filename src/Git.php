@@ -51,10 +51,10 @@ class Git
         if (!$repoPath) {
             $repoPath = $this->repo;
         }
-        
+
         // "-c core.quotepath=false" in fixes special characters issue like ë, ä, ü etc., in file names
         $command = 'git -c core.quotepath=false --git-dir="'.$repoPath.'/.git" --work-tree="'.$repoPath.'" '.$command;
-
+        echo $command;
         return $this->exec($command);
     }
 
@@ -68,6 +68,13 @@ class Git
             // What's the point of this ELSE clause?
             $command = 'diff --name-status '.$remoteRevision.' '.$localRevision;
         }
+
+        return $this->command($command);
+    }
+
+    public function checkout($branch)
+    {
+        $command = 'checkout ' . $branch;
 
         return $this->command($command);
     }
