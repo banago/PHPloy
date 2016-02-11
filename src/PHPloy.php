@@ -670,9 +670,23 @@ class PHPloy
         }
 
         if (!empty($this->servers[$this->currentlyDeploying]['branch'])) {
-            $this->debug("Checkout branch {$this->servers[$this->currentlyDeploying]['branch']}");
-            $output = $this->git->checkout($this->servers[$this->currentlyDeploying]['branch']);
-            $this->debug(implode("\r\n", $output));
+           $output = $this->git->checkout($this->servers[$this->currentlyDeploying]['branch']);
+
+            if(isset($output[0])) {
+                if(strpos($output[0], 'error') === 0) {
+                    throw new \Exception("Stash your modifications before sync");
+                }
+            }
+
+            if(isset($output[1])) {
+                if($output[1][0] === 'M') {
+                    throw new \Exception("Stash your modifications before sync");
+                }
+            }
+
+            if(isset($output[0])) {
+                $this->cli->out($output[0]);
+            }
         }
 
         $output = $this->git->diff($remoteRevision, $localRevision);
