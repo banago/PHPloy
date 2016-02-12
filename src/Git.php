@@ -35,7 +35,7 @@ class Git
     {
         $output = null;
 
-        exec("({$command}) 2>&1", $output);
+        exec('(' . escapeshellcmd($command) . ') 2>&1', $output);
 
         return $output;
     }
