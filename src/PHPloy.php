@@ -37,9 +37,9 @@ class PHPloy
     public $git;
 
     /**
-     * @var \Banago\PHPloy\LocalCommands
+     * @var array
      */
-    public $localCommands;
+    public $hooks;
 
     /**
      * @var string
@@ -222,11 +222,9 @@ class PHPloy
         $this->opt = new \Banago\PHPloy\Options(new \League\CLImate\CLImate());
         $this->cli = $this->opt->cli;
 
-        $this->localCommands = new \Banago\PHPloy\LocalCommands();
-
-        $this->cli->backgroundGreen()->out('---------------------------------------------------');
-        $this->cli->backgroundGreen()->out("|                PHPloy v{$this->version}                |");
-        $this->cli->backgroundGreen()->out('---------------------------------------------------');
+        $this->cli->backgroundGreen()->bold()->out('---------------------------------------------------');
+        $this->cli->backgroundGreen()->bold()->out("|                PHPloy v{$this->version}                |");
+        $this->cli->backgroundGreen()->bold()->out('---------------------------------------------------');
 
         // Setup PHPloy
         $this->setup();
@@ -1074,7 +1072,7 @@ class PHPloy
 
             $this->cli->out("Execute : <white>{$command}");
 
-            $this->localCommands->command($command);
+            $this->git->exec($command);
         }
     }
 
@@ -1089,7 +1087,7 @@ class PHPloy
 
             $this->cli->out("Execute : <white>{$command}");
 
-            $this->localCommands->command($command);
+            $this->git->exec($command);
         }
     }
 
