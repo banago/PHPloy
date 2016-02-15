@@ -818,23 +818,17 @@ class PHPloy
                 // Skip mkdir if dir is basedir
                 if ($dir[0] !== '.') {
                     // Loop through each folder in the path /a/b/c/d.txt to ensure that it exists
+                    // @TODO Can be improved by using: $filesystem->write('path/to/file.txt', 'contents');
                     for ($i = 0, $count = count($dir); $i < $count; ++$i) {
                         $path .= $dir[$i] . '/';
-
                         if (!isset($pathsThatExist[$path])) {
-                            //$origin = $this->connection->pwd();
-
                             if (!$this->connection->has($path)) {
                                 $this->connection->createDir($path);
                                 $this->cli->out(" + Created directory '$path'.");
                                 $pathsThatExist[$path] = true;
                             } else {
-                                //$this->connection->cd($path);
                                 $pathsThatExist[$path] = true;
                             }
-
-                            // Go home
-                            //$this->connection->cd($origin);
                         }
                     }
                 }
@@ -1013,36 +1007,21 @@ class PHPloy
     public function purge($purgeDirs)
     {
         foreach ($purgeDirs as $dir) {
-            $origin = $this->connection->pwd();
-
+            
             $this->cli->out("<red>Purging directory <white>{$dir}");
 
-            // Failing to enter into the directory means should stop
-            // the script form purging. Otherwise wrong content is deleted.
-            // @Agnis-LV lost ~8GB of important data because of this. Sorry man!
-            if (!$this->connection->cd($dir)) {
-                $this->cli->out(" ! Could not enter into '{$dir}'. Check your directory path.");
-                $this->connection->cd($origin);
-                continue;
-            }
-
-            if (!$tmpFiles = $this->connection->ls()) {
+            if (!$tmpFiles = $this->connection->listContents($dir, true)) {
                 $this->cli->out(" - Nothing to purge in {$dir}");
-                $this->connection->cd($origin);
                 continue;
             }
 
             $haveFiles = false;
             $innerDirs = [];
             foreach ($tmpFiles as $file) {
-                $curr = $this->connection->pwd();
-                if ($this->connection->cd($file)) {
-                    $innerDirs[] = $file;
-                    $this->connection->cd($curr);
-                } else {
-                    $haveFiles = true;
+                $haveFiles = true;                
+                if ($this->connection->delete($file)) {
                     $this->cli->out(" - {$file} is removed from directory");
-                    $this->connection->delete($file);
+                    $innerDirs[] = $file;
                 }
             }
 
@@ -1054,10 +1033,8 @@ class PHPloy
 
             if (count($innerDirs) > 0) {
                 // Recursive purging
-                $this->purge($innerDirs);
+                //$this->purge($innerDirs);
             }
-
-            $this->connection->cd($origin);
         }
     }
 
