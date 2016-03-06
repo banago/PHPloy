@@ -128,6 +128,7 @@ class PHPloy
      *
      * @var string
      */
+    public $iniFilePath = null;
     public $iniFilename = 'phploy.ini';
 
     /**
@@ -215,6 +216,13 @@ class PHPloy
     protected $init = false;
 
     /**
+     * Set configuration provided via terminal
+     *
+     * @var bool init
+     */
+    protected $config = null;
+
+    /**
      * Constructor.
      */
     public function __construct()
@@ -288,6 +296,20 @@ class PHPloy
             $this->init = true;
         }
 
+        if ($this->cli->arguments->defined('config')) {
+            $this->config = $this->cli->arguments->get('config');
+        }
+
+        if ($this->cli->arguments->defined('inifilepath')) {
+            $this->iniFilePath = $this->cli->arguments->get('inifilepath');
+        } else {
+            $this->iniFilePath = $this->repo . DIRECTORY_SEPARATOR;
+        }
+
+        if ($this->cli->arguments->defined('inifilename')) {
+            $this->iniFilename = $this->cli->arguments->get('inifilename');
+        }
+
         $this->repo = getcwd();
         $this->mainRepo = $this->repo;
     }
@@ -337,9 +359,17 @@ class PHPloy
             'post-deploy' => [],
         ];
 
-        $iniFile = $this->repo . DIRECTORY_SEPARATOR . $this->iniFilename;
+        $iniFile = $this->iniFilePath . $this->iniFilename;
 
         $servers = $this->parseCredentials($iniFile);
+
+        // Check if config are defined
+        if($this->config) {
+
+            // If so, we overwrite server with our defined configuration from terminal
+            $servers = json_decode($this->config, true);
+
+        }
 
         foreach ($servers as $name => $options) {
             $options = array_merge($defaults, $options);
