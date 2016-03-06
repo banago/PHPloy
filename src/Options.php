@@ -67,6 +67,20 @@ class Options
                 'description' => 'Lists commands and their usage',
                 'noValue'     => true,
             ],
+            'config' => [
+                'longPrefix'  => 'config',
+                'description' => 'Set configuration as JSON',
+            ],
+            'inifilepath' => [
+                'prefix'      => 'ifp',
+                'longPrefix'  => 'inifilepath',
+                'description' => 'Set the path to the ini configuration file',
+            ],
+            'inifilename' => [
+                'prefix'      => 'ifn',
+                'longPrefix'  => 'inifilename',
+                'description' => 'Set the filename for the ini configuration file',
+            ],
         ]);
     }
 
