@@ -218,7 +218,7 @@ class PHPloy
     /**
      * Set configuration provided via terminal
      *
-     * @var string init
+     * @var string config
      */
     protected $config = null;
 
