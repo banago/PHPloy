@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.0-alpha
+ * @version 4.0-beta
  */
 
 namespace Banago\PHPloy;
@@ -19,7 +19,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.0-alpha';
+    protected $version = '4.0-beta';
 
     /**
      * @var string
@@ -223,7 +223,7 @@ class PHPloy
         $this->cli = $this->opt->cli;
 
         $this->cli->backgroundGreen()->bold()->out('---------------------------------------------------');
-        $this->cli->backgroundGreen()->bold()->out("|                PHPloy v{$this->version}                |");
+        $this->cli->backgroundGreen()->bold()->out("|                PHPloy v{$this->version}                 |");
         $this->cli->backgroundGreen()->bold()->out('---------------------------------------------------');
 
         // Setup PHPloy
@@ -1015,32 +1015,36 @@ class PHPloy
         foreach ($purgeDirs as $dir) {
             
             $this->cli->out("<red>Purging directory <white>{$dir}");
-
-            if (!$tmpFiles = $this->connection->listContents($dir, true)) {
+            
+            // Recursive file/dir listing
+            $contents = $this->connection->listContents($dir, true);
+            
+            if ( count($contents) < 1 ) {
                 $this->cli->out(" - Nothing to purge in {$dir}");
-                continue;
+                exit;
             }
 
-            $haveFiles = false;
             $innerDirs = [];
-            foreach ($tmpFiles as $file) {
-                $haveFiles = true;                
-                if ($this->connection->delete($file)) {
-                    $this->cli->out(" - {$file} is removed from directory");
-                    $innerDirs[] = $file;
+            foreach ($contents as $item) {
+                $haveFiles = true;
+                if ( $item['type'] === 'file' ) {
+                    $this->connection->delete($item['path']);
+                    $this->cli->out("<red> × {$item['path']} is removed from directory");
+                } else if ( $item['type'] === 'dir' ){
+                    // Directories need to be stacked to be 
+                    // deleted at the end when they are empty
+                    $innerDirs[] = $item['path'];
                 }
             }
 
-            if (!$haveFiles) {
-                $this->cli->out(" - Nothing to purge in {$dir}");
-            } else {
-                $this->cli->out("<red>Purged <white>{$dir}");
+            if (count($innerDirs) > 0) {
+                foreach( $innerDirs as $innerDir ) {
+                    $this->connection->deleteDir($innerDir);
+                    $this->cli->out("<red> ×  {$innerDir} directory");
+                }
             }
 
-            if (count($innerDirs) > 0) {
-                // Recursive purging
-                //$this->purge($innerDirs);
-            }
+            $this->cli->out("<red>Purged <white>{$dir}");
         }
     }
 
