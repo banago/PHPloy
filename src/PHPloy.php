@@ -342,6 +342,12 @@ class PHPloy
         $servers = $this->parseCredentials($iniFile);
 
         foreach ($servers as $name => $options) {
+            
+            // If a server is specified, we can skip adding the others
+            if ($this->server != '' && $this->server != $name) {
+                continue;
+            }
+            
             $options = array_merge($defaults, $options);
 
             // Determine if a default server is configured
