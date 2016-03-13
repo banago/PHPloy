@@ -164,6 +164,15 @@ In many cases, we need to purge the contents of a directory after a deployment. 
 
     ; relative to the deployment path
     purge[] = "cache/"
+    
+## Hooks
+
+PHPloy allows you to execute commands before and after the deployment. For example you can use `wget`  call a script on my server to execute a `composer update`.
+
+    ; To execute before deployment
+    pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
+    ; To execute after deployment
+    post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
 
 ## Contribute
 
@@ -178,4 +187,6 @@ If you've got any suggestions, questions, or anything else about PHPloy, [you sh
 
 Please check [release history](https://github.com/banago/PHPloy/releases) for details.
 
+## License
 
+PHPloy is lisenced under the MIT License (MIT).
