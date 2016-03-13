@@ -7,9 +7,7 @@ PHPloy requires PHP 5.4+ and Git 1.8+
 
 ## How it works
 
-PHPloy stores a file called `.revision` on your server. This file contains the hash of the commit that you have deployed to that server. When you run phploy, it downloads that file and compares the commit reference in it with the commit you are trying to deploy to find out which files to upload.
-
-PHPloy also stores a `.revision` file for each submodule in your repository.
+PHPloy stores a file called `.revision` on your server. This file contains the hash of the commit that you have deployed to that server. When you run phploy, it downloads that file and compares the commit reference in it with the commit you are trying to deploy to find out which files to upload. PHPloy also stores a `.revision` file for each submodule in your repository.
 
 ## Usage 
 
@@ -115,7 +113,7 @@ If you have a 'default' server configured, you can specify to deploy to all conf
 
 ## Rollbacks
 
-**Warning: the --rollback option does not currently update your submodules correctly.  Until this is fixed, we recommend that you checkout the revision that you would like to deploy, update your submodules, and *then* run phploy.**
+**Warning: the --rollback option does not currently update your submodules correctly.**
 
 PHPloy allows you to roll back to an earlier version when you need to. Rolling back is very easy. 
 
@@ -172,7 +170,7 @@ If you've got any suggestions, questions, or anything else about PHPloy, [you sh
 ## Credits
 
  * [Baki Goxhaj](https://twitter.com/banago)
- * [Contributors](https://github.com/banago/PHPloy/graphs/contributors)
+ * [Contributors](https://github.com/banago/PHPloy/graphs/contributors?type=a)
 
 ## Version history
 

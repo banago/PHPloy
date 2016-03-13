@@ -5,7 +5,7 @@ require __DIR__.'/vendor/autoload.php';
 use Banago\PHPloy\PHPloy;
 
 /*
- * Run deployment
+ * Run PHPloy
  */
 try {
     $phploy = new PHPloy();
