@@ -50,42 +50,44 @@ Adding folders to your *system path* means that you can execute an application f
 The `phploy.ini` file hold your credentials and it must be in the root directory of your project. Use as many servers as you need and whichever configuration type you prefer.
 
 ```ini
-; This is a sample phploy.ini file. You can specify as many
+; This is a sample deploy.ini file. You can specify as many
 ; servers as you need and use normal or quickmode configuration.
 ;
 ; NOTE: If a value in the .ini file contains any non-alphanumeric 
 ; characters it needs to be enclosed in double-quotes (").
 
 [staging]
-scheme = sftp
-user = example
-; When connecting via SFTP, you can opt for password-based authentication:
-pass = password
-; Or private key-based authentication:
-privkey = /path/to/private/key
-; If the private key is encrypted, you must also provide the passphrase:
-host = staging-example.com
-path = /path/to/installation
-port = 22
-; You can specify a list of patterns of files to be uploaded.
-; Only files that match at least one of the patterns will be uploaded to the server.
-; Include any file or directories of your choice on every deploy, for example minified files that you don't track with Git.
-include[] = dist/css/app.css
-include[] = dist/js/app.js
-include[] = dist/js/img
-; Files that should be ignored and not uploaded to your server, but still tracked in your repository
-; This takes precedence over include[]
-exclude[] = 'src/*.scss'
-exclude[] = '*.ini'
-exclude[] = 'public_html/ignored/*'
-
+    scheme = sftp
+    user = example
+    ; When connecting via SFTP, you can opt for password-based authentication:
+    pass = password
+    ; Or private key-based authentication:
+    pubkey  = /path/to/public/key
+    privkey = /path/to/private/key
+    ; If the private key is encrypted, you must also provide the passphrase:
+    keypass = passphrase
+    host = staging-example.com
+    path = /path/to/installation
+    port = 22
+    branch = develop
+    ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
+    skip[] = 'src/*.scss'
+    skip[] = '*.ini'
+    purge[] = "cache/"
+    pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
+    post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
+    
 [production]
-quickmode = ftp://example:password@production-example.com:21/path/to/installation
-passive = true
-; Files that should be ignored and not uploaded to your server, but still tracked in your repository
-exclude[] = 'libs/*'
-exclude[] = 'config/*'
-exclude[] = 'src/*.scss'
+    quickmode = ftp://example:password@production-example.com:21/path/to/installation
+    passive = true
+    branch = master
+    ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
+    skip[] = 'libs/*'
+    skip[] = 'config/*'
+    skip[] = 'src/*.scss'
+    purge[] = "cache/" 
+    pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
+    post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
 ```
 
 If your password is missing in the `phploy.ini` file, PHPloy will interactively ask you for your password.
