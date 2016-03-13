@@ -1,135 +1,121 @@
 # PHPloy
+**Version 4.0.0-beta**
 
-**Version 3.5.6**
+PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 5.4+** and **Git 1.8+**.
 
-PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
+## How it works
 
-## Requirements
+PHPloy stores a file called `.revision` on your server. This file contains the hash of the commit that you have deployed to that server. When you run phploy, it downloads that file and compares the commit reference in it with the commit you are trying to deploy to find out which files to upload. PHPloy also stores a `.revision` file for each submodule in your repository.
 
-* PHP 5.4+ command line interpreter (CLI)
-* Git 1.7.12.4+
-* [SSH2 PECL extension](https://php.net/manual/en/ssh2.installation.php) (SFTP)
+## Usage 
 
-Windows users can optionally download [ANSICON](https://github.com/adoxa/ansicon/releases) to enable the display of colors in the command prompt. Install it by running `ansicon -i` from a command prompt or "Run" window.
+You can use PHPloy globally, from your `/usr/local/bin` directory or locally, from your project directory:
 
-## Usage
+### Using PHPloy globally
 
-As any script, you can use PHPloy globally, from your `bin` directory or locally, from your project directory:
-
-### Using PHPloy locally (per project)
-
-1. Drop `phploy.phar` into your project.
-2. Run `phploy.phar --init` in the terminal to create a sample `deploy.ini` file or create one manually.
-3. Run `php phploy.phar` in terminal.
-
-Please note that the sample `deploy.ini` file does not contain all the possible options. It is meant to provide a quick setup option for a simple deployment. For the full set of options, please see the example `deploy.ini` bellow.
-
-### Using PHPloy globally in Linux
-
-1. Drop `phploy.phar` into `/usr/local/bin` and make it executable by running `sudo chmod +x phploy`.
-2. Run `phploy --init` in the terminal to create the `deploy.ini` file inside your project folder or create one manually.
+1. Move `phploy.phar` into `/usr/local/bin` and make it executable by running `sudo chmod +x phploy`.
+2. Run `phploy --init` in the terminal to create the `phploy.ini` file inside your project folder or create one manually.
 3. Run `phploy` in terminal.
 
-Or:
+### Using PHPloy locally
 
-You can add a symlink/symbolic link to `phploy.phar` in your `/usr/local/bin`, that way you can still update PHPloy, and you won't have to copy/paste new files every time.
+1. Put `phploy.phar` into your project *(you can rename it to anything)*
+2. Run `phploy.phar --init` in the terminal to create a sample `phploy.ini` file or create one manually
+3. Run `php phploy.phar` in terminal
 
-You can create the symlink very easy with this command:
-`sudo ln -s ~/PHPloy/bin/phploy.phar /usr/local/bin/phploy`
-In this case, I've placed the PHPloy folder in my home directory, you can just change the path to wherever PHPloy is placed.
-
-Then you can run `phploy` in terminal.
+Please note that the sample `phploy.ini` file does not contain all the possible options. It is meant to provide a quick setup option for a simple deployment. For the full set of options, please see the example `phploy.ini` bellow.
 
 ### Installing PHPloy globally in Windows
 
 1. Extract or clone the PHPloy files into a folder of your choice
-2. Ensure `phploy.bat` can find the path to `php.exe` by either:
-    * Adding the path to `php.exe` to your system path
-    * Manually adding the path inside `phploy.bat`
-3. Add the PHPloy folder to your system path
+2. Ensure phploy.bat can find the path to php.exe by either:
+    * Adding the path to php.exe to your system path
+    * Manually adding the path inside phploy.bat
+3. Add the phploy folder to your system path
 4. Run `phploy` from the command prompt (from your repository folder)
 
-Adding folders to your system path means that you can execute an application from any folder, and not have to specify the full path to it. To add folders to your system path:
+Adding folders to your *system path* means that you can execute an application from any folder, and not have to specify the full path to it.  To add folders to your system path:
 
-1. From your "Start" menu right-click "Computer" and click "Properties", or press <kbd>Windows</kbd>+<kbd>Pause</kbd> to open the "System" window.
-2. Click "Advanced system settings".
-3. Click "Environment Variables".
-4. Under "System variables" select the "Path" variable and click "Edit".
-5. Add a semicolon `;` at the end of the value, keeping all existing values intact. Add the location of the PHPloy folder (spaces are allowed and no quotes are required).
-6. Click "OK".
+1. Press WINDOWS + PAUSE to open Control Panel > System screen
+2. Click "Advanced System Settings"
+3. Click "Environment Variables"
+4. Under "System variables" there should be a variable called "Path".  Select this and click "Edit".
+5. Keep the existing paths there, add a semi-colon `;` at the end and then type the location of the appropriate folder.  Spaces are OK, and no quotes are required.
+6. Click OK
 
-## deploy.ini
+## phploy.ini
 
-The `deploy.ini` file hold your credentials and it must be in the root directory of your project. Use as many servers as you need and whichever configuration type you prefer.
+The `phploy.ini` file hold your credentials and it must be in the root directory of your project. Use as many servers as you need and whichever configuration type you prefer.
 
 ```ini
 ; This is a sample deploy.ini file. You can specify as many
 ; servers as you need and use normal or quickmode configuration.
 ;
-; NOTE: If a value in the .ini file contains any non-alphanumeric
+; NOTE: If a value in the .ini file contains any non-alphanumeric 
 ; characters it needs to be enclosed in double-quotes (").
 
 [staging]
-scheme = sftp
-user = username
-; When connecting via SFTP, you can opt for password-based authentication:
-pass = password
-; Or private key-based authentication:
-pubkey  = /path/to/public/key
-privkey = /path/to/private/key
-; If the private key is encrypted, you must also provide the passphrase:
-keypass = passphrase
-host = staging-example.com
-path = /path/to/installation
-port = 22
-passive = true
-; You can specify a list of patterns of files to be uploaded.
-; Only files that match at least one of the patterns will be uploaded to the server.
-; If a list of include patterns is not present, all files are considered
-; by default (as if include[] = '*' was specified).
-include[] = 'public_html/*'
-; Files that should be ignored and not uploaded to your server, but still tracked in your repository
-; This takes precedence over include[]
-skip[] = 'src/*.scss'
-skip[] = '*.ini'
-skip[] = 'public_html/ignored/*'
-
+    scheme = sftp
+    user = example
+    ; When connecting via SFTP, you can opt for password-based authentication:
+    pass = password
+    ; Or private key-based authentication:
+    pubkey  = /path/to/public/key
+    privkey = /path/to/private/key
+    ; If the private key is encrypted, you must also provide the passphrase:
+    keypass = passphrase
+    host = staging-example.com
+    path = /path/to/installation
+    port = 22
+    branch = develop
+    ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
+    skip[] = 'src/*.scss'
+    skip[] = '*.ini'
+    purge[] = "cache/"
+    pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
+    post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
+    
 [production]
-quickmode = ftp://username:password@production-example.com:21/path/to/installation
-passive = true
-; Files that should be ignored and not uploaded to your server, but still tracked in your repository
-skip[] = 'libs/*'
-skip[] = 'config/*'
-skip[] = 'src/*.scss'
+    quickmode = ftp://example:password@production-example.com:21/path/to/installation
+    passive = true
+    branch = master
+    ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
+    skip[] = 'libs/*'
+    skip[] = 'config/*'
+    skip[] = 'src/*.scss'
+    purge[] = "cache/" 
+    pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
+    post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
 ```
 
-If your password is missing in the `deploy.ini` file, PHPloy will interactively ask you for your password.
+If your password is missing in the `phploy.ini` file, PHPloy will interactively ask you for your password.
 
-The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload **all** the files of your project. If the remote server already has a copy of the files, you can specify which revision it is on using the `--sync` command (see below).
+The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload ALL the files of your project.  If the remote server already has a copy of the files, you can specify which revision it is on using the `--sync` command (see below).
+
 
 ## Multiple servers
 
-PHPloy allows you to configure multiple servers in the deploy file and deploy to any of them with ease.
+PHPloy allows you to configure multiple servers in the deploy file and deploy to any of them with ease. 
 
-By default PHPloy will deploy to **all** specified servers. Alternatively, if an entry named `default` exists in your server configuration, PHPloy will default to that server configuration. To specify one single server, run:
+By default PHPloy will deploy to *ALL* specified servers.  Alternatively, if an entry named 'default' exists in your server configuration, PHPloy will default to that server configuration. To specify one single server, run:
 
     phploy -s servername
 
-Or:
+or:
 
     phploy --server servername
+    
+`servername` stands for the name you have given to the server in the `phploy.ini` configuration file.
 
-`servername` stands for the name you have given to the server in the `deploy.ini` configuration file.
-
-If you have a `default` server configured, you can specify to deploy to **all** configured servers by running:
+If you have a 'default' server configured, you can specify to deploy to all configured servers by running:
 
     phploy --all
 
 ## Rollbacks
 
-> Warning: the `--rollback` option does not currently update your submodules correctly. Until this is fixed, we recommend you first checkout the revision you would like to deploy and update its submodules, before running `phploy`.
+**Warning: the --rollback option does not currently update your submodules correctly.**
 
-PHPloy allows you to roll back to an earlier version when you need to. Rolling back is very easy.
+PHPloy allows you to roll back to an earlier version when you need to. Rolling back is very easy. 
 
 To roll back to the previous commit, you just run:
 
@@ -143,27 +129,16 @@ When you run a rollback, the files in your working copy will revert **temporaril
 
 Note that there is not a short version of `--rollback`.
 
+
 ## Listing changed files
 
-PHPloy allows you to see what files are going to be uploaded/deleted before you actually push them. Just run:
+PHPloy allows you to see what files are going to be uploaded/deleted before you actually push them. Just run: 
 
     phploy -l
 
 Or:
 
     phploy --list
-
-## Upload other files
-
-To upload all files, even the ones not tracked by git (e.g. the Composer vendor directory), run:
-
-    phploy -o
-
-Or:
-
-    phploy --others
-
-Please keep in mind that **all** files not excluded in your `deploy.ini` will be uploaded.
 
 ## Updating or "syncing" the remote revision
 
@@ -177,42 +152,39 @@ If you want to set it to a previous commit revision, just specify the revision l
 
 ## Submodules
 
-Submodules are supported, but are turned off by default since you don't expect them to change very often and you only update them once in a while. To run a deployment with submodule scanning, add the `--submodules` parameter to the command:
+Submodules are supported, but are turned off by default since you don't expect them to change very often and you only update them once in a while. To run a deployment with submodule scanning, add the `--submodules` paramenter to the command:
 
     phploy --submodules
-
+    
 ## Purging
 
-In many cases, we need to purge the contents of a directory after a deployment. This can be achieved by specifying the directories in `deploy.ini` like this:
+In many cases, we need to purge the contents of a directory after a deployment. This can be achieved by specifing the directories in `phploy.ini` like this:
 
-```ini
-; relative to the deployment path
-purge[] = "cache/"
-; absolute path
-purge[] = "/public_html/wp-content/themes/base/cache/"
-```
+    ; relative to the deployment path
+    purge[] = "cache/"
+    
+## Hooks
 
-## How it works
+PHPloy allows you to execute commands before and after the deployment. For example you can use `wget`  call a script on my server to execute a `composer update`.
 
-PHPloy stores a file called `.revision` on your server. This file contains the hash of the commit that you have deployed to that server. When you run `phploy`, it downloads that file and compares the commit reference in it with the commit you are trying to deploy to find out which files to upload.
-
-PHPloy also stores a `.revision` file for each submodule in your repository.
+    ; To execute before deployment
+    pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
+    ; To execute after deployment
+    post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
 
 ## Contribute
 
-If you've got any suggestions, questions, or anything else about PHPloy, [you should create an issue here](https://github.com/banago/PHPloy/issues).
+Contributions are very welcome; PHPloy is great because of the contributors. Please check out the [issues](https://github.com/banago/PHPloy/issues). 
 
 ## Credits
 
-The people that have brought PHPloy to you are:
-
-* [Baki Goxhaj](https://twitter.com/banago) - lead developer
-* [Bruno De Barros](https://twitter.com/terraduo) - initial inspiration
-* [Fadion Dashi](https://twitter.com/jonidashi) - contributor
-* [Simon East](https://twitter.com/SimoEast) - contributor, Windows support
-* [Mark Beech](https://github.com/JayBizzle) - contributor
-* [Guido Hendriks](https://twitter.com/GuidoHendriks) - contributor
+ * [Baki Goxhaj](https://twitter.com/banago)
+ * [Contributors](https://github.com/banago/PHPloy/graphs/contributors?type=a)
 
 ## Version history
 
 Please check [release history](https://github.com/banago/PHPloy/releases) for details.
+
+## License
+
+PHPloy is lisenced under the MIT License (MIT).

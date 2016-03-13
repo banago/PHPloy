@@ -1,14 +1,14 @@
 <?php
-require __DIR__ . '/vendor/autoload.php';
+
+require __DIR__.'/vendor/autoload.php';
 
 use Banago\PHPloy\PHPloy;
-use Banago\PHPloy\Ansi;
 
-/**
- * Run deployment
+/*
+ * Run PHPloy
  */
 try {
     $phploy = new PHPloy();
 } catch (Exception $e) {
-    echo Ansi::tagsToColors("\r\n<red>Oh Snap: {$e->getMessage()}\r\n");
+    echo "\r\nOh Snap: {$e->getMessage()}\r\n";
 }

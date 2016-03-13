@@ -2,7 +2,7 @@
     "name": "banago/phploy",
     "description": "PHPloy - Incremental Git (S)FTP deployment tool that supports submodules, multiple servers and rollbacks.",
     "license": "MIT",
-    "keywords": ["banago", "deploy", "ftp", "sftp", "ssh", "git"],
+    "keywords": ["deploy", "ftp", "sftp", "git"],
     "authors": [
         {
             "name": "Baki Goxhaj",
@@ -13,13 +13,16 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "banago/bridge": "dev-master",
-        "jakeasmith/http_build_url": "dev-master"
+        "league/climate": "^3.2",
+        "league/flysystem": "^1.0",
+        "league/flysystem-sftp": "^1.0",
+        "jakeasmith/http_build_url": "^1.0"
     },
     "require-dev": {},
     "autoload": {
         "psr-4": {
             "Banago\\PHPloy\\": "src"
         }
-    }
+    },
+    "bin": ["bin/phploy"]
 }
