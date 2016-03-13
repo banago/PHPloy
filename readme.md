@@ -176,7 +176,7 @@ PHPloy allows you to execute commands before and after the deployment. For examp
 
 ## Contribute
 
-If you've got any suggestions, questions, or anything else about PHPloy, [you should create an issue here](https://github.com/banago/PHPloy/issues). 
+Contributions are very welcome. PHPloy is great because of the contributors. Please check [the issues](https://github.com/banago/PHPloy/issues) and pick anyone to fix/improve. 
 
 ## Credits
 
