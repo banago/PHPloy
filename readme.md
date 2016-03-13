@@ -3,10 +3,13 @@
 
 PHPloy is a incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
 
-## Requirements
+PHPloy requires PHP 5.4+ and Git 1.8+
 
-* PHP 5.4+ command line interpreter (CLI)
-* Git 1.7.12.4+
+## How it works
+
+PHPloy stores a file called `.revision` on your server. This file contains the hash of the commit that you have deployed to that server. When you run phploy, it downloads that file and compares the commit reference in it with the commit you are trying to deploy to find out which files to upload.
+
+PHPloy also stores a `.revision` file for each submodule in your repository.
 
 ## Usage 
 
@@ -161,31 +164,15 @@ In many cases, we need to purge the contents of a directory after a deployment. 
 
     ; relative to the deployment path
     purge[] = "cache/"
-    ; absolute path
-    purge[] = "/public_html/wp-content/themes/base/cache/"
-
-## How it works
-
-PHPloy stores a file called `.revision` on your server. This file contains the hash of the commit that you have deployed to that server. When you run phploy, it downloads that file and compares the commit reference in it with the commit you are trying to deploy to find out which files to upload.
-
-PHPloy also stores a `.revision` file for each submodule in your repository.
-
 
 ## Contribute
 
 If you've got any suggestions, questions, or anything else about PHPloy, [you should create an issue here](https://github.com/banago/PHPloy/issues). 
 
-
 ## Credits
 
-The people that have brought PHPloy to you are:
-
-* [Baki Goxhaj](https://twitter.com/banago) - lead developer
-* [Bruno De Barros](https://twitter.com/terraduo) - initial inspiration
-* [Fadion Dashi](https://twitter.com/jonidashi) - contributor
-* [Simon East](https://twitter.com/SimoEast) - contributor, Windows support 
-* [Mark Beech](https://github.com/JayBizzle) - contributor 
-* [Guido Hendriks](https://twitter.com/GuidoHendriks) - contributor 
+ * [Baki Goxhaj](https://twitter.com/banago)
+ * [Contributors](https://github.com/banago/PHPloy/graphs/contributors)
 
 ## Version history
 
