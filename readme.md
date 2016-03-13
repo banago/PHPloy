@@ -1,9 +1,7 @@
 # PHPloy
 **Version 4.0.0-beta**
 
-PHPloy is a incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks.
-
-PHPloy requires PHP 5.4+ and Git 1.8+
+PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 5.4+** and **Git 1.8+**.
 
 ## How it works
 
