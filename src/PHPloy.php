@@ -772,42 +772,7 @@ class PHPloy
         }
         $filesToUpload = $files['upload'];
 
-        // Not needed any longer
-        unset($files);
-
-        // Delete files
-        if (count($filesToDelete) > 0) {
-            foreach ($filesToDelete as $fileNo => $file) {
-                if ($this->currentSubmoduleName) {
-                    $file = $this->currentSubmoduleName . '/' . $file;
-                }
-                $numberOfFilesToDelete = count($filesToDelete);
-                $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
-                if ($this->connection->has($file)) {
-                    $this->connection->delete($file);
-                    $this->cli->out("<red> × $fileNo of $numberOfFilesToDelete <white>{$file}");
-                } else {
-                    $this->cli->out("<red> ! $fileNo of $numberOfFilesToDelete <white>{$file} not found");
-                }
-            }
-        }
-
-        // Delete Directories
-        if (count($dirsToDelete) > 0) {
-            foreach ($dirsToDelete as $dirNo => $dir) {
-                if ($this->currentSubmoduleName) {
-                    $dir = $this->currentSubmoduleName . '/' . $dir;
-                }
-                $numberOfdirsToDelete = count($dirsToDelete);
-                $dirNo = str_pad(++$dirNo, strlen($numberOfdirsToDelete), ' ', STR_PAD_LEFT);
-                if ($this->connection->has($dir)) {
-                    $this->connection->deleteDir($dir);
-                    $this->cli->out("<red> × $dirNo of $numberOfdirsToDelete <white>{$dir}");
-                } else {
-                    $this->cli->out("<red> ! $dirNo of $numberOfdirsToDelete <white>{$dir} not found");
-                }
-            }
-        }
+        unset($files); // No longer needed
 
         // Upload Files
         if (count($filesToUpload) > 0) {
@@ -861,6 +826,40 @@ class PHPloy
 
                 $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToUpdate), ' ', STR_PAD_LEFT);
                 $this->cli->lightGreen(" ^ $fileNo of $numberOfFilesToUpdate <white>{$file}");
+            }
+        }
+
+        // Delete files
+        if (count($filesToDelete) > 0) {
+            foreach ($filesToDelete as $fileNo => $file) {
+                if ($this->currentSubmoduleName) {
+                    $file = $this->currentSubmoduleName . '/' . $file;
+                }
+                $numberOfFilesToDelete = count($filesToDelete);
+                $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
+                if ($this->connection->has($file)) {
+                    $this->connection->delete($file);
+                    $this->cli->out("<red> × $fileNo of $numberOfFilesToDelete <white>{$file}");
+                } else {
+                    $this->cli->out("<red> ! $fileNo of $numberOfFilesToDelete <white>{$file} not found");
+                }
+            }
+        }
+
+        // Delete Directories
+        if (count($dirsToDelete) > 0) {
+            foreach ($dirsToDelete as $dirNo => $dir) {
+                if ($this->currentSubmoduleName) {
+                    $dir = $this->currentSubmoduleName . '/' . $dir;
+                }
+                $numberOfdirsToDelete = count($dirsToDelete);
+                $dirNo = str_pad(++$dirNo, strlen($numberOfdirsToDelete), ' ', STR_PAD_LEFT);
+                if ($this->connection->has($dir)) {
+                    $this->connection->deleteDir($dir);
+                    $this->cli->out("<red> × $dirNo of $numberOfdirsToDelete <white>{$dir}");
+                } else {
+                    $this->cli->out("<red> ! $dirNo of $numberOfdirsToDelete <white>{$dir} not found");
+                }
             }
         }
 
