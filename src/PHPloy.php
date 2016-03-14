@@ -886,15 +886,12 @@ class PHPloy
     {
         $localRevision = $this->currentRevision();
 
-        if ($this->sync && $this->sync != 'sync') {
-            $localRevision = $this->sync;
-        }
-
         if ($this->sync) {
-            $this->cli->info("SYNC: $localRevision");
+            $this->cli->info("Setting Remote revision to: $localRevision");
+            if ($this->sync != 'sync') {
+                $localRevision = $this->sync;
+            }
         }
-
-        $this->debug('Updating remote revision file to ' . $localRevision);
 
         $this->connection->put($this->dotRevision, $localRevision);
     }
@@ -1023,10 +1020,9 @@ class PHPloy
                 $this->cli->out(" - Nothing to purge in {$dir}");
                 exit;
             }
-
+            
             $innerDirs = [];
             foreach ($contents as $item) {
-                $haveFiles = true;
                 if ( $item['type'] === 'file' ) {
                     $this->connection->delete($item['path']);
                     $this->cli->out("<red> × {$item['path']} is removed from directory");
