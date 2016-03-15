@@ -9,15 +9,16 @@ PHPloy stores a file called `.revision` on your server. This file contains the h
 
 ## Install 
 
-You can install PHPloy globally, in your `/usr/local/bin` directory or, locally, in your project directory:
+You can install PHPloy globally, in your `/usr/local/bin` directory or, locally, in your project directory. Rename `phploy.phar` to `phploy` for ease of use.
 
-1. **Globally:** Move `phploy.phar` into `/usr/local/bin`. Make it executable by running `sudo chmod +x phploy`.
-2. **Locally** Move `phploy.phar` into your project directory *(rename to `phploy` for ease of use)*
+1. **Globally:** Move `phploy` into `/usr/local/bin`. Make it executable by running `sudo chmod +x phploy`.
+2. **Locally** Move `phploy` into your project directory. 
 
 ## Usage 
-*When using PHPloy locally, procceed the command with `php`*
-1. Run `(php) phploy --init` in the terminal to create the `phploy.ini` file or create one manually
-2. Run `(php) phploy` in terminal to deploy
+*When using PHPloy locally, procceed the command with `php `*
+
+1. Run `(php) phploy --init` in the terminal to create the `phploy.ini` file or create one manually.
+2. Run `(php) phploy` in terminal to deploy.
 
 Windows Users: [Installing PHPloy globally on Windows](https://github.com/banago/PHPloy/issues/214)
 
