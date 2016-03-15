@@ -672,19 +672,20 @@ class PHPloy
         } else {
             $this->cli->comment('No revision found - uploading everything...');
         }
-
+        
+        // Checkout the specified Git branch
         if (!empty($this->servers[$this->currentlyDeploying]['branch'])) {
            $output = $this->git->checkout($this->servers[$this->currentlyDeploying]['branch']);
 
             if(isset($output[0])) {
                 if(strpos($output[0], 'error') === 0) {
-                    throw new \Exception("Stash your modifications before sync");
+                    throw new \Exception("Stash your modifications before deploying.");
                 }
             }
 
             if(isset($output[1])) {
                 if($output[1][0] === 'M') {
-                    throw new \Exception("Stash your modifications before sync");
+                    throw new \Exception("Stash your modifications before deploying.");
                 }
             }
 
@@ -708,7 +709,6 @@ class PHPloy
          * U: file is unmerged (you must complete the merge before it can be committed)
          * X: "unknown" change type (most probably a bug, please report it)
          */
-
         if (!empty($remoteRevision)) {
             foreach ($output as $line) {
                 if ($line[0] === 'A' or $line[0] === 'C' or $line[0] === 'M' or $line[0] === 'T') {
