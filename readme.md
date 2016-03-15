@@ -7,45 +7,23 @@ PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of t
 
 PHPloy stores a file called `.revision` on your server. This file contains the hash of the commit that you have deployed to that server. When you run phploy, it downloads that file and compares the commit reference in it with the commit you are trying to deploy to find out which files to upload. PHPloy also stores a `.revision` file for each submodule in your repository.
 
+## Install 
+
+You can install PHPloy globally, in your `/usr/local/bin` directory or, locally, in your project directory:
+
+1. **Globally:** Move `phploy.phar` into `/usr/local/bin`. Make it executable by running `sudo chmod +x phploy`.
+2. **Locally** Move `phploy.phar` into your project directory *(rename to `phploy` for ease of use)*
+
 ## Usage 
+*When using PHPloy locally, procceed the command with `php`*
+1. Run `(php) phploy --init` in the terminal to create the `phploy.ini` file or create one manually
+2. Run `(php) phploy` in terminal to deploy
 
-You can use PHPloy globally, from your `/usr/local/bin` directory or locally, from your project directory:
-
-### Using PHPloy globally
-
-1. Move `phploy.phar` into `/usr/local/bin` and make it executable by running `sudo chmod +x phploy`.
-2. Run `phploy --init` in the terminal to create the `phploy.ini` file inside your project folder or create one manually.
-3. Run `phploy` in terminal.
-
-### Using PHPloy locally
-
-1. Put `phploy.phar` into your project *(you can rename it to anything)*
-2. Run `phploy.phar --init` in the terminal to create a sample `phploy.ini` file or create one manually
-3. Run `php phploy.phar` in terminal
-
-Please note that the sample `phploy.ini` file does not contain all the possible options. It is meant to provide a quick setup option for a simple deployment. For the full set of options, please see the example `phploy.ini` bellow.
-
-### Installing PHPloy globally in Windows
-
-1. Extract or clone the PHPloy files into a folder of your choice
-2. Ensure phploy.bat can find the path to php.exe by either:
-    * Adding the path to php.exe to your system path
-    * Manually adding the path inside phploy.bat
-3. Add the phploy folder to your system path
-4. Run `phploy` from the command prompt (from your repository folder)
-
-Adding folders to your *system path* means that you can execute an application from any folder, and not have to specify the full path to it.  To add folders to your system path:
-
-1. Press WINDOWS + PAUSE to open Control Panel > System screen
-2. Click "Advanced System Settings"
-3. Click "Environment Variables"
-4. Under "System variables" there should be a variable called "Path".  Select this and click "Edit".
-5. Keep the existing paths there, add a semi-colon `;` at the end and then type the location of the appropriate folder.  Spaces are OK, and no quotes are required.
-6. Click OK
+Windows Users: [Installing PHPloy globally on Windows](https://github.com/banago/PHPloy/issues/214)
 
 ## phploy.ini
 
-The `phploy.ini` file hold your credentials and it must be in the root directory of your project. Use as many servers as you need and whichever configuration type you prefer.
+The `phploy.ini` file holds your project configuration. It must be in the root directory of your project. Check the sample below for all availalble options:
 
 ```ini
 ; This is a sample deploy.ini file. You can specify as many
@@ -61,16 +39,18 @@ The `phploy.ini` file hold your credentials and it must be in the root directory
     pass = password
     ; Or private key-based authentication:
     privkey = 'path/to/or/contents/of/privatekey'
-    ; If the private key is encrypted, you must also provide the passphrase:
-    keypass = passphrase
     host = staging-example.com
     path = /path/to/installation
     port = 22
     ; You can speify a branch to deploy from
     branch = develop
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
-    skip[] = 'src/*.scss'
-    skip[] = '*.ini'
+    exclude[] = 'src/*.scss'
+    exclude[] = '*.ini'
+    ; Files that are ignored by Git, but you want to send the the server
+    include[] = 'js/scripts.min.js'
+    include[] = 'js/style.min.css'
+    include[] = 'diretory-name/'
     purge[] = "cache/"
     pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
     post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
@@ -81,18 +61,19 @@ The `phploy.ini` file hold your credentials and it must be in the root directory
     ; You can speify a branch to deploy from
     branch = master
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
-    skip[] = 'libs/*'
-    skip[] = 'config/*'
-    skip[] = 'src/*.scss'
+    exclude[] = 'libs/*'
+    exclude[] = 'config/*'
+    exclude[] = 'src/*.scss'
+    ; Files that are ignored by Git, but you want to send the the server
+    include[] = 'js/scripts.min.js'
+    include[] = 'js/style.min.css'
+    include[] = 'diretory-name/'
     purge[] = "cache/" 
     pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
     post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
 ```
 
 If your password is missing in the `phploy.ini` file, PHPloy will interactively ask you for your password.
-
-The first time it's executed, PHPloy will assume that your deployment server is empty, and will upload ALL the files of your project.  If the remote server already has a copy of the files, you can specify which revision it is on using the `--sync` command (see below).
-
 
 ## Multiple servers
 
