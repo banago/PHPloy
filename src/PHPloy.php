@@ -1017,7 +1017,7 @@ class PHPloy
             
             if ( count($contents) < 1 ) {
                 $this->cli->out(" - Nothing to purge in {$dir}");
-                exit;
+                return;
             }
             
             $innerDirs = [];
