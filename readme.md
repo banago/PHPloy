@@ -24,7 +24,7 @@ Windows Users: [Installing PHPloy globally on Windows](https://github.com/banago
 
 ## phploy.ini
 
-The `phploy.ini` file holds your project configuration. It must be in the root directory of your project. Check the sample below for all availalble options:
+The `phploy.ini` file holds your project configuration. It should be located in the root directory of the project. `phploy.ini` is never uploaded to server.  Check the sample below for all availalble options:
 
 ```ini
 ; This is a sample deploy.ini file. You can specify as many
@@ -154,6 +154,16 @@ PHPloy allows you to execute commands before and after the deployment. For examp
     pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
     ; To execute after deployment
     post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
+
+## Logging
+
+PHPloy supports sinple logging of the activity. Logging is saved in a `phploy.log` file in your project in the following format:
+    
+    2016-03-28 08:12:37+02:00 --- INFO: [SHA: 59a387c26641f731df6f0d1098aaa86cd55f4382] Deployment to server: "default" from branch "master". 2 files uploaded; 0 files deleted.
+
+To turn logging on, add this to `phploy.ini`:
+
+    logger = on
 
 ## Contribute
 

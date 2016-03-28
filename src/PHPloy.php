@@ -864,18 +864,20 @@ class PHPloy
         }
 
         if (count($filesToUpload) > 0 or count($filesToDelete) > 0) {
-            // Set revision on server
             $this->setRevision();
         } else {
             $this->cli->gray()->out('   No files to upload or delete.');
         }
 
         // If $this->revision is not HEAD, it means the rollback command was provided
-        // The working copy was rolled back earlier to run the deployment, and we now
-        // want to return the working copy back to its original state.
+        // The working copy was rolled back earlier to run the deployment, and we 
+        // now want to return the working copy back to its original state.
         if ($this->revision != 'HEAD') {
             $this->git->command('checkout ' . ($initialBranch ? : 'master'));
         }
+        
+		$this->log( '[SHA: ' . $this->localRevision . '] Deployment to server: "' . $this->currentlyDeploying . '" from branch "' . 
+		            $initialBranch . '". ' . count($filesToUpload) . ' files uploaded; ' . count($filesToDelete) . ' files deleted.' );
     }
 
     /**
@@ -1175,7 +1177,7 @@ class PHPloy
     /**
      * Strip Absolute Path
      */
-    static function relPath($el)
+    protected function relPath($el)
     {
         $abs = getcwd() . '/';
         return str_replace($abs, "", $el);
@@ -1184,7 +1186,7 @@ class PHPloy
     /**
      * Creates sample ini file.
      */
-    private function createSampleIniFile()
+    protected function createSampleIniFile()
     {
         $data = "; NOTE: If non-alphanumeric characters are present, enclose in value in quotes.\n
 [staging]
@@ -1197,9 +1199,25 @@ class PHPloy
     path = /path/to/installation
     port = 22";
 
-        if (file_put_contents(getcwd() . '/phploy.ini', $data)) {
+        if (file_put_contents(getcwd() . DIRECTORY_SEPARATOR . 'phploy.ini', $data)) {
             $this->cli->info("\nSample phploy.ini file created.\n");
         }
     }
+    
+    /**
+	 * Log a message to file.
+	 * 
+	 * @param 	string 	$message 	The message to write
+	 * @param 	string 	$type 		The type of log message (e.g. INFO, DEBUG, ERROR, etc.)
+	 */
+	protected function log( $message, $type = 'INFO' ) 
+	{
+		if ( isset( $this->servers[$this->currentlyDeploying]['logger'] ) && $this->servers[$this->currentlyDeploying]['logger'] ) {
+			$filename = getcwd() . DIRECTORY_SEPARATOR . 'phploy.log';
+			if ( !file_exists( $filename ) ) touch($filename);
 
+			// Format: time --- type: message
+			file_put_contents( $filename, date('Y-m-d H:i:sP') . ' --- ' . $type . ': ' . $message . PHP_EOL, FILE_APPEND );
+		}		
+	}
 }
