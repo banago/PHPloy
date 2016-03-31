@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.0-beta
+ * @version 4.0
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.0-beta';
+    protected $version = '4.0';
 
     /**
      * @var string
@@ -222,7 +222,7 @@ class PHPloy
         $this->cli = $this->opt->cli;
 
         $this->cli->backgroundGreen()->bold()->out('---------------------------------------------------');
-        $this->cli->backgroundGreen()->bold()->out("|                PHPloy v{$this->version}                 |");
+        $this->cli->backgroundGreen()->bold()->out("|                   PHPloy v{$this->version}                   |");
         $this->cli->backgroundGreen()->bold()->out('---------------------------------------------------');
 
         // Setup PHPloy
