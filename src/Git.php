@@ -35,7 +35,7 @@ class Git
     {
         $output = null;
 
-        exec('(' . escapeshellcmd($command) . ') 2>&1', $output);
+        exec('('.escapeshellcmd($command).') 2>&1', $output);
 
         return $output;
     }
@@ -76,7 +76,7 @@ class Git
 
     public function checkout($branch)
     {
-        $command = 'checkout ' . $branch;
+        $command = 'checkout '.$branch;
 
         return $this->command($command);
     }
