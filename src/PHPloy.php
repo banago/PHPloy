@@ -471,23 +471,21 @@ class PHPloy
      *
      * @param array $files Array of files which needed to be filtered
      *
-     * @return array $filesToGrip
+     * @return array $filteredFiles
      */
     private function filterIncludedFiles($files)
     {
-        $filesToGrip = [];
-
+        $filteredFiles = [];
         foreach ($files as $i => $file) {
-
             $name = getcwd() . '/' . $file;
             if (is_dir($name)) {
-                $filesToGrip = array_merge($filesToGrip, array_map([$this, 'relPath'], $this->directoryToArray($name, false)));
+                $filteredFiles = array_merge($filteredFiles, array_map([$this, 'relPath'], $this->directoryToArray($name, true)));
             } else {
-                $filesToGrip[] = $file;
+                $filteredFiles[] = $file;
             }
         }
 
-        return $filesToGrip;
+        return $filteredFiles;
     }
 
     /**
