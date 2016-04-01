@@ -103,6 +103,11 @@ class PHPloy
     /**
      * @var array
      */
+    public $copyDirs = [];
+
+    /**
+     * @var array
+     */
     public $purgeDirs = [];
 
     /**
@@ -331,6 +336,7 @@ class PHPloy
             'branch' => '',
             'include' => [],
             'exclude' => [],
+            'copy' => [],
             'purge' => [],
             'pre-deploy' => [],
             'post-deploy' => [],
@@ -369,6 +375,10 @@ class PHPloy
 
             if (!empty($servers[$name]['include'])) {
                 $this->filesToInclude[$name] = $servers[$name]['include'];
+            }
+
+            if (!empty($servers[$name]['copy'])) {
+                $this->copyDirs[$name] = $servers[$name]['copy'];
             }
 
             if (!empty($servers[$name]['purge'])) {
@@ -541,6 +551,10 @@ class PHPloy
                     $this->preDeploy($this->preDeploy[$name]);
                 }
                 $this->push($files[$this->currentlyDeploying]);
+                // Copy
+                if (isset($this->copyDirs[$name]) && count($this->copyDirs[$name]) > 0) {
+                    $this->copy($this->copyDirs[$name]);
+                }
                 // Purge
                 if (isset($this->purgeDirs[$name]) && count($this->purgeDirs[$name]) > 0) {
                     $this->purge($this->purgeDirs[$name]);
@@ -1039,6 +1053,58 @@ class PHPloy
             }
 
             $this->cli->out("<red>Purged <white>{$dir}");
+        }
+    }
+
+    /**
+     * Copy given directory's contents.
+     *
+     * @var string
+     */
+    public function copy($copyDirs)
+    {
+        $dirNameTrimFunc = function($name) {
+          return rtrim(str_replace('\\', '/', trim($name)), '/');
+        };
+
+        foreach ($copyDirs as $copyRule) {
+            list($fromDir, $toDir) = array_map($dirNameTrimFunc, array_pad(explode("->", $copyRule), 2, "."));
+            // Skip to next element if to and from are the same
+            if($fromDir == $toDir) {
+              $this->cli->out("<red>Omitting directory <white>{$fromDir}<red>, as it would copy on itself");
+              break;
+            }
+            // Skip to next element if from is not present
+            if(!$this->connection->has($fromDir)) {
+              $this->cli->out("<red>Omitting directory <white>{$fromDir}<red>, as it does not exist on the server");
+              break;
+            }
+            $this->cli->out("<red>Copying directory <white>{$fromDir}<red> to <white>{$toDir}");
+
+            // Recursive file/dir listing
+            $contents = $this->connection->listContents($fromDir, true);
+
+            if (count($contents) < 1) {
+                $this->cli->out(" - Nothing to copy in {$fromDir}");
+
+                return;
+            }
+
+            foreach ($contents as $item) {
+                if ($item['type'] === 'file') {
+                    $newPath = $toDir . '/' . pathinfo($item['path'], PATHINFO_BASENAME);
+                    if($this->connection->has($newPath)) {
+                      $this->connection->delete($newPath);
+                    }
+                    $this->connection->copy($item['path'], $newPath);
+                    $this->cli->out("<red> × {$item['path']} is copied to {$newPath}");
+                } elseif ($item['type'] === 'dir') {
+                    $dirParts = explode('/', $item['path']);
+                    $this->copy(array($fromDir . '/' . end($dirParts) . "->" . $toDir . '/' . end($dirParts)));
+                }
+            }
+
+            $this->cli->out("<red>Copied <white>{$fromDir} <red>to <white>{$toDir}");
         }
     }
 
