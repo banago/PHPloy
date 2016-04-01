@@ -52,10 +52,14 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     include[] = 'js/scripts.min.js'
     include[] = 'js/style.min.css'
     include[] = 'diretory-name/'
+    ; Directories that should be copied after deploy, from->to
+    copy[] = 'public->www'
+    ; Directories that should be purged after deploy
     purge[] = "cache/"
+    ; Pre- and Post-deploy hooks
     pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
     post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
-    
+
 [production]
     quickmode = ftp://example:password@production-example.com:21/path/to/installation
     passive = true
