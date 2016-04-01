@@ -805,7 +805,7 @@ class PHPloy
                 $data = @file_get_contents($filePath);
 
                 // It can happen the path is wrong, especially with included files.
-                if (!$data) {
+                if ($data === FALSE) {
                     $this->cli->error(' ! File not found - please check path: '.$filePath);
                     continue;
                 }
