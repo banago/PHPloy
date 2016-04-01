@@ -885,10 +885,10 @@ class PHPloy
         $localRevision = $this->currentRevision();
 
         if ($this->sync) {
-            $this->cli->info("Setting Remote revision to: $localRevision");
-            if ($this->sync != 'sync') {
+            if ($this->sync != 'LAST') {
                 $localRevision = $this->sync;
             }
+            $this->cli->info("Setting remote revision to: $localRevision");
         }
 
         $this->connection->put($this->dotRevision, $localRevision);
