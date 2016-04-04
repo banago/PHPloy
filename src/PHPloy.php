@@ -680,7 +680,7 @@ class PHPloy
 
         if ($this->connection->has($this->dotRevision)) {
             $remoteRevision = $this->connection->read($this->dotRevision);
-            $this->debug('Remote revision: <bold>' . $remoteRevision);
+            $this->debug('Remote revision: <bold>'.$remoteRevision);
         } else {
             $this->cli->comment('No revision found - uploading everything...');
         }
@@ -820,7 +820,7 @@ class PHPloy
                 $data = @file_get_contents($filePath);
 
                 // It can happen the path is wrong, especially with included files.
-                if ($data === FALSE) {
+                if ($data === false) {
                     $this->cli->error(' ! File not found - please check path: '.$filePath);
                     continue;
                 }
@@ -1064,21 +1064,21 @@ class PHPloy
      */
     public function copy($copyDirs)
     {
-        $dirNameTrimFunc = function($name) {
+        $dirNameTrimFunc = function ($name) {
           return rtrim(str_replace('\\', '/', trim($name)), '/');
         };
 
         foreach ($copyDirs as $copyRule) {
-            list($fromDir, $toDir) = array_map($dirNameTrimFunc, array_pad(explode("->", $copyRule), 2, "."));
+            list($fromDir, $toDir) = array_map($dirNameTrimFunc, array_pad(explode('->', $copyRule), 2, '.'));
             // Skip to next element if to and from are the same
-            if($fromDir == $toDir) {
-              $this->cli->out("<red>Omitting directory <white>{$fromDir}<red>, as it would copy on itself");
-              break;
+            if ($fromDir == $toDir) {
+                $this->cli->out("<red>Omitting directory <white>{$fromDir}<red>, as it would copy on itself");
+                break;
             }
             // Skip to next element if from is not present
-            if(!$this->connection->has($fromDir)) {
-              $this->cli->out("<red>Omitting directory <white>{$fromDir}<red>, as it does not exist on the server");
-              break;
+            if (!$this->connection->has($fromDir)) {
+                $this->cli->out("<red>Omitting directory <white>{$fromDir}<red>, as it does not exist on the server");
+                break;
             }
             $this->cli->out("<red>Copying directory <white>{$fromDir}<red> to <white>{$toDir}");
 
@@ -1093,15 +1093,15 @@ class PHPloy
 
             foreach ($contents as $item) {
                 if ($item['type'] === 'file') {
-                    $newPath = $toDir . '/' . pathinfo($item['path'], PATHINFO_BASENAME);
-                    if($this->connection->has($newPath)) {
-                      $this->connection->delete($newPath);
+                    $newPath = $toDir.'/'.pathinfo($item['path'], PATHINFO_BASENAME);
+                    if ($this->connection->has($newPath)) {
+                        $this->connection->delete($newPath);
                     }
                     $this->connection->copy($item['path'], $newPath);
                     $this->cli->out("<red> × {$item['path']} is copied to {$newPath}");
                 } elseif ($item['type'] === 'dir') {
                     $dirParts = explode('/', $item['path']);
-                    $this->copy(array($fromDir . '/' . end($dirParts) . "->" . $toDir . '/' . end($dirParts)));
+                    $this->copy(array($fromDir.'/'.end($dirParts).'->'.$toDir.'/'.end($dirParts)));
                 }
             }
 
