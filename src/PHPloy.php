@@ -680,6 +680,7 @@ class PHPloy
 
         if ($this->connection->has($this->dotRevision)) {
             $remoteRevision = $this->connection->read($this->dotRevision);
+            $this->debug('Remote revision: <bold>' . $remoteRevision);
         } else {
             $this->cli->comment('No revision found - uploading everything...');
         }
@@ -724,10 +725,10 @@ class PHPloy
             foreach ($output as $line) {
                 if ($line[0] === 'A' or $line[0] === 'C' or $line[0] === 'M' or $line[0] === 'T') {
                     $filesToUpload[] = trim(substr($line, 1));
-                } elseif ($line[0] == 'D' or $line[0] === 'T') {
+                } elseif ($line[0] == 'D') {
                     $filesToDelete[] = trim(substr($line, 1));
                 } else {
-                    throw new \Exception("Unsupported git-diff status: {$line[0]}");
+                    throw new \Exception("Unknown git-diff status. Use '--sync' to update remote revision or use '--debug' to see what's wrong.");
                 }
             }
         } else {

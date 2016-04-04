@@ -34,7 +34,7 @@ class Git
     public function exec($command)
     {
         $output = null;
-
+        
         exec('('.escapeshellcmd($command).') 2>&1', $output);
 
         return $output;
