@@ -659,6 +659,8 @@ class PHPloy
      *
      * @param string $pattern
      * @param string $string
+     *
+     * @return string
      */
     public function patternMatch($pattern, $string)
     {
@@ -1185,6 +1187,8 @@ class PHPloy
      * Checks for deleted directories. Git cares only about files.
      *
      * @param array $filesToDelete
+     *
+     * @return array
      */
     public function hasDeletedDirectories($filesToDelete)
     {
