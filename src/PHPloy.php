@@ -26,12 +26,12 @@ class PHPloy
     public $revision = 'HEAD';
 
     /**
-     * @var string
+     * @var \League\CLImate\CLImate
      */
     public $cli;
 
     /**
-     * @var string
+     * @var Git
      */
     public $git;
 
@@ -142,7 +142,7 @@ class PHPloy
     public $passFolder = '.phploy';
 
     /**
-     * @var bool|resource
+     * @var \League\Flysystem\Filesystem;
      */
     protected $connection = null;
 
@@ -306,9 +306,11 @@ class PHPloy
     /**
      * Parse Credentials.
      *
-     * @param string $deploy The filename to obtain the list of servers from, normally $this->iniFilename
+     * @param string $iniFile The filename to obtain the list of servers from, normally $this->iniFilename
      *
      * @return array of servers listed in the file $deploy
+     *
+     * @throws \Exception
      */
     public function parseCredentials($iniFile)
     {
@@ -611,6 +613,8 @@ class PHPloy
      *
      * @param int $bytes
      * @param int $decimals
+     * 
+     * @return string
      */
     public function humanFilesize($bytes, $decimals = 2)
     {
@@ -669,18 +673,15 @@ class PHPloy
      *
      * @param string $localRevision
      *
-     * @throws Exception if unknown git diff status
+     * @throws \Exception if unknown git diff status
      *
      * @return array
      */
     public function compare($localRevision)
     {
         $remoteRevision = null;
-        $tmpFile = tmpfile();
         $filesToUpload = [];
         $filesToDelete = [];
-        $filesToSkip = [];
-        $output = [];
 
         if ($this->currentSubmoduleName) {
             $this->dotRevision = $this->currentSubmoduleName.'/'.$this->dotRevisionFilename;
@@ -895,7 +896,7 @@ class PHPloy
         }
 
         // If $this->revision is not HEAD, it means the rollback command was provided
-        // The working copy was rolled back earlier to run the deployment, and we 
+        // The working copy was rolled back earlier to run the deployment, and we
         // now want to return the working copy back to its original state.
         if ($this->revision != 'HEAD') {
             $this->git->command('checkout '.($initialBranch ?: 'master'));
@@ -1053,7 +1054,7 @@ class PHPloy
                     $this->connection->delete($item['path']);
                     $this->cli->out("<red> × {$item['path']} is removed from directory");
                 } elseif ($item['type'] === 'dir') {
-                    // Directories need to be stacked to be 
+                    // Directories need to be stacked to be
                     // deleted at the end when they are empty
                     $innerDirs[] = $item['path'];
                 }
@@ -1214,7 +1215,9 @@ class PHPloy
      * @param bool   $recursive Include sub directories
      * @param bool   $listDirs  Include directories on listing
      * @param bool   $listFiles Include files on listing
-     * @param regex  $exclude   Exclude paths that matches this regex
+     * @param string $exclude   Exclude paths that matches this regex
+     *
+     * @return array
      */
     public function directoryToArray($directory, $recursive = true, $listDirs = false, $listFiles = true, $exclude = '')
     {
@@ -1252,6 +1255,10 @@ class PHPloy
 
     /**
      * Strip Absolute Path.
+     *
+     * @param string $el
+     *
+     * @return string
      */
     protected function relPath($el)
     {
