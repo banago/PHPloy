@@ -135,11 +135,11 @@ class PHPloy
     public $iniFilename = 'phploy.ini';
 
     /**
-     * The foldername where to look for pass files.
+     * The filename from which to read server password.
      *
      * @var string
      */
-    public $passFolder = '.phploy';
+    public $passFile = '.phploy.ini';
 
     /**
      * @var \League\Flysystem\Filesystem;
@@ -304,25 +304,25 @@ class PHPloy
     }
 
     /**
-     * Parse Credentials.
+     * Parse an ini file and return values as array.
      *
-     * @param string $iniFile The filename to obtain the list of servers from, normally $this->iniFilename
+     * @param string $iniFile
      *
-     * @return array of servers listed in the file $deploy
+     * @return array
      *
      * @throws \Exception
      */
-    public function parseCredentials($iniFile)
+    public function parseIniFile($iniFile)
     {
         if (!file_exists($iniFile)) {
             throw new \Exception("'$iniFile' does not exist.");
         } else {
-            $servers = parse_ini_file($iniFile, true);
+            $values = parse_ini_file($iniFile, true);
 
-            if (!$servers) {
+            if (!$values) {
                 throw new \Exception("'$iniFile' is not a valid .ini file.");
             } else {
-                return $servers;
+                return $values;
             }
         }
     }
@@ -353,7 +353,7 @@ class PHPloy
 
         $iniFile = $this->repo.DIRECTORY_SEPARATOR.$this->iniFilename;
 
-        $servers = $this->parseCredentials($iniFile);
+        $servers = $this->parseIniFile($iniFile);
 
         foreach ($servers as $name => $options) {
 
@@ -404,10 +404,9 @@ class PHPloy
 
             // Ask user a password if it is empty, and if a public or private key is not defined
             if ($options['pass'] === '' && $options['privkey'] === '') {
-                $passFile = $this->repo.DIRECTORY_SEPARATOR.$this->passFolder.DIRECTORY_SEPARATOR.$name;
                 // Look for pass file.
-                if (file_exists($passFile) === true) {
-                    $options['pass'] = trim(file_get_contents($passFile));
+                if (file_exists($this->getPasswordFile()) === true) {
+                    $options['pass'] = $this->getPasswordFromIniFile($name);
                 } else {
                     fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
                     $input = urlencode($this->getPassword());
@@ -422,6 +421,37 @@ class PHPloy
             }
 
             $this->servers[$name] = $options;
+        }
+    }
+
+    /**
+     * Returns the full path to password file.
+     *
+     * @return string
+     */
+    public function getPasswordFile()
+    {
+        return $this->repo.DIRECTORY_SEPARATOR.$this->passFile;
+    }
+
+    /**
+     * Try to fetch password from .phploy.ini file if not found, an empty string will be returned.
+     *
+     * @param string $servername Server to fetch password for
+     *
+     * @return string
+     */
+    public function getPasswordFromIniFile($servername)
+    {
+        try {
+            $values = $this->parseIniFile($this->getPasswordFile());
+            if (isset($values[$servername]['password']) === true) {
+                return $values[$servername]['password'];
+            }
+
+            return '';
+        } catch (\Exception $e) {
+            return '';
         }
     }
 
