@@ -79,7 +79,7 @@ The `phploy.ini` file holds your project configuration. It should be located in 
 ```
 
 If your password is missing in the `phploy.ini` file, PHPloy will interactively ask you for your password.
-There is also an option to store the password in a separate file. PHPloy will look for a file called like the server name in a subfolder called .phploy.
+There is also an option to store the password in a separate file. PHPloy will look for a file called like the servername in a subfolder called .phploy.
 
 If your deployment destination is called "production" the full path should be ".phploy/production".
 
