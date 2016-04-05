@@ -135,6 +135,13 @@ class PHPloy
     public $iniFilename = 'phploy.ini';
 
     /**
+     * The foldername where to look for pass files.
+     *
+     * @var string
+     */
+    public $passFolder = '.phploy';
+
+    /**
      * @var bool|resource
      */
     protected $connection = null;
@@ -395,14 +402,20 @@ class PHPloy
 
             // Ask user a password if it is empty, and if a public or private key is not defined
             if ($options['pass'] === '' && $options['privkey'] === '') {
-                fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
-                $input = urlencode($this->getPassword());
-
-                if ($input == '') {
-                    $this->cli->lightGreen()->out('You entered an empty password. Continuing deployment anyway ...');
+                $passFile = $this->repo.DIRECTORY_SEPARATOR.$this->passFolder.DIRECTORY_SEPARATOR.$name;
+                // Look for pass file.
+                if (file_exists($passFile) === true) {
+                    $options['pass'] = trim(file_get_contents($passFile));
                 } else {
-                    $options['pass'] = $input;
-                    $this->cli->lightGreen()->out('Password received. Continuing deployment ...');
+                    fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
+                    $input = urlencode($this->getPassword());
+
+                    if ($input == '') {
+                        $this->cli->lightGreen()->out('You entered an empty password. Continuing deployment anyway ...');
+                    } else {
+                        $options['pass'] = $input;
+                        $this->cli->lightGreen()->out('Password received. Continuing deployment ...');
+                    }
                 }
             }
 
@@ -889,7 +902,7 @@ class PHPloy
         }
 
         $this->log('[SHA: '.$this->localRevision.'] Deployment to server: "'.$this->currentlyDeploying.'" from branch "'.
-                    $initialBranch.'". '.count($filesToUpload).' files uploaded; '.count($filesToDelete).' files deleted.');
+            $initialBranch.'". '.count($filesToUpload).' files uploaded; '.count($filesToDelete).' files deleted.');
     }
 
     /**
@@ -1065,7 +1078,7 @@ class PHPloy
     public function copy($copyDirs)
     {
         $dirNameTrimFunc = function ($name) {
-          return rtrim(str_replace('\\', '/', trim($name)), '/');
+            return rtrim(str_replace('\\', '/', trim($name)), '/');
         };
 
         foreach ($copyDirs as $copyRule) {
@@ -1270,7 +1283,7 @@ class PHPloy
 
     /**
      * Log a message to file.
-     * 
+     *
      * @param string $message The message to write
      * @param string $type    The type of log message (e.g. INFO, DEBUG, ERROR, etc.)
      */
