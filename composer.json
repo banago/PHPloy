@@ -13,7 +13,7 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "league/climate": "dev-master",
+        "league/climate": "^3.2",
         "league/flysystem": "^1.0",
         "league/flysystem-sftp": "^1.0"
     },
