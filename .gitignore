@@ -1,3 +1,4 @@
+/.idea
 /vendor
 /dev
 composer.lock

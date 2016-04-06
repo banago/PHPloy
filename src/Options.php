@@ -2,10 +2,23 @@
 
 namespace Banago\PHPloy;
 
+use League\CLImate\CLImate;
+
+/**
+ * Class Options.
+ */
 class Options
 {
+    /**
+     * @var CLImate
+     */
     public $cli;
 
+    /**
+     * Options constructor.
+     *
+     * @param CLImate $climate
+     */
     public function __construct($climate)
     {
         $this->cli = $climate;
@@ -14,6 +27,9 @@ class Options
         $this->parse();
     }
 
+    /**
+     *
+     */
     protected function build()
     {
         $this->cli->description('PHPloy - Incremental Git FTP/SFTP deployment tool that supports multiple servers, submodules and rollbacks.');
@@ -70,6 +86,9 @@ class Options
         ]);
     }
 
+    /**
+     *
+     */
     protected function parse()
     {
         $this->cli->arguments->parse();

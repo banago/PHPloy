@@ -2,6 +2,9 @@
 
 namespace Banago\PHPloy;
 
+/**
+ * Class Git.
+ */
 class Git
 {
     /**
@@ -19,6 +22,11 @@ class Git
      */
     protected $repo;
 
+    /**
+     * Git constructor.
+     *
+     * @param null $repo
+     */
     public function __construct($repo = null)
     {
         $this->repo = $repo;
@@ -28,6 +36,8 @@ class Git
 
     /**
      * Executes a console command and returns the output (as an array).
+     *
+     * @param string $command Command to execute
      *
      * @return array of all lines that were output to the console during the command (STDOUT)
      */
@@ -60,6 +70,14 @@ class Git
         return $this->exec($command);
     }
 
+    /**
+     * Diff versions.
+     *
+     * @param string $remoteRevision
+     * @param string $localRevision
+     *
+     * @return array
+     */
     public function diff($remoteRevision, $localRevision)
     {
         if (empty($remoteRevision)) {
@@ -74,6 +92,13 @@ class Git
         return $this->command($command);
     }
 
+    /**
+     * Checkout given $branch.
+     *
+     * @param string $branch
+     *
+     * @return array
+     */
     public function checkout($branch)
     {
         $command = 'checkout '.$branch;
