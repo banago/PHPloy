@@ -79,14 +79,14 @@ The `phploy.ini` file holds your project configuration. It should be located in 
 ```
 
 If your password is missing in the `phploy.ini` file, PHPloy will interactively ask you for your password.
-There is also an option to store the password in a file called `.phploy.ini`.
+There is also an option to store the password in a file called `.phploy`.
 
 ```
 [staging]
-    password=PasswordA
+    password=password
     
 [production]
-    password=PasswordA
+    password=password
 ```
 
 This feature is especially useful if you would like to share your phploy.ini via Git but hide your password from the public.

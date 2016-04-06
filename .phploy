@@ -1,0 +1,11 @@
+; This is a sample .phploy file. You can specify passwords
+; for every server that is in your phploy.ini file.
+;
+; NOTE: If a value in the .ini file contains any non-alphanumeric
+; characters it needs to be enclosed in double-quotes (").
+
+[staging]
+    password = password
+
+[production]
+    password = password

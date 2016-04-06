@@ -139,7 +139,7 @@ class PHPloy
      *
      * @var string
      */
-    public $passFile = '.phploy.ini';
+    public $passFile = '.phploy';
 
     /**
      * @var \League\Flysystem\Filesystem;
@@ -435,7 +435,7 @@ class PHPloy
     }
 
     /**
-     * Try to fetch password from .phploy.ini file if not found, an empty string will be returned.
+     * Try to fetch password from .phploy file if not found, an empty string will be returned.
      *
      * @param string $servername Server to fetch password for
      *
@@ -443,16 +443,12 @@ class PHPloy
      */
     public function getPasswordFromIniFile($servername)
     {
-        try {
-            $values = $this->parseIniFile($this->getPasswordFile());
-            if (isset($values[$servername]['password']) === true) {
-                return $values[$servername]['password'];
-            }
-
-            return '';
-        } catch (\Exception $e) {
-            return '';
+        $values = $this->parseIniFile($this->getPasswordFile());
+        if (isset($values[$servername]['password']) === true) {
+            return $values[$servername]['password'];
         }
+
+        return '';
     }
 
     /**
