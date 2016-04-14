@@ -1143,7 +1143,7 @@ class PHPloy
                     $this->cli->out("<red> × {$item['path']} is copied to {$newPath}");
                 } elseif ($item['type'] === 'dir') {
                     $dirParts = explode('/', $item['path']);
-                    $this->copy(array($fromDir.'/'.end($dirParts).'->'.$toDir.'/'.end($dirParts)));
+                    $this->copy([$fromDir.'/'.end($dirParts).'->'.$toDir.'/'.end($dirParts)]);
                 }
             }
 
@@ -1251,7 +1251,7 @@ class PHPloy
      */
     public function directoryToArray($directory, $recursive = true, $listDirs = false, $listFiles = true, $exclude = '')
     {
-        $arrayItems = array();
+        $arrayItems = [];
         $skipByExclude = false;
         $handle = opendir($directory);
         if ($handle) {
