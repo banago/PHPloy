@@ -1,5 +1,5 @@
 # PHPloy
-**Version 4.1.3**
+**Version 4.2**
 
 PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 5.4+** and **Git 1.8+**.
 
@@ -79,6 +79,17 @@ The `phploy.ini` file holds your project configuration. It should be located in 
 ```
 
 If your password is missing in the `phploy.ini` file, PHPloy will interactively ask you for your password.
+There is also an option to store the password in a file called `.phploy`.
+
+```
+[staging]
+    password=password
+    
+[production]
+    password=password
+```
+
+This feature is especially useful if you would like to share your phploy.ini via Git but hide your password from the public.
 
 ## Multiple servers
 

@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.1.3
+ * @version 4.2
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.1';
+    protected $version = '4.2';
 
     /**
      * @var string
@@ -26,12 +26,12 @@ class PHPloy
     public $revision = 'HEAD';
 
     /**
-     * @var string
+     * @var \League\CLImate\CLImate
      */
     public $cli;
 
     /**
-     * @var string
+     * @var Git
      */
     public $git;
 
@@ -135,7 +135,14 @@ class PHPloy
     public $iniFilename = 'phploy.ini';
 
     /**
-     * @var bool|resource
+     * The filename from which to read server password.
+     *
+     * @var string
+     */
+    public $passFile = '.phploy';
+
+    /**
+     * @var \League\Flysystem\Filesystem;
      */
     protected $connection = null;
 
@@ -297,23 +304,25 @@ class PHPloy
     }
 
     /**
-     * Parse Credentials.
+     * Parse an ini file and return values as array.
      *
-     * @param string $deploy The filename to obtain the list of servers from, normally $this->iniFilename
+     * @param string $iniFile
      *
-     * @return array of servers listed in the file $deploy
+     * @return array
+     *
+     * @throws \Exception
      */
-    public function parseCredentials($iniFile)
+    public function parseIniFile($iniFile)
     {
         if (!file_exists($iniFile)) {
             throw new \Exception("'$iniFile' does not exist.");
         } else {
-            $servers = parse_ini_file($iniFile, true);
+            $values = parse_ini_file($iniFile, true);
 
-            if (!$servers) {
+            if (!$values) {
                 throw new \Exception("'$iniFile' is not a valid .ini file.");
             } else {
-                return $servers;
+                return $values;
             }
         }
     }
@@ -344,7 +353,7 @@ class PHPloy
 
         $iniFile = $this->repo.DIRECTORY_SEPARATOR.$this->iniFilename;
 
-        $servers = $this->parseCredentials($iniFile);
+        $servers = $this->parseIniFile($iniFile);
 
         foreach ($servers as $name => $options) {
 
@@ -393,15 +402,47 @@ class PHPloy
                 $this->postDeploy[$name] = $servers[$name]['post-deploy'];
             }
 
-            // Ask for a password if it is empty and a private key is not provided
+           // Ask for a password if it is empty and a private key is not provided
             if ($options['pass'] === '' && $options['privkey'] === '') {
-                fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
-                $options['pass'] = $this->getPassword();
-                $this->cli->lightGreen()->out("\r\n" . 'Password received. Continuing deployment ...');
+                // Look for .phploy config file
+                if (file_exists($this->getPasswordFile())) {
+                    $options['pass'] = $this->getPasswordFromIniFile($name);
+                } else {
+                    fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
+                    $options['pass'] = $this->getPassword();
+                    $this->cli->lightGreen()->out("\r\n" . 'Password received. Continuing deployment ...');
+                }
             }
 
             $this->servers[$name] = $options;
         }
+    }
+
+    /**
+     * Returns the full path to password file.
+     *
+     * @return string
+     */
+    public function getPasswordFile()
+    {
+        return $this->repo.DIRECTORY_SEPARATOR.$this->passFile;
+    }
+
+    /**
+     * Try to fetch password from .phploy file if not found, an empty string will be returned.
+     *
+     * @param string $servername Server to fetch password for
+     *
+     * @return string
+     */
+    public function getPasswordFromIniFile($servername)
+    {
+        $values = $this->parseIniFile($this->getPasswordFile());
+        if (isset($values[$servername]['password']) === true) {
+            return $values[$servername]['password'];
+        }
+
+        return '';
     }
 
     /**
@@ -592,6 +633,8 @@ class PHPloy
      *
      * @param int $bytes
      * @param int $decimals
+     * 
+     * @return string
      */
     public function humanFilesize($bytes, $decimals = 2)
     {
@@ -606,6 +649,8 @@ class PHPloy
      *
      * @param string $pattern
      * @param string $string
+     *
+     * @return string
      */
     public function patternMatch($pattern, $string)
     {
@@ -650,18 +695,15 @@ class PHPloy
      *
      * @param string $localRevision
      *
-     * @throws Exception if unknown git diff status
+     * @throws \Exception if unknown git diff status
      *
      * @return array
      */
     public function compare($localRevision)
     {
         $remoteRevision = null;
-        $tmpFile = tmpfile();
         $filesToUpload = [];
         $filesToDelete = [];
-        $filesToSkip = [];
-        $output = [];
 
         if ($this->currentSubmoduleName) {
             $this->dotRevision = $this->currentSubmoduleName.'/'.$this->dotRevisionFilename;
@@ -876,14 +918,14 @@ class PHPloy
         }
 
         // If $this->revision is not HEAD, it means the rollback command was provided
-        // The working copy was rolled back earlier to run the deployment, and we 
+        // The working copy was rolled back earlier to run the deployment, and we
         // now want to return the working copy back to its original state.
         if ($this->revision != 'HEAD') {
             $this->git->command('checkout '.($initialBranch ?: 'master'));
         }
 
         $this->log('[SHA: '.$this->localRevision.'] Deployment to server: "'.$this->currentlyDeploying.'" from branch "'.
-                    $initialBranch.'". '.count($filesToUpload).' files uploaded; '.count($filesToDelete).' files deleted.');
+            $initialBranch.'". '.count($filesToUpload).' files uploaded; '.count($filesToDelete).' files deleted.');
     }
 
     /**
@@ -1034,7 +1076,7 @@ class PHPloy
                     $this->connection->delete($item['path']);
                     $this->cli->out("<red> × {$item['path']} is removed from directory");
                 } elseif ($item['type'] === 'dir') {
-                    // Directories need to be stacked to be 
+                    // Directories need to be stacked to be
                     // deleted at the end when they are empty
                     $innerDirs[] = $item['path'];
                 }
@@ -1059,7 +1101,7 @@ class PHPloy
     public function copy($copyDirs)
     {
         $dirNameTrimFunc = function ($name) {
-          return rtrim(str_replace('\\', '/', trim($name)), '/');
+            return rtrim(str_replace('\\', '/', trim($name)), '/');
         };
 
         foreach ($copyDirs as $copyRule) {
@@ -1095,7 +1137,7 @@ class PHPloy
                     $this->cli->out("<red> × {$item['path']} is copied to {$newPath}");
                 } elseif ($item['type'] === 'dir') {
                     $dirParts = explode('/', $item['path']);
-                    $this->copy(array($fromDir.'/'.end($dirParts).'->'.$toDir.'/'.end($dirParts)));
+                    $this->copy([$fromDir.'/'.end($dirParts).'->'.$toDir.'/'.end($dirParts)]);
                 }
             }
 
@@ -1135,6 +1177,8 @@ class PHPloy
      * Checks for deleted directories. Git cares only about files.
      *
      * @param array $filesToDelete
+     *
+     * @return array
      */
     public function hasDeletedDirectories($filesToDelete)
     {
@@ -1195,11 +1239,13 @@ class PHPloy
      * @param bool   $recursive Include sub directories
      * @param bool   $listDirs  Include directories on listing
      * @param bool   $listFiles Include files on listing
-     * @param regex  $exclude   Exclude paths that matches this regex
+     * @param string $exclude   Exclude paths that matches this regex
+     *
+     * @return array
      */
     public function directoryToArray($directory, $recursive = true, $listDirs = false, $listFiles = true, $exclude = '')
     {
-        $arrayItems = array();
+        $arrayItems = [];
         $skipByExclude = false;
         $handle = opendir($directory);
         if ($handle) {
@@ -1233,6 +1279,10 @@ class PHPloy
 
     /**
      * Strip Absolute Path.
+     *
+     * @param string $el
+     *
+     * @return string
      */
     protected function relPath($el)
     {
@@ -1249,7 +1299,7 @@ class PHPloy
         $data = "; NOTE: If non-alphanumeric characters are present, enclose in value in quotes.\n
 [staging]
     quickmode = ftp://example:password@production-example.com:21/path/to/installation\n
-[staging]
+[production]
     scheme = sftp
     user = example
     pass = password
@@ -1264,7 +1314,7 @@ class PHPloy
 
     /**
      * Log a message to file.
-     * 
+     *
      * @param string $message The message to write
      * @param string $type    The type of log message (e.g. INFO, DEBUG, ERROR, etc.)
      */

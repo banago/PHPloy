@@ -6,10 +6,25 @@ use League\Flysystem\Adapter\Ftp as FtpAdapter;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Sftp\SftpAdapter as SftpAdapter;
 
+/**
+ * Class Connection.
+ */
 class Connection
 {
+    /**
+     * @var Filesystem
+     */
     public $server;
 
+    /**
+     * Connection constructor.
+     *
+     * @param string $server
+     *
+     * @return Connection
+     *
+     * @throws \Exception
+     */
     public function __construct($server)
     {
         if (!isset($server['scheme'])) {
@@ -30,7 +45,9 @@ class Connection
      *
      * @param string $server
      *
-     * @throws Exception if it can't connect to FTP server
+     * @return Filesystem|null
+     *
+     * @throws \Exception if it can't connect to FTP server
      */
     protected function connectToFtp($server)
     {
@@ -47,6 +64,8 @@ class Connection
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
+
+        return;
     }
 
     /**
@@ -54,7 +73,9 @@ class Connection
      *
      * @param string $server
      *
-     * @throws Exception if it can't connect to FTP server
+     * @return Filesystem|null
+     *
+     * @throws \Exception if it can't connect to FTP server
      */
     protected function connectToSftp($server)
     {
@@ -71,5 +92,7 @@ class Connection
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
+
+        return;
     }
 }
