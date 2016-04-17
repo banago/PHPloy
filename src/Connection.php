@@ -31,7 +31,7 @@ class Connection
             throw new \Exception("Please provide a connection protocol such as 'ftp' or 'sftp'.");
         }
 
-        if ($server['scheme'] === 'ftp') {
+        if ($server['scheme'] === 'ftp' or $server['scheme'] === 'ftps') {
             $this->server = $this->connectToFtp($server);
         } elseif ($server['scheme'] === 'sftp') {
             $this->server = $this->connectToSftp($server);
