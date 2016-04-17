@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.1.2
+ * @version 4.1.3
  */
 
 namespace Banago\PHPloy;
@@ -393,17 +393,11 @@ class PHPloy
                 $this->postDeploy[$name] = $servers[$name]['post-deploy'];
             }
 
-            // Ask user a password if it is empty, and if a public or private key is not defined
+            // Ask for a password if it is empty and a private key is not provided
             if ($options['pass'] === '' && $options['privkey'] === '') {
                 fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
-                $input = urlencode($this->getPassword());
-
-                if ($input == '') {
-                    $this->cli->lightGreen()->out('You entered an empty password. Continuing deployment anyway ...');
-                } else {
-                    $options['pass'] = $input;
-                    $this->cli->lightGreen()->out('Password received. Continuing deployment ...');
-                }
+                $options['pass'] = $this->getPassword();
+                $this->cli->lightGreen()->out("\r\n" . 'Password received. Continuing deployment ...');
             }
 
             $this->servers[$name] = $options;
