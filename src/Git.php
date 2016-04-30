@@ -75,10 +75,11 @@ class Git
      *
      * @param string $remoteRevision
      * @param string $localRevision
+     * @param string $repoPath
      *
      * @return array
      */
-    public function diff($remoteRevision, $localRevision)
+    public function diff($remoteRevision, $localRevision, $repoPath = null)
     {
         if (empty($remoteRevision)) {
             $command = 'ls-files';
@@ -89,20 +90,21 @@ class Git
             $command = 'diff --name-status '.$remoteRevision.' '.$localRevision;
         }
 
-        return $this->command($command);
+        return $this->command($command, $repoPath);
     }
 
     /**
      * Checkout given $branch.
      *
      * @param string $branch
+     * @param string $repoPath
      *
      * @return array
      */
-    public function checkout($branch)
+    public function checkout($branch, $repoPath = null)
     {
         $command = 'checkout '.$branch;
 
-        return $this->command($command);
+        return $this->command($command, $repoPath);
     }
 }
