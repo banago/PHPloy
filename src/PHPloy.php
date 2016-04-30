@@ -585,6 +585,7 @@ class PHPloy
                 if (isset($this->preDeploy[$name]) && count($this->preDeploy[$name]) > 0) {
                     $this->preDeploy($this->preDeploy[$name]);
                 }
+                // Push repository
                 $this->push($files[$this->currentlyDeploying]);
                 // Copy
                 if (isset($this->copyDirs[$name]) && count($this->copyDirs[$name]) > 0) {
