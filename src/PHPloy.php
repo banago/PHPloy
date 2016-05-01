@@ -585,7 +585,27 @@ class PHPloy
                 if (isset($this->preDeploy[$name]) && count($this->preDeploy[$name]) > 0) {
                     $this->preDeploy($this->preDeploy[$name]);
                 }
+                // Push repository
                 $this->push($files[$this->currentlyDeploying]);
+                // Push Submodules
+                if ($this->scanSubmodules && count($this->submodules) > 0) {
+                    foreach ($this->submodules as $submodule) {
+                        $this->repo = $submodule['path'];
+                        $this->currentSubmoduleName = $submodule['name'];
+
+                        $this->cli->gray()->out("\r\nSUBMODULE: ".$this->currentSubmoduleName);
+                        $files = $this->compare($submodule['revision']);
+
+                        if ($this->listFiles === true) {
+                            $this->listFiles($files[$this->currentlyDeploying]);
+                        } else {
+                            $this->push($files[$this->currentlyDeploying], $submodule['revision']);
+                        }
+                    }
+                    // We've finished deploying submodules, reset settings for the next server
+                    $this->repo = $this->mainRepo;
+                    $this->currentSubmoduleName = '';
+                }
                 // Copy
                 if (isset($this->copyDirs[$name]) && count($this->copyDirs[$name]) > 0) {
                     $this->copy($this->copyDirs[$name]);
@@ -598,26 +618,6 @@ class PHPloy
                 if (isset($this->postDeploy[$name]) && count($this->postDeploy[$name]) > 0) {
                     $this->postDeploy($this->postDeploy[$name]);
                 }
-            }
-
-            if ($this->scanSubmodules && count($this->submodules) > 0) {
-                foreach ($this->submodules as $submodule) {
-                    $this->repo = $submodule['path'];
-                    $this->currentSubmoduleName = $submodule['name'];
-
-                    $this->cli->gray()->out("\r\nSUBMODULE: ".$this->currentSubmoduleName);
-
-                    $files = $this->compare($this->revision);
-
-                    if ($this->listFiles === true) {
-                        $this->listFiles($files[$this->currentlyDeploying]);
-                    } else {
-                        $this->push($files[$this->currentlyDeploying]);
-                    }
-                }
-                // We've finished deploying submodules, reset settings for the next server
-                $this->repo = $this->mainRepo;
-                $this->currentSubmoduleName = '';
             }
 
             // Done
@@ -633,7 +633,7 @@ class PHPloy
      *
      * @param int $bytes
      * @param int $decimals
-     * 
+     *
      * @return string
      */
     public function humanFilesize($bytes, $decimals = 2)
@@ -723,7 +723,8 @@ class PHPloy
 
         // Checkout the specified Git branch
         if (!empty($this->servers[$this->currentlyDeploying]['branch'])) {
-            $output = $this->git->checkout($this->servers[$this->currentlyDeploying]['branch']);
+
+            $output = $this->git->checkout($this->servers[$this->currentlyDeploying]['branch'], $this->repo);
 
             if (isset($output[0])) {
                 if (strpos($output[0], 'error') === 0) {
@@ -742,7 +743,7 @@ class PHPloy
             }
         }
 
-        $output = $this->git->diff($remoteRevision, $localRevision);
+        $output = $this->git->diff($remoteRevision, $localRevision, $this->repo);
         $this->debug(implode("\r\n", $output));
 
         /*
@@ -795,10 +796,12 @@ class PHPloy
      * @param array $files 2-dimensional array with 2 indices: 'upload' and 'delete'
      *                     Each of these contains an array of filenames and paths (relative to repository root)
      */
-    public function push($files)
+    public function push($files, $localRevision = null)
     {
-        // We will write this in the server
-        $this->localRevision = $this->currentRevision();
+        if (empty($localRevision)) {
+            // We will write this in the server
+            $localRevision = $this->currentRevision();
+        }
 
         $initialBranch = $this->currentBranch();
 
@@ -809,7 +812,7 @@ class PHPloy
 
             // BUG: This does NOT work correctly for submodules & subsubmodules (and leaves them in an incorrect state)
             //      It technically should do a submodule update in the parent, not a checkout inside the submodule
-            $this->git->command('checkout '.$this->revision);
+            $this->git->command('checkout '.$this->revision, $this->repo);
         }
 
         $filesToDelete = $files['delete'];
@@ -912,7 +915,7 @@ class PHPloy
         }
 
         if (count($filesToUpload) > 0 or count($filesToDelete) > 0) {
-            $this->setRevision();
+            $this->setRevision($localRevision);
         } else {
             $this->cli->gray()->out('   No files to upload or delete.');
         }
@@ -924,16 +927,18 @@ class PHPloy
             $this->git->command('checkout '.($initialBranch ?: 'master'));
         }
 
-        $this->log('[SHA: '.$this->localRevision.'] Deployment to server: "'.$this->currentlyDeploying.'" from branch "'.
+        $this->log('[SHA: '.$localRevision.'] Deployment to server: "'.$this->currentlyDeploying.'" from branch "'.
             $initialBranch.'". '.count($filesToUpload).' files uploaded; '.count($filesToDelete).' files deleted.');
     }
 
     /**
      * Sets revision on the server.
      */
-    public function setRevision()
+    public function setRevision($localRevision = null)
     {
-        $localRevision = $this->currentRevision();
+        if (empty($localRevision)) {
+            $localRevision = $this->currentRevision();
+        }
 
         if ($this->sync) {
             if ($this->sync != 'LAST') {
