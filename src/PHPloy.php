@@ -1160,7 +1160,10 @@ class PHPloy
         foreach ($commands as $command) {
             $this->cli->out("Execute : <white>{$command}");
 
-            $this->git->exec($command);
+            $output = $this->git->exec($command);
+
+            $output = implode(' ', $output);
+            $this->cli->out("Result : <white>{$output}");
         }
     }
 
@@ -1174,7 +1177,10 @@ class PHPloy
         foreach ($commands as $command) {
             $this->cli->out("Execute : <white>{$command}");
 
-            $this->git->exec($command);
+            $output = $this->git->exec($command);
+            
+            $output = implode(' ', $output);
+            $this->cli->out("Result : <white>{$output}");
         }
     }
 
