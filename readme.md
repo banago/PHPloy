@@ -15,7 +15,7 @@ You can install PHPloy globally, in your `/usr/local/bin` directory or, locally,
 2. **Locally** Move `phploy` into your project directory. 
 
 ## Usage 
-*When using PHPloy locally, procceed the command with `php `*
+*When using PHPloy locally, proceed the command with `php `*
 
 1. Run `(php) phploy --init` in the terminal to create the `phploy.ini` file or create one manually.
 2. Run `(php) phploy` in terminal to deploy.
@@ -24,7 +24,7 @@ Windows Users: [Installing PHPloy globally on Windows](https://github.com/banago
 
 ## phploy.ini
 
-The `phploy.ini` file holds your project configuration. It should be located in the root directory of the project. `phploy.ini` is never uploaded to server.  Check the sample below for all availalble options:
+The `phploy.ini` file holds your project configuration. It should be located in the root directory of the project. `phploy.ini` is never uploaded to server.  Check the sample below for all available options:
 
 ```ini
 ; This is a sample deploy.ini file. You can specify as many
@@ -43,7 +43,7 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     host = staging-example.com
     path = /path/to/installation
     port = 22
-    ; You can speify a branch to deploy from
+    ; You can specify a branch to deploy from
     branch = develop
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
     exclude[] = 'src/*.scss'
@@ -51,7 +51,7 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     ; Files that are ignored by Git, but you want to send the the server
     include[] = 'js/scripts.min.js'
     include[] = 'js/style.min.css'
-    include[] = 'diretory-name/'
+    include[] = 'directory-name/'
     ; Directories that should be copied after deploy, from->to
     copy[] = 'public->www'
     ; Directories that should be purged after deploy
@@ -63,7 +63,7 @@ The `phploy.ini` file holds your project configuration. It should be located in 
 [production]
     quickmode = ftp://example:password@production-example.com:21/path/to/installation
     passive = true
-    ; You can speify a branch to deploy from
+    ; You can specify a branch to deploy from
     branch = master
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
     exclude[] = 'libs/*'
@@ -72,7 +72,7 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     ; Files that are ignored by Git, but you want to send the the server
     include[] = 'js/scripts.min.js'
     include[] = 'js/style.min.css'
-    include[] = 'diretory-name/'
+    include[] = 'directory-name/'
     purge[] = "cache/" 
     pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
     post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
@@ -150,13 +150,13 @@ If you want to set it to a previous commit revision, just specify the revision l
 
 ## Submodules
 
-Submodules are supported, but are turned off by default since you don't expect them to change very often and you only update them once in a while. To run a deployment with submodule scanning, add the `--submodules` paramenter to the command:
+Submodules are supported, but are turned off by default since you don't expect them to change very often and you only update them once in a while. To run a deployment with submodule scanning, add the `--submodules` parameter to the command:
 
     phploy --submodules
     
 ## Purging
 
-In many cases, we need to purge the contents of a directory after a deployment. This can be achieved by specifing the directories in `phploy.ini` like this:
+In many cases, we need to purge the contents of a directory after a deployment. This can be achieved by specifying the directories in `phploy.ini` like this:
 
     ; relative to the deployment path
     purge[] = "cache/"
@@ -172,7 +172,7 @@ PHPloy allows you to execute commands before and after the deployment. For examp
 
 ## Logging
 
-PHPloy supports sinple logging of the activity. Logging is saved in a `phploy.log` file in your project in the following format:
+PHPloy supports simple logging of the activity. Logging is saved in a `phploy.log` file in your project in the following format:
     
     2016-03-28 08:12:37+02:00 --- INFO: [SHA: 59a387c26641f731df6f0d1098aaa86cd55f4382] Deployment to server: "default" from branch "master". 2 files uploaded; 0 files deleted.
 
@@ -195,4 +195,4 @@ Please check [release history](https://github.com/banago/PHPloy/releases) for de
 
 ## License
 
-PHPloy is lisenced under the MIT License (MIT).
+PHPloy is licensed under the MIT License (MIT).
