@@ -172,7 +172,7 @@ PHPloy allows you to execute commands before and after the deployment. For examp
 
 ## Logging
 
-PHPloy supports sinple logging of the activity. Logging is saved in a `phploy.log` file in your project in the following format:
+PHPloy supports simple logging of the activity. Logging is saved in a `phploy.log` file in your project in the following format:
     
     2016-03-28 08:12:37+02:00 --- INFO: [SHA: 59a387c26641f731df6f0d1098aaa86cd55f4382] Deployment to server: "default" from branch "master". 2 files uploaded; 0 files deleted.
 
