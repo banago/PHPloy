@@ -61,8 +61,9 @@ class Connection
                 'passive' => ($server['passive'] ?: true),
                 'timeout' => ($server['timeout'] ?: 30),
                 'ssl' => ($server['ssl'] ?: false),
-            ]));
-            'visibility' => AdapterInterface::VISIBILITY_PRIVATE
+            ]), [
+                'visibility' => ($server['visibility'] ?: 'private')
+            ]);
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
