@@ -39,8 +39,9 @@ class Connection
             throw new \Exception("Please provide a known connection protocol such as 'ftp' or 'sftp'.");
         }
     }
-    
-    private function getCommonOptions($server) {
+
+    private function getCommonOptions($server)
+    {
         $options = [
             'host' => $server['host'],
             'username' => $server['user'],
@@ -55,8 +56,9 @@ class Connection
         if (isset($server['permPublic'])) {
             $options['permPublic'] = intval($server['permPublic'], 8);
         }
+
         return $options;
-    } 
+    }
 
     /**
      * Connects to the FTP Server.
@@ -71,11 +73,11 @@ class Connection
     {
         try {
             $options = $this->getCommonOptions($server);
-            $options['passive'] = ($server['passive'] ?: true);             
+            $options['passive'] = ($server['passive'] ?: true);
             $options['ssl'] = ($server['ssl'] ?: false);
-            
+
             return new Filesystem(new FtpAdapter($options), [
-                'visibility' => ($server['visibility'] ?: 'private')
+                'visibility' => ($server['visibility'] ?: 'private'),
             ]);
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
@@ -98,9 +100,9 @@ class Connection
         try {
             $options = $this->getCommonOptions($server);
             $options['privateKey'] = $server['privkey'];
-            
+
             return new Filesystem(new SftpAdapter($options), [
-                'visibility' => ($server['visibility'] ?: 'private')
+                'visibility' => ($server['visibility'] ?: 'private'),
             ]);
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";

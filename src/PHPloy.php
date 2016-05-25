@@ -414,7 +414,7 @@ class PHPloy
                 } else {
                     fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
                     $options['pass'] = $this->getPassword();
-                    $this->cli->lightGreen()->out("\r\n" . 'Password received. Continuing deployment ...');
+                    $this->cli->lightGreen()->out("\r\n".'Password received. Continuing deployment ...');
                 }
             }
 
@@ -727,7 +727,6 @@ class PHPloy
 
         // Checkout the specified Git branch
         if (!empty($this->servers[$this->currentlyDeploying]['branch'])) {
-
             $output = $this->git->checkout($this->servers[$this->currentlyDeploying]['branch'], $this->repo);
 
             if (isset($output[0])) {
@@ -1182,7 +1181,7 @@ class PHPloy
             $this->cli->out("Execute : <white>{$command}");
 
             $output = $this->git->exec($command);
-            
+
             $output = implode(' ', $output);
             $this->cli->out("Result : <white>{$output}");
         }
