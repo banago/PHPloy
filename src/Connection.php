@@ -39,6 +39,24 @@ class Connection
             throw new \Exception("Please provide a known connection protocol such as 'ftp' or 'sftp'.");
         }
     }
+    
+    private function getCommonOptions($server) {
+        $options = [
+            'host' => $server['host'],
+            'username' => $server['user'],
+            'password' => $server['pass'],
+            'port' => ($server['port'] ?: 22),
+            'root' => $server['path'],
+            'timeout' => ($server['timeout'] ?: 30),
+        ];
+        if (isset($server['permPrivate'])) {
+            $options['permPrivate'] = intval($server['permPrivate'], 8);
+        }
+        if (isset($server['permPublic'])) {
+            $options['permPublic'] = intval($server['permPublic'], 8);
+        }
+        return $options;
+    } 
 
     /**
      * Connects to the FTP Server.
@@ -52,16 +70,11 @@ class Connection
     protected function connectToFtp($server)
     {
         try {
-            return new Filesystem(new FtpAdapter([
-                'host' => $server['host'],
-                'username' => $server['user'],
-                'password' => $server['pass'],
-                'port' => ($server['port'] ?: 21),
-                'root' => $server['path'],
-                'passive' => ($server['passive'] ?: true),
-                'timeout' => ($server['timeout'] ?: 30),
-                'ssl' => ($server['ssl'] ?: false),
-            ]), [
+            $options = $this->getCommonOptions($server);
+            $options['passive'] = ($server['passive'] ?: true);             
+            $options['ssl'] = ($server['ssl'] ?: false);
+            
+            return new Filesystem(new FtpAdapter($options), [
                 'visibility' => ($server['visibility'] ?: 'private')
             ]);
         } catch (\Exception $e) {
@@ -83,15 +96,12 @@ class Connection
     protected function connectToSftp($server)
     {
         try {
-            return new Filesystem(new SftpAdapter([
-                'host' => $server['host'],
-                'username' => $server['user'],
-                'password' => $server['pass'],
-                'port' => ($server['port'] ?: 22),
-                'root' => $server['path'],
-                'timeout' => ($server['timeout'] ?: 30),
-                'privateKey' => $server['privkey'],
-            ]));
+            $options = $this->getCommonOptions($server);
+            $options['privateKey'] = $server['privkey'];
+            
+            return new Filesystem(new SftpAdapter($options), [
+                'visibility' => ($server['visibility'] ?: 'private')
+            ]);
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }

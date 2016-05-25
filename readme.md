@@ -45,6 +45,9 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     port = 22
     ; You can specify a branch to deploy from
     branch = develop
+    ; Will influnce file permission on the uploaded files, see http://flysystem.thephpleague.com/api/
+    visibility = private
+    permPrivate = 0700
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
     exclude[] = 'src/*.scss'
     exclude[] = '*.ini'
@@ -63,8 +66,12 @@ The `phploy.ini` file holds your project configuration. It should be located in 
 [production]
     quickmode = ftp://example:password@production-example.com:21/path/to/installation
     passive = true
+    ssl = false
     ; You can specify a branch to deploy from
     branch = master
+    ; Will influnce file permission on the uploaded files, see http://flysystem.thephpleague.com/api/
+    visibility = public
+    permPublic = 0774
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
     exclude[] = 'libs/*'
     exclude[] = 'config/*'
