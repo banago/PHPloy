@@ -50,11 +50,15 @@ class Connection
             'root' => $server['path'],
             'timeout' => ($server['timeout'] ?: 30),
         ];
-        if (isset($server['permPrivate'])) {
-            $options['permPrivate'] = intval($server['permPrivate'], 8);
+        if ($server['permissions']) {
+            $key = sprintf('perm%s', ucfirst($server['visibility']));
+            $server[$key] = $server['permissions'];
         }
-        if (isset($server['permPublic'])) {
-            $options['permPublic'] = intval($server['permPublic'], 8);
+        if ($server['permPrivate']) {
+            $options['permPrivate'] = intval($server['permPrivate'], 0);
+        }
+        if ($server['permPublic']) {
+            $options['permPublic'] = intval($server['permPublic'], 0);
         }
 
         return $options;

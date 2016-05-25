@@ -346,6 +346,7 @@ class PHPloy
             'visibility' => 'private',
             'permPublic' => 0774,
             'permPrivate' => 0700,
+            'permissions' => null,
             'branch' => '',
             'include' => [],
             'exclude' => [],
