@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.2
+ * @version 4.3
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.2';
+    protected $version = '4.3';
 
     /**
      * @var string
@@ -233,22 +233,25 @@ class PHPloy
         $this->opt = new \Banago\PHPloy\Options(new \League\CLImate\CLImate());
         $this->cli = $this->opt->cli;
 
-        $this->cli->backgroundGreen()->bold()->out('---------------------------------------------------');
-        $this->cli->backgroundGreen()->bold()->out("|                   PHPloy v{$this->version}                   |");
-        $this->cli->backgroundGreen()->bold()->out('---------------------------------------------------');
+        $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
+        $this->cli->backgroundGreen()->bold()->out("|                     PHPloy                    |");
+        $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
 
         // Setup PHPloy
         $this->setup();
 
         if ($this->cli->arguments->defined('help')) {
             $this->cli->usage();
-
             return;
         }
 
         if ($this->cli->arguments->defined('init')) {
             $this->createSampleIniFile();
+            return;
+        }
 
+        if ($this->cli->arguments->defined('version')) {
+            $this->cli->bold()->info('PHPloy v'.$this->version);
             return;
         }
 
