@@ -46,7 +46,7 @@ class Connection
             'host' => $server['host'],
             'username' => $server['user'],
             'password' => $server['pass'],
-            'port' => ($server['port'] ?: 22),
+            'port' => ($server['port'] ?: 21),
             'root' => $server['path'],
             'timeout' => ($server['timeout'] ?: 30),
         ];
