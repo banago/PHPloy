@@ -46,7 +46,6 @@ class Connection
             'host' => $server['host'],
             'username' => $server['user'],
             'password' => $server['pass'],
-            'port' => ($server['port'] ?: 21),
             'root' => $server['path'],
             'timeout' => ($server['timeout'] ?: 30),
         ];
@@ -78,7 +77,8 @@ class Connection
         try {
             $options = $this->getCommonOptions($server);
             $options['passive'] = ($server['passive'] ?: true);
-            $options['ssl'] = ($server['ssl'] ?: false);
+            $options['ssl'] = ($server['ssl'] ?: false);           
+            $options['port'] = ($server['port'] ?: 21);
 
             return new Filesystem(new FtpAdapter($options), [
                 'visibility' => ($server['visibility'] ?: 'private'),
@@ -104,6 +104,7 @@ class Connection
         try {
             $options = $this->getCommonOptions($server);
             $options['privateKey'] = $server['privkey'];
+            $options['port'] = ($server['port'] ?: 22);
 
             return new Filesystem(new SftpAdapter($options), [
                 'visibility' => ($server['visibility'] ?: 'private'),
