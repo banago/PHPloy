@@ -234,7 +234,7 @@ class PHPloy
         $this->cli = $this->opt->cli;
 
         $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
-        $this->cli->backgroundGreen()->bold()->out("|                     PHPloy                    |");
+        $this->cli->backgroundGreen()->bold()->out('|                     PHPloy                    |');
         $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
 
         // Setup PHPloy
@@ -242,16 +242,19 @@ class PHPloy
 
         if ($this->cli->arguments->defined('help')) {
             $this->cli->usage();
+
             return;
         }
 
         if ($this->cli->arguments->defined('init')) {
             $this->createSampleIniFile();
+
             return;
         }
 
         if ($this->cli->arguments->defined('version')) {
             $this->cli->bold()->info('PHPloy v'.$this->version);
+
             return;
         }
 
@@ -1273,17 +1276,17 @@ class PHPloy
                     preg_match($exclude, $file, $skipByExclude);
                 }
                 if (!$skip && !$skipByExclude) {
-                    if (is_dir($directory.DIRECTORY_SEPARATOR.$file)) {
+                    if (is_dir($directory.'/'.$file)) {
                         if ($recursive) {
-                            $arrayItems = array_merge($arrayItems, $this->directoryToArray($directory.DIRECTORY_SEPARATOR.$file, $recursive, $listDirs, $listFiles, $exclude));
+                            $arrayItems = array_merge($arrayItems, $this->directoryToArray($directory.'/'.$file, $recursive, $listDirs, $listFiles, $exclude));
                         }
                         if ($listDirs) {
-                            $file = $directory.DIRECTORY_SEPARATOR.$file;
+                            $file = $directory.'/'.$file;
                             $arrayItems[] = $file;
                         }
                     } else {
                         if ($listFiles) {
-                            $file = $directory.DIRECTORY_SEPARATOR.$file;
+                            $file = $directory.'/'.$file;
                             $arrayItems[] = $file;
                         }
                     }

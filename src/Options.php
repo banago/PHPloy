@@ -28,7 +28,7 @@ class Options
     }
 
     /**
-     * Register available options
+     * Register available options.
      */
     protected function build()
     {
