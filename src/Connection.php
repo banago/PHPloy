@@ -80,9 +80,7 @@ class Connection
             $options['ssl'] = ($server['ssl'] ?: false);
             $options['port'] = ($server['port'] ?: 21);
 
-            return new Filesystem(new FtpAdapter($options), [
-                'visibility' => ($server['visibility'] ?: 'public'),
-            ]);
+            return new Filesystem(new FtpAdapter($options));
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
@@ -106,9 +104,7 @@ class Connection
             $options['privateKey'] = $server['privkey'];
             $options['port'] = ($server['port'] ?: 22);
 
-            return new Filesystem(new SftpAdapter($options), [
-                'visibility' => ($server['visibility'] ?: 'public'),
-            ]);
+            return new Filesystem(new SftpAdapter($options));
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
