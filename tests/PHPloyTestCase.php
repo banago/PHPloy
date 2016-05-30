@@ -5,19 +5,39 @@ class PHPloyTestCase extends PHPUnit_Framework_TestCase
   protected $workspace;
   protected $repositoriesPath;
   protected $share;
+  protected $repository;
 
   protected function runSync()
   {
     $phployScriptPath = realpath(dirname(__FILE__)."/../phploy.php");
     $output = [];
     $returnValue;
+    chdir($this->repository);
     exec("php $phployScriptPath", $output, $returnValue);
+    // foreach ($output as $line)
+    // {
+    //   echo $line."\n";
+    // }
     return $returnValue;
+  }
+
+  protected function assertShareInSync()
+  {
+    exec("diff -r --exclude=\".git\" --exclude=\"phploy.ini\" --exclude=\".revision\" $this->share $this->repository", $output, $returnValue);
+    if ($returnValue != 0)
+    {
+      echo "sync failed:\n";
+      foreach ($output as $line)
+      {
+        echo $line."\n";
+      }
+    }
+    $this->assertEquals(0, $returnValue);
   }
 
   protected function setup()
   {
-    // echo "setup\n";
+    //echo "setup\n";
     // make this path configuratble?
     $this->workspace = "/tmp/PHPloyTestWorkspace";
     // echo "workspace: $this->workspace\n";
@@ -32,6 +52,9 @@ class PHPloyTestCase extends PHPUnit_Framework_TestCase
     }
     $this->safeDeleteDirectoryContentInWorkspace("repositories");
     $this->safeDeleteDirectoryContentInWorkspace("share");
+
+    $this->repository = $this->repositoriesPath."/".$this->generateRandomString().".git";
+    $this->share = $this->workspace."/share";
   }
 
   protected function tearDown()
@@ -66,5 +89,18 @@ class PHPloyTestCase extends PHPUnit_Framework_TestCase
         $this->safeDeleteInWorkspace($relativePath."/".$fileInfo->getFilename());
       }
     }
+  }
+
+  // Thank you stackoverflow
+  // http://stackoverflow.com/questions/4356289/php-random-string-generator
+  protected function generateRandomString($length = 10)
+  {
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+    for ($i = 0; $i < $length; $i++) {
+        $randomString .= $characters[rand(0, $charactersLength - 1)];
+    }
+    return $randomString;
   }
 }
