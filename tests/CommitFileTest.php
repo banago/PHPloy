@@ -15,7 +15,6 @@ class CommitFileTest extends PHPloyTestCase
 
       $executionResult = $this->runSync();
       $this->assertEquals(0, $executionResult);
-
-      // verify that repository and share are in sync
+      $this->assertShareInSync();
   }
 }
