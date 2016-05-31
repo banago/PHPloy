@@ -6,8 +6,9 @@ class PHPloyTestCase extends PHPUnit_Framework_TestCase
   protected $repositoriesPath;
   protected $share;
   protected $repository;
+  protected $synchronizationResult;
 
-  protected function runSync()
+  protected function whenRepositoryIsSynchronized()
   {
     $phployScriptPath = realpath(dirname(__FILE__)."/../phploy.php");
     $output = [];
@@ -18,6 +19,7 @@ class PHPloyTestCase extends PHPUnit_Framework_TestCase
     // {
     //   echo $line."\n";
     // }
+    $this->synchronizationResult = $returnValue;
     return $returnValue;
   }
 

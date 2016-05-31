@@ -9,7 +9,7 @@ class ExecutionErrorTest extends PHPloyTestCase
         $git = Repository::open($this->repository, '/usr/bin/git', 0755);
         $commit = $git->writeFile('test.txt', 'Test', 'Added test.txt');
 
-        $executionResult = $this->runSync();
+        $executionResult = $this->whenRepositoryIsSynchronized();
         $this->assertEquals(1, $executionResult);
     }
 
@@ -18,7 +18,7 @@ class ExecutionErrorTest extends PHPloyTestCase
         mkdir($this->repository);
         copy(realpath(dirname(__FILE__)."/resources/phploy.ini"), $this->repository."/phploy.ini");
 
-        $executionResult = $this->runSync();
+        $executionResult = $this->whenRepositoryIsSynchronized();
         $this->assertEquals(1, $executionResult);
     }
 }
