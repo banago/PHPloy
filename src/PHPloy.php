@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.2
+ * @version 4.3.5
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.2';
+    protected $version = '4.3.5';
 
     /**
      * @var string
@@ -233,9 +233,9 @@ class PHPloy
         $this->opt = new \Banago\PHPloy\Options(new \League\CLImate\CLImate());
         $this->cli = $this->opt->cli;
 
-        $this->cli->backgroundGreen()->bold()->out('---------------------------------------------------');
-        $this->cli->backgroundGreen()->bold()->out("|                   PHPloy v{$this->version}                   |");
-        $this->cli->backgroundGreen()->bold()->out('---------------------------------------------------');
+        $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
+        $this->cli->backgroundGreen()->bold()->out('|                     PHPloy                    |');
+        $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
 
         // Setup PHPloy
         $this->setup();
@@ -248,6 +248,12 @@ class PHPloy
 
         if ($this->cli->arguments->defined('init')) {
             $this->createSampleIniFile();
+
+            return;
+        }
+
+        if ($this->cli->arguments->defined('version')) {
+            $this->cli->bold()->info('PHPloy v'.$this->version);
 
             return;
         }
@@ -342,6 +348,11 @@ class PHPloy
             'port' => null,
             'passive' => null,
             'timeout' => null,
+            'ssl' => false,
+            'visibility' => 'public',
+            'permPublic' => 0774,
+            'permPrivate' => 0700,
+            'permissions' => null,
             'branch' => '',
             'include' => [],
             'exclude' => [],
@@ -410,7 +421,7 @@ class PHPloy
                 } else {
                     fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
                     $options['pass'] = $this->getPassword();
-                    $this->cli->lightGreen()->out("\r\n" . 'Password received. Continuing deployment ...');
+                    $this->cli->lightGreen()->out("\r\n".'Password received. Continuing deployment ...');
                 }
             }
 
@@ -622,7 +633,7 @@ class PHPloy
 
             // Done
             if (!$this->listFiles) {
-                $this->cli->bold()->lightGreen("\r\n|----------------[ ".$this->humanFilesize($this->deploymentSize).' Deployed ]----------------|');
+                $this->cli->bold()->lightGreen("\r\n|---------------[ ".$this->humanFilesize($this->deploymentSize).' Deployed ]---------------|');
                 $this->deploymentSize = 0;
             }
         }
@@ -723,7 +734,6 @@ class PHPloy
 
         // Checkout the specified Git branch
         if (!empty($this->servers[$this->currentlyDeploying]['branch'])) {
-
             $output = $this->git->checkout($this->servers[$this->currentlyDeploying]['branch'], $this->repo);
 
             if (isset($output[0])) {
@@ -1178,7 +1188,7 @@ class PHPloy
             $this->cli->out("Execute : <white>{$command}");
 
             $output = $this->git->exec($command);
-            
+
             $output = implode(' ', $output);
             $this->cli->out("Result : <white>{$output}");
         }
@@ -1266,17 +1276,17 @@ class PHPloy
                     preg_match($exclude, $file, $skipByExclude);
                 }
                 if (!$skip && !$skipByExclude) {
-                    if (is_dir($directory.DIRECTORY_SEPARATOR.$file)) {
+                    if (is_dir($directory.'/'.$file)) {
                         if ($recursive) {
-                            $arrayItems = array_merge($arrayItems, $this->directoryToArray($directory.DIRECTORY_SEPARATOR.$file, $recursive, $listDirs, $listFiles, $exclude));
+                            $arrayItems = array_merge($arrayItems, $this->directoryToArray($directory.'/'.$file, $recursive, $listDirs, $listFiles, $exclude));
                         }
                         if ($listDirs) {
-                            $file = $directory.DIRECTORY_SEPARATOR.$file;
+                            $file = $directory.'/'.$file;
                             $arrayItems[] = $file;
                         }
                     } else {
                         if ($listFiles) {
-                            $file = $directory.DIRECTORY_SEPARATOR.$file;
+                            $file = $directory.'/'.$file;
                             $arrayItems[] = $file;
                         }
                     }

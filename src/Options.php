@@ -28,7 +28,7 @@ class Options
     }
 
     /**
-     *
+     * Register available options.
      */
     protected function build()
     {
@@ -74,7 +74,13 @@ class Options
             'debug' => [
                 'prefix' => 'd',
                 'longPrefix' => 'debug',
-                'description' => 'Debug output',
+                'description' => 'Shows verbose output for debugging',
+                'noValue' => true,
+            ],
+            'version' => [
+                'prefix' => 'v',
+                'longPrefix' => 'version',
+                'description' => 'Shows PHPloy version',
                 'noValue' => true,
             ],
             'help' => [
