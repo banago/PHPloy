@@ -5,7 +5,7 @@ services:
 
 language: php
 php:
-  - 5.3
+  - 5.4
 
 before_install:
   - composer self-update
