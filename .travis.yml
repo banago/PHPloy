@@ -1,0 +1,18 @@
+sudo: required
+
+services:
+  - docker
+
+language: php
+php:
+  - 5.3
+
+before_install:
+  - composer self-update
+  - mkdir -p "/tmp/PHPloyTestWorkspace/share"
+  - docker run 	--name sftp_testserver 	-d 	-v /tmp/PHPloyTestWorkspace/share:/home/sftpuser/share 	-p 2222:22 atmoz/sftp sftpuser:password:$(id -u)
+
+install:
+  - travis_retry composer install --no-interaction --prefer-source
+
+script: ./vendor/bin/phpunit tests
