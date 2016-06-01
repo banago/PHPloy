@@ -39,10 +39,8 @@ class PHPloyTestCase extends PHPUnit_Framework_TestCase
 
   protected function setup()
   {
-    //echo "setup\n";
-    // make this path configuratble?
+    // TODO make this path configuratble?
     $this->workspace = "/tmp/PHPloyTestWorkspace";
-    // echo "workspace: $this->workspace\n";
     if (!file_exists($this->workspace))
     {
       mkdir($this->workspace, 0777, true);
@@ -61,7 +59,6 @@ class PHPloyTestCase extends PHPUnit_Framework_TestCase
 
   protected function tearDown()
   {
-    // echo "tearDown";
   }
 
   protected function safeDeleteInWorkspace($relativePath)
@@ -71,7 +68,6 @@ class PHPloyTestCase extends PHPUnit_Framework_TestCase
     // just to be safe
     if (strpos($realPath, '/PHPloyTestWorkspace') !== false)
     {
-      // echo "deleting $realPath\n";
       exec("rm -rf \"$realPath\"");
     }
     else
@@ -83,7 +79,6 @@ class PHPloyTestCase extends PHPUnit_Framework_TestCase
   protected function safeDeleteDirectoryContentInWorkspace($relativePath)
   {
     $realPath = realpath($this->workspace."/".$relativePath);
-    // echo "delete directory content $realPath\n";
     foreach (new DirectoryIterator($realPath) as $fileInfo)
     {
       if(!$fileInfo->isDot() && strcmp($fileInfo->getFilename(),".gitkeep") != 0)
