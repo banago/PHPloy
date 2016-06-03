@@ -1133,8 +1133,8 @@ class PHPloy
             }
             $this->cli->out("<red>Copying directory <white>{$fromDir}<red> to <white>{$toDir}");
 
-            // Recursive file/dir listing
-            $contents = $this->connection->listContents($fromDir, true);
+            // File/dir listing
+            $contents = $this->connection->listContents($fromDir, false);
 
             if (count($contents) < 1) {
                 $this->cli->out(" - Nothing to copy in {$fromDir}");
