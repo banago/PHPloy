@@ -63,6 +63,16 @@ class Connection
         return $options;
     }
 
+    private function getCommonFilesystemConfig($server)
+    {
+        $config = [];
+        if ($server['visibility']) {
+            $config['visibility'] = $server['visibility'];
+        }
+
+        return $config;
+    }
+
     /**
      * Connects to the FTP Server.
      *
@@ -80,7 +90,7 @@ class Connection
             $options['ssl'] = ($server['ssl'] ?: false);
             $options['port'] = ($server['port'] ?: 21);
 
-            return new Filesystem(new FtpAdapter($options));
+            return new Filesystem(new FtpAdapter($options), $this->getCommonFilesystemConfig($server));
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
@@ -104,7 +114,7 @@ class Connection
             $options['privateKey'] = $server['privkey'];
             $options['port'] = ($server['port'] ?: 22);
 
-            return new Filesystem(new SftpAdapter($options));
+            return new Filesystem(new SftpAdapter($options), $this->getCommonFilesystemConfig($server));
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
