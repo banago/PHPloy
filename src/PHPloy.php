@@ -349,7 +349,7 @@ class PHPloy
             'passive' => null,
             'timeout' => null,
             'ssl' => false,
-            'visibility' => 'public',
+            'visibility' => null,
             'permPublic' => 0774,
             'permPrivate' => 0700,
             'permissions' => null,

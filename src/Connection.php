@@ -50,7 +50,7 @@ class Connection
             'timeout' => ($server['timeout'] ?: 30),
         ];
         if ($server['permissions']) {
-            $key = sprintf('perm%s', ucfirst($server['visibility']));
+            $key = sprintf('perm%s', ucfirst($server['visibility'] ?: 'public'));
             $server[$key] = $server['permissions'];
         }
         if ($server['permPrivate']) {
@@ -61,6 +61,18 @@ class Connection
         }
 
         return $options;
+    }
+
+    private function getCommonFilesystemConfig($server)
+    {
+        $config = [];
+        if ($server['visibility']) {
+            $config['visibility'] = $server['visibility'];
+        } elseif ($server['permissions']) {
+            $config['visibility'] = 'public';
+        }
+
+        return $config;
     }
 
     /**
@@ -80,7 +92,7 @@ class Connection
             $options['ssl'] = ($server['ssl'] ?: false);
             $options['port'] = ($server['port'] ?: 21);
 
-            return new Filesystem(new FtpAdapter($options));
+            return new Filesystem(new FtpAdapter($options), $this->getCommonFilesystemConfig($server));
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
@@ -104,7 +116,7 @@ class Connection
             $options['privateKey'] = $server['privkey'];
             $options['port'] = ($server['port'] ?: 22);
 
-            return new Filesystem(new SftpAdapter($options));
+            return new Filesystem(new SftpAdapter($options), $this->getCommonFilesystemConfig($server));
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
