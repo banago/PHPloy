@@ -50,7 +50,7 @@ class Connection
             'timeout' => ($server['timeout'] ?: 30),
         ];
         if ($server['permissions']) {
-            $key = sprintf('perm%s', ucfirst($server['visibility']));
+            $key = sprintf('perm%s', ucfirst($server['visibility'] ?: 'public'));
             $server[$key] = $server['permissions'];
         }
         if ($server['permPrivate']) {
@@ -68,6 +68,8 @@ class Connection
         $config = [];
         if ($server['visibility']) {
             $config['visibility'] = $server['visibility'];
+        } elseif ($server['permissions']) {
+            $config['visibility'] = 'public';
         }
 
         return $config;
