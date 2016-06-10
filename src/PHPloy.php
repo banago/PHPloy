@@ -121,6 +121,16 @@ class PHPloy
     public $postDeploy = [];
 
     /**
+     * @var array
+     */
+    public $preDeployRemote = [];
+
+    /**
+     * @var array
+     */
+    public $postDeployRemote = [];
+
+    /**
      * The name of the file on remote servers that stores the current revision hash.
      *
      * @var string
@@ -360,6 +370,8 @@ class PHPloy
             'purge' => [],
             'pre-deploy' => [],
             'post-deploy' => [],
+            'pre-deploy-remote' => [],
+            'post-deploy-remote' => [],
         ];
 
         $iniFile = $this->repo.DIRECTORY_SEPARATOR.$this->iniFilename;
@@ -411,6 +423,14 @@ class PHPloy
 
             if (!empty($servers[$name]['post-deploy'])) {
                 $this->postDeploy[$name] = $servers[$name]['post-deploy'];
+            }
+
+            if (!empty($servers[$name]['pre-deploy-remote'])) {
+                $this->preDeployRemote[$name] = $servers[$name]['pre-deploy-remote'];
+            }
+
+            if (!empty($servers[$name]['post-deploy-remote'])) {
+                $this->postDeployRemote[$name] = $servers[$name]['post-deploy-remote'];
             }
 
            // Ask for a password if it is empty and a private key is not provided
@@ -596,6 +616,10 @@ class PHPloy
                 if (isset($this->preDeploy[$name]) && count($this->preDeploy[$name]) > 0) {
                     $this->preDeploy($this->preDeploy[$name]);
                 }
+                // Pre Deploy Remote
+                if (isset($this->preDeployRemote[$name]) && count($this->preDeployRemote[$name]) > 0) {
+                    $this->preDeployRemote($this->preDeployRemote[$name]);
+                }
                 // Push repository
                 $this->push($files[$this->currentlyDeploying]);
                 // Push Submodules
@@ -628,6 +652,10 @@ class PHPloy
                 // Post Deploy
                 if (isset($this->postDeploy[$name]) && count($this->postDeploy[$name]) > 0) {
                     $this->postDeploy($this->postDeploy[$name]);
+                }
+                // Post Deploy Remote
+                if (isset($this->postDeployRemote[$name]) && count($this->postDeployRemote[$name]) > 0) {
+                    $this->postDeployRemote($this->postDeployRemote[$name]);
                 }
             }
 
@@ -1191,6 +1219,60 @@ class PHPloy
 
             $output = implode(' ', $output);
             $this->cli->out("Result : <white>{$output}");
+        }
+    }
+
+    /**
+     * Execute pre commands on remote server.
+     *
+     * @param array $commands
+     */
+    public function preDeployRemote(array $commands)
+    {
+        $this->executeOnRemoteServer($commands);
+    }
+
+    /**
+     * Execute post commands on remote server.
+     *
+     * @param array $commands
+     */
+    public function postDeployRemote(array $commands)
+    {
+        $this->executeOnRemoteServer($commands);
+    }
+
+    /**
+     * @param array $commands
+     */
+    public function executeOnRemoteServer(array $commands)
+    {
+        /**
+         * @var \phpseclib\Net\SFTP
+         */
+        $connection = $this->connection->getAdapter()->getConnection();
+
+        if ($this->servers[$this->currentlyDeploying]['scheme'] != 'sftp'
+            || get_class($connection) != \phpseclib\Net\SFTP::class
+        )
+        {
+            $this->cli->yellow()->out("\r\nConnection scheme is not 'sftp' ignoring [pre/post]-deploy-remote");
+
+            return;
+        }
+
+        if (!$connection->isConnected())
+        {
+            $this->cli->red()->out("\r\nSFTP adapter connection problem skipping '[pre/post]-deploy-remote' commands");
+
+            return;
+        }
+
+        foreach ($commands as $command)
+        {
+            $this->cli->out("Execute remote : <white>{$command}");
+            $output = $connection->exec($command);
+            $this->cli->out("Result remote: <white>{$output}");
         }
     }
 
