@@ -20,4 +20,4 @@ before_install:
 install:
   - travis_retry composer install --no-interaction --prefer-source
 
-script: ./vendor/bin/phpunit tests
+script: sudo ./vendor/bin/phpunit tests
