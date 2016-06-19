@@ -1,24 +1,27 @@
 <?php
 use TQ\Git\Repository\Repository;
-require_once('PHPloyTestCase.php');
 
-class ExecutionErrorTest extends PHPloyTestCase
+require_once('PHPLoyTestHelper.php');
+
+class ExecutionErrorTest extends PHPUnit_Framework_TestCase
 {
-    public function testRunWithoutConfigurationShouldReturnError()
-    {
-        $git = Repository::open($this->repository, '/usr/bin/git', 0755);
-        $commit = $git->writeFile('test.txt', 'Test', 'Added test.txt');
+  public function testRunWithoutConfigurationShouldReturnError()
+  {
+    $testHelper = new PHPLoyTestHelper('sftp', false);
+    $git = Repository::open($testHelper->repository, '/usr/bin/git', 0755);
+    $commit = $git->writeFile('test.txt', 'Test', 'Added test.txt');
 
-        $executionResult = $this->whenRepositoryIsSynchronized();
-        $this->assertEquals(1, $executionResult);
-    }
+    $executionResult = $testHelper->whenRepositoryIsSynchronized();
+    $this->assertEquals(1, $executionResult);
+  }
 
-    public function testRunWithoutGitRepositoryShouldReturnError()
-    {
-        mkdir($this->repository);
-        copy(realpath(dirname(__FILE__)."/resources/phploy.ini"), $this->repository."/phploy.ini");
+  public function testRunWithoutGitRepositoryShouldReturnError()
+  {
+    $testHelper = new PHPLoyTestHelper('sftp', false);
+    mkdir($testHelper->repository);
+    copy(realpath(dirname(__FILE__)."/resources/sftp_phploy.ini"), $testHelper->repository."/phploy.ini");
 
-        $executionResult = $this->whenRepositoryIsSynchronized();
-        $this->assertEquals(1, $executionResult);
-    }
+    $executionResult = $testHelper->whenRepositoryIsSynchronized();
+    $this->assertEquals(1, $executionResult);
+  }
 }

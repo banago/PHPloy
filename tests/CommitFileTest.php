@@ -1,77 +1,82 @@
 <?php
-use TQ\Git\Repository\Repository;
-require_once('PHPloyTestCase.php');
+require_once('PHPLoyTestHelper.php');
 
-class CommitFileTest extends PHPloyTestCase
+class CommitFileTest extends PHPUnit_Framework_TestCase
 {
-  protected $git;
-
-  public function testSyncAddedFileShouldSucceed()
+  public function provider()
   {
-    $this->givenRepositoryWithConfiguration();
+    return array(
+      array('ftp'),
+      array('sftp')
+    );
+  }
+
+  protected $testHelper;
+  /**
+  * @dataProvider provider
+  */
+  public function testSyncAddedFileShouldSucceed($testHelper)
+  {
+    $this->testHelper = new PHPLoyTestHelper($testHelper);
+    $this->testHelper->givenRepositoryWithConfiguration();
     $this->whenFileIsAdded();
     $this->thenRepositoryIsSynchronizedSuccessfully();
   }
 
-  public function testSyncDeletedFileShouldSucceed()
+  /**
+  * @dataProvider provider
+  */
+  public function testSyncDeletedFileShouldSucceed($testHelper)
   {
+    $this->testHelper = new PHPLoyTestHelper($testHelper);
     $this->givenSynchronizedRepositoryWithSingleFile();
     $this->whenFileIsDeleted();
     $this->thenRepositoryIsSynchronizedSuccessfully();
   }
 
-  public function testSyncChangedFileShouldSucceed()
+  /**
+  * @dataProvider provider
+  */
+  public function testSyncChangedFileShouldSucceed($testHelper)
   {
+    $this->testHelper = new PHPLoyTestHelper($testHelper);
     $this->givenSynchronizedRepositoryWithSingleFile();
     $this->whenFileIsChanged();
     $this->thenRepositoryIsSynchronizedSuccessfully();
   }
 
-  // test helper methods
-  protected function givenRepositoryWithConfiguration()
-  {
-    $this->git = Repository::open($this->repository, '/usr/bin/git', 0755);
-    $result = $this->git->transactional(function(TQ\Vcs\Repository\Transaction $t) {
-      copy(realpath(dirname(__FILE__)."/resources/phploy.ini"), $this->repository."/phploy.ini");
-      $t->setCommitMsg('Add configuration');
-    });
-  }
-
   protected function givenSynchronizedRepositoryWithSingleFile()
   {
-    $this->givenRepositoryWithConfiguration();
+    $this->testHelper->givenRepositoryWithConfiguration();
     $this->whenFileIsAdded();
     $this->thenRepositoryIsSynchronizedSuccessfully();
   }
 
   protected function whenFileIsAdded()
   {
-    $commit = $this->git->writeFile('test.txt', 'Test', 'Added test.txt');
-    $this->whenRepositoryIsSynchronized();
+    $commit = $this->testHelper->git->writeFile('test.txt', 'Test', 'Added test.txt');
+    $this->testHelper->whenRepositoryIsSynchronized();
   }
 
   protected function whenFileIsDeleted()
   {
-    $result = $this->git->transactional(function(TQ\Vcs\Repository\Transaction $t) {
-      unlink($this->repository."/test.txt");
-      $t->setCommitMsg('Deleted test.txt');
-    });
-    $this->whenRepositoryIsSynchronized();
+    $commit = $this->testHelper->git->removeFile('test.txt', 'Remove test.txt');
+    $this->testHelper->whenRepositoryIsSynchronized();
   }
 
   protected function whenFileIsChanged()
   {
-    $result = $this->git->transactional(function(TQ\Vcs\Repository\Transaction $t) {
-      $myfile = file_put_contents($this->repository."/test.txt", "change".PHP_EOL , FILE_APPEND);
+    $result = $this->testHelper->git->transactional(function(TQ\Vcs\Repository\Transaction $t) {
+      $myfile = file_put_contents($this->testHelper->repository."/test.txt", "change".PHP_EOL , FILE_APPEND);
       $t->setCommitMsg('Changed test.txt');
     });
-    $this->whenRepositoryIsSynchronized();
+    $this->testHelper->whenRepositoryIsSynchronized();
   }
 
-  protected function thenRepositoryIsSynchronizedSuccessfully()
+  public function thenRepositoryIsSynchronizedSuccessfully()
   {
-    $this->assertEquals(0, $this->synchronizationResult);
-    $this->assertShareInSync();
+    $this->assertEquals(0, $this->testHelper->getSynchronizationResult());
+    $this->assertEquals(true, $this->testHelper->shareInSync());
   }
 
 }

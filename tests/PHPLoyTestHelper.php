@@ -1,29 +1,58 @@
 <?php
+use TQ\Git\Repository\Repository;
 
-class PHPloyTestCase extends PHPUnit_Framework_TestCase
+class PHPloyTestHelper
 {
+  public $git;
+  public $repository;
+
+  protected $helperType;
+  protected $configFileName;
   protected $workspace;
   protected $repositoriesPath;
   protected $share;
-  protected $repository;
   protected $synchronizationResult;
+  protected $logErroneousSync = true;
 
-  protected function whenRepositoryIsSynchronized()
+  public function __construct($helperType, $logErroneousSync = true)
+  {
+    $this->logErroneousSync = $logErroneousSync;
+    $this->helperType = $helperType;
+    $this->configFileName = $helperType."_phploy.ini";
+    $this->setup();
+  }
+
+  public function givenRepositoryWithConfiguration()
+  {
+    $this->git = Repository::open($this->repository, '/usr/bin/git', 0755);
+    $result = $this->git->transactional(function(TQ\Vcs\Repository\Transaction $t) {
+      copy(realpath(dirname(__FILE__)."/resources/$this->configFileName"), $this->repository."/phploy.ini");
+      $t->setCommitMsg('Add configuration');
+    });
+  }
+
+  public function whenRepositoryIsSynchronized()
   {
     $phployScriptPath = realpath(dirname(__FILE__)."/../phploy.php");
     $output = [];
     $returnValue;
     chdir($this->repository);
     exec("php $phployScriptPath", $output, $returnValue);
-    // foreach ($output as $line)
-    // {
-    //   echo $line."\n";
-    // }
     $this->synchronizationResult = $returnValue;
+    if ($this->synchronizationResult != 0 && $this->logErroneousSync)
+    {
+      echo "======== Synchronizing ========\n";
+      echo "protocol: $this->helperType \n";
+      echo "repository: $this->repository \n";
+      foreach ($output as $line)
+      {
+        echo $line."\n";
+      }
+    }
     return $returnValue;
   }
 
-  protected function assertShareInSync()
+  public function shareInSync()
   {
     exec("diff -r --exclude=\".git\" --exclude=\"phploy.ini\" --exclude=\".revision\" $this->share $this->repository", $output, $returnValue);
     if ($returnValue != 0)
@@ -33,13 +62,18 @@ class PHPloyTestCase extends PHPUnit_Framework_TestCase
       {
         echo $line."\n";
       }
+      return false;
     }
-    $this->assertEquals(0, $returnValue);
+    return true;
+  }
+
+  public function getSynchronizationResult()
+  {
+    return $this->synchronizationResult;
   }
 
   protected function setup()
   {
-    // TODO make this path configuratble?
     $this->workspace = "/tmp/PHPloyTestWorkspace";
     if (!file_exists($this->workspace))
     {
@@ -51,14 +85,23 @@ class PHPloyTestCase extends PHPUnit_Framework_TestCase
       mkdir($this->repositoriesPath, 0777, true);
     }
     $this->safeDeleteDirectoryContentInWorkspace("repositories");
-    $this->safeDeleteDirectoryContentInWorkspace("share");
+    $this->safeDeleteDirectoryContentInWorkspace($this->helperType."_share/share");
 
     $this->repository = $this->repositoriesPath."/".$this->generateRandomString().".git";
-    $this->share = $this->workspace."/share";
+    $this->share = $this->workspace."/".$this->helperType."_share/share";
   }
 
-  protected function tearDown()
+  // Thank you stackoverflow
+  // http://stackoverflow.com/questions/4356289/php-random-string-generator
+  protected function generateRandomString($length = 10)
   {
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+    for ($i = 0; $i < $length; $i++) {
+        $randomString .= $characters[rand(0, $charactersLength - 1)];
+    }
+    return $randomString;
   }
 
   protected function safeDeleteInWorkspace($relativePath)
@@ -81,23 +124,10 @@ class PHPloyTestCase extends PHPUnit_Framework_TestCase
     $realPath = realpath($this->workspace."/".$relativePath);
     foreach (new DirectoryIterator($realPath) as $fileInfo)
     {
-      if(!$fileInfo->isDot() && strcmp($fileInfo->getFilename(),".gitkeep") != 0)
+      if(!$fileInfo->isDot())
       {
         $this->safeDeleteInWorkspace($relativePath."/".$fileInfo->getFilename());
       }
     }
-  }
-
-  // Thank you stackoverflow
-  // http://stackoverflow.com/questions/4356289/php-random-string-generator
-  protected function generateRandomString($length = 10)
-  {
-    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    $charactersLength = strlen($characters);
-    $randomString = '';
-    for ($i = 0; $i < $length; $i++) {
-        $randomString .= $characters[rand(0, $charactersLength - 1)];
-    }
-    return $randomString;
   }
 }
