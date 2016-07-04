@@ -11,7 +11,7 @@
  * @author Mark Beech <mbeech@mark-beech.co.uk>
  * @link http://wplancer.com
  * @licence MIT Licence
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 /**
@@ -33,7 +33,7 @@ class PHPloy
     /**
      * @var string $phployVersion
      */
-    protected $phployVersion = '2.0.0';
+    protected $phployVersion = '2.1.0';
 
     /**
      * @var string $revision
@@ -515,14 +515,20 @@ class PHPloy
 
 	            // Added (A), Modified (C), Unmerged (M)
                 if ($line[0] == 'A' or $line[0] == 'C' or $line[0] == 'M') {
-	                $filesToUpload[] = trim(substr($line, 1));
+                    $filesToUpload[] = trim(substr($line, 1));
                     // TODO: we could possibly calculate & sum the file sizes here to display the proper upload progress later on
 
                 // Deleted (D)
-	            } elseif ($line[0] == 'D') {
-	                $filesToDelete[] = trim(substr($line, 1));
-
-	            } else {
+                } elseif ($line[0] == 'D') {
+                    $filesToDelete[] = trim(substr($line, 1));
+                
+                // Renamed files (R)
+                } elseif ($line[0] == 'R') {
+                    list(, $renameFrom, $renameTo) = explode("\t", $line);
+                    $filesToUpload[] = trim($renameTo);
+                    $filesToDelete[] = trim($renameFrom);
+                    
+                } else {
 	                throw new Exception("Unknown git-diff status: {$line[0]}");
 	            }
 	        }
