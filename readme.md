@@ -1,6 +1,6 @@
 # PHPloy Legacy
 
-**Version 2.0.0**
+**Version 2.1.0**
 
 This is PHPloy Legacy. To use the latest and greatest version of PHPloy, please switch [master](https://github.com/banago/PHPloy) branch.
 
@@ -180,6 +180,10 @@ The people that have brought PHPloy to you are:
 
 
 ## Version history
+
+v2.1.0 (4 July 2016)
+
+* Feature: added support for renamed files, which previously caused deployment process to fail
 
 v2.0.0-beta4 (13 Aug 2014)
 
