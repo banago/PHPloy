@@ -808,6 +808,11 @@ class PHPloy
                     $filesToUpload[] = trim(substr($line, 1));
                 } elseif ($status == 'D') {
                     $filesToDelete[] = trim(substr($line, 1));
+                } elseif ($status === 'R') {
+                    list(, $oldFile, $newFile) = preg_split('/\s+/', $line);
+
+                    $filesToDelete[] = trim($oldFile);
+                    $filesToUpload[] = trim($newFile);
                 } else {
                     throw new \Exception("Unknown git-diff status. Use '--sync' to update remote revision or use '--debug' to see what's wrong.");
                 }
