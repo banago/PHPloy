@@ -798,10 +798,21 @@ class PHPloy
          */
         if (!empty($remoteRevision)) {
             foreach ($output as $line) {
-                if ($line[0] === 'A' or $line[0] === 'C' or $line[0] === 'M' or $line[0] === 'T') {
+                $status = $line[0];
+
+                if (strpos($line, 'warning: CRLF will be replaced by LF in') !== false) {
+                    continue;
+                } elseif (strpos($line, 'The file will have its original line endings in your working directory.') !== false) {
+                    continue;
+                } elseif ($status === 'A' or $status === 'C' or $status === 'M' or $status === 'T') {
                     $filesToUpload[] = trim(substr($line, 1));
-                } elseif ($line[0] == 'D') {
+                } elseif ($status == 'D') {
                     $filesToDelete[] = trim(substr($line, 1));
+                } elseif ($status === 'R') {
+                    list(, $oldFile, $newFile) = preg_split('/\s+/', $line);
+
+                    $filesToDelete[] = trim($oldFile);
+                    $filesToUpload[] = trim($newFile);
                 } else {
                     throw new \Exception("Unknown git-diff status. Use '--sync' to update remote revision or use '--debug' to see what's wrong.");
                 }
