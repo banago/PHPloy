@@ -61,6 +61,10 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     ; Pre- and Post-deploy hooks
     pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
     post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
+    ; Works only via SSH2 connection
+    pre-deploy-remote[] = "touch .maintenance"
+    post-deploy-remote[] = "mv cache cache2"
+    post-deploy-remote[] = "rm .maintenance"
 
 [production]
     quickmode = ftp://example:password@production-example.com:21/path/to/installation
