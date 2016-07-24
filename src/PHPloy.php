@@ -469,8 +469,12 @@ class PHPloy
     public function getPasswordFromIniFile($servername)
     {
         $values = $this->parseIniFile($this->getPasswordFile());
+        if (isset($values[$servername]['pass']) === true) {
+            return $values[$servername]['pass'];
+        }
+
         if (isset($values[$servername]['password']) === true) {
-            return $values[$servername]['password'];
+            throw new \Exception('Please rename password to pass in '.$this->getPasswordFile());
         }
 
         return '';
