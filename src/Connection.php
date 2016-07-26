@@ -101,6 +101,14 @@ class Connection
     {
         try {
             $options = $this->getCommonOptions($server);
+            if ('~' === $server['privkey'][0] && getenv('HOME') !== null) {
+                $server['privkey'] = substr_replace($server['privkey'], getenv('HOME'), 0, 1);
+            }
+
+            if (!empty($server['privkey']) && !is_file($server['privkey'])) {
+                throw new \Exception("Private key {$server['privkey']} doesn't exists.");
+            }
+
             $options['privateKey'] = $server['privkey'];
             $options['port'] = ($server['port'] ?: 22);
 

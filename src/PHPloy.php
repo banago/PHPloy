@@ -121,6 +121,16 @@ class PHPloy
     public $postDeploy = [];
 
     /**
+     * @var array
+     */
+    public $preDeployRemote = [];
+
+    /**
+     * @var array
+     */
+    public $postDeployRemote = [];
+
+    /**
      * The name of the file on remote servers that stores the current revision hash.
      *
      * @var string
@@ -360,6 +370,8 @@ class PHPloy
             'purge' => [],
             'pre-deploy' => [],
             'post-deploy' => [],
+            'pre-deploy-remote' => [],
+            'post-deploy-remote' => [],
         ];
 
         $iniFile = $this->repo.DIRECTORY_SEPARATOR.$this->iniFilename;
@@ -413,6 +425,14 @@ class PHPloy
                 $this->postDeploy[$name] = $servers[$name]['post-deploy'];
             }
 
+            if (!empty($servers[$name]['pre-deploy-remote'])) {
+                $this->preDeployRemote[$name] = $servers[$name]['pre-deploy-remote'];
+            }
+
+            if (!empty($servers[$name]['post-deploy-remote'])) {
+                $this->postDeployRemote[$name] = $servers[$name]['post-deploy-remote'];
+            }
+
            // Ask for a password if it is empty and a private key is not provided
             if ($options['pass'] === '' && $options['privkey'] === '') {
                 // Look for .phploy config file
@@ -449,8 +469,12 @@ class PHPloy
     public function getPasswordFromIniFile($servername)
     {
         $values = $this->parseIniFile($this->getPasswordFile());
+        if (isset($values[$servername]['pass']) === true) {
+            return $values[$servername]['pass'];
+        }
+
         if (isset($values[$servername]['password']) === true) {
-            return $values[$servername]['password'];
+            throw new \Exception('Please rename password to pass in '.$this->getPasswordFile());
         }
 
         return '';
@@ -596,6 +620,10 @@ class PHPloy
                 if (isset($this->preDeploy[$name]) && count($this->preDeploy[$name]) > 0) {
                     $this->preDeploy($this->preDeploy[$name]);
                 }
+                // Pre Deploy Remote
+                if (isset($this->preDeployRemote[$name]) && count($this->preDeployRemote[$name]) > 0) {
+                    $this->preDeployRemote($this->preDeployRemote[$name]);
+                }
                 // Push repository
                 $this->push($files[$this->currentlyDeploying]);
                 // Push Submodules
@@ -628,6 +656,10 @@ class PHPloy
                 // Post Deploy
                 if (isset($this->postDeploy[$name]) && count($this->postDeploy[$name]) > 0) {
                     $this->postDeploy($this->postDeploy[$name]);
+                }
+                // Post Deploy Remote
+                if (isset($this->postDeployRemote[$name]) && count($this->postDeployRemote[$name]) > 0) {
+                    $this->postDeployRemote($this->postDeployRemote[$name]);
                 }
             }
 
@@ -770,10 +802,21 @@ class PHPloy
          */
         if (!empty($remoteRevision)) {
             foreach ($output as $line) {
-                if ($line[0] === 'A' or $line[0] === 'C' or $line[0] === 'M' or $line[0] === 'T') {
+                $status = $line[0];
+
+                if (strpos($line, 'warning: CRLF will be replaced by LF in') !== false) {
+                    continue;
+                } elseif (strpos($line, 'The file will have its original line endings in your working directory.') !== false) {
+                    continue;
+                } elseif ($status === 'A' or $status === 'C' or $status === 'M' or $status === 'T') {
                     $filesToUpload[] = trim(substr($line, 1));
-                } elseif ($line[0] == 'D') {
+                } elseif ($status == 'D') {
                     $filesToDelete[] = trim(substr($line, 1));
+                } elseif ($status === 'R') {
+                    list(, $oldFile, $newFile) = preg_split('/\s+/', $line);
+
+                    $filesToDelete[] = trim($oldFile);
+                    $filesToUpload[] = trim($newFile);
                 } else {
                     throw new \Exception("Unknown git-diff status. Use '--sync' to update remote revision or use '--debug' to see what's wrong.");
                 }
@@ -1133,8 +1176,8 @@ class PHPloy
             }
             $this->cli->out("<red>Copying directory <white>{$fromDir}<red> to <white>{$toDir}");
 
-            // Recursive file/dir listing
-            $contents = $this->connection->listContents($fromDir, true);
+            // File/dir listing
+            $contents = $this->connection->listContents($fromDir, false);
 
             if (count($contents) < 1) {
                 $this->cli->out(" - Nothing to copy in {$fromDir}");
@@ -1191,6 +1234,60 @@ class PHPloy
 
             $output = implode(' ', $output);
             $this->cli->out("Result : <white>{$output}");
+        }
+    }
+
+    /**
+     * Execute pre commands on remote server.
+     *
+     * @param array $commands
+     */
+    public function preDeployRemote(array $commands)
+    {
+        $this->executeOnRemoteServer($commands);
+    }
+
+    /**
+     * Execute post commands on remote server.
+     *
+     * @param array $commands
+     */
+    public function postDeployRemote(array $commands)
+    {
+        $this->executeOnRemoteServer($commands);
+    }
+
+    /**
+     * @param array $commands
+     */
+    public function executeOnRemoteServer(array $commands)
+    {
+        /**
+         * @var \phpseclib\Net\SFTP
+         */
+        $connection = $this->connection->getAdapter()->getConnection();
+
+        if ($this->servers[$this->currentlyDeploying]['scheme'] != 'sftp'
+            || get_class($connection) != \phpseclib\Net\SFTP::class
+        )
+        {
+            $this->cli->yellow()->out("\r\nConnection scheme is not 'sftp' ignoring [pre/post]-deploy-remote");
+
+            return;
+        }
+
+        if (!$connection->isConnected())
+        {
+            $this->cli->red()->out("\r\nSFTP adapter connection problem skipping '[pre/post]-deploy-remote' commands");
+
+            return;
+        }
+
+        foreach ($commands as $command)
+        {
+            $this->cli->out("Execute remote : <white>{$command}");
+            $output = $connection->exec($command);
+            $this->cli->out("Result remote: <white>{$output}");
         }
     }
 
