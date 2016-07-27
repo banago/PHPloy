@@ -433,11 +433,28 @@ class PHPloy
                 $this->postDeployRemote[$name] = $servers[$name]['post-deploy-remote'];
             }
 
+            // Set host from environment variable if it does not exist in the config
+            if (empty($options['host']) && !empty(getenv('PHPLOY_HOST'))) {
+                $options['host'] = getenv('PHPLOY_HOST');
+            }
+
+            // Set port number from environment variable if it does not exist in the config
+            if (empty($options['port']) && !empty(getenv('PHPLOY_PORT'))) {
+                $options['port'] = getenv('PHPLOY_PORT');
+            }
+
+            // Set username from environment variable if it does not exist in the config
+            if (empty($options['user']) && !empty(getenv('PHPLOY_USER'))) {
+                $options['user'] = getenv('PHPLOY_USER');
+            }
+
            // Ask for a password if it is empty and a private key is not provided
             if ($options['pass'] === '' && $options['privkey'] === '') {
                 // Look for .phploy config file
                 if (file_exists($this->getPasswordFile())) {
                     $options['pass'] = $this->getPasswordFromIniFile($name);
+                } elseif (!empty(getenv('PHPLOY_PASSWORD'))) {
+                    $options['pass'] = getenv('PHPLOY_PASSWORD');
                 } else {
                     fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
                     $options['pass'] = $this->getPassword();

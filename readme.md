@@ -87,7 +87,7 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
 ```
 
-If your password is missing in the `phploy.ini` file, PHPloy will interactively ask you for your password.
+If your password is missing in the `phploy.ini` file or the `PHPLOY_PASSWORD` environment variable, PHPloy will interactively ask you for your password.
 There is also an option to store the password in a file called `.phploy`.
 
 ```
@@ -99,6 +99,29 @@ There is also an option to store the password in a file called `.phploy`.
 ```
 
 This feature is especially useful if you would like to share your phploy.ini via Git but hide your password from the public.
+
+You can also use environment variables to deploy without storing your credentials in a file.
+These variables will be used if they do not exist in the `phploy.ini` file:
+```
+PHPLOY_HOST
+PHPLOY_PORT
+PHPLOY_PASSWORD
+PHPLOY_USER
+```
+
+These variables can be used like this;
+```
+$ PHPLOY_PORT="21" PHPLOY_HOST="myftphost.com" PHPLOY_USER="ftp" PHPLOY_PASSWORD="ftp-password" phploy -s servername
+```
+
+Or export them like this, the script will automatically use them:
+```
+$ export PHPLOY_PORT="21"
+$ export PHPLOY_HOST="myftphost.com"
+$ export PHPLOY_USER="ftp"
+$ export PHPLOY_PASSWORD="ftp-password"
+$ phploy -s servername
+```
 
 ## Multiple servers
 
