@@ -14,6 +14,8 @@ Thank you for your contribution! PHPloy wouldn't be so great without you.
 
 ## Testing
 
+*Sepcial thanks to [@mbrugger](https://github.com/mbrugger) for implementing the testing functionality, a long awaited feature.*
+
 To get starting with testing, please fullow the steps below:
 
 1. Install [docker](https://docs.docker.com/engine/installation/)
