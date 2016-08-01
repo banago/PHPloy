@@ -21,7 +21,7 @@ To get starting with testing, please fullow the steps below:
 ```
 vagrant@vagrant-ubuntu-trusty-64:/vagrant/PHPloy$ ./tests/start_test_server.sh
 ```
-- 3. run the tests
+3. run the tests
 ```
 vagrant@vagrant-ubuntu-trusty-64:/vagrant/PHPloy$ vendor/bin/phpunit tests
 PHPUnit 4.8.26 by Sebastian Bergmann and contributors.
