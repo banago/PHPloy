@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.3.5
+ * @version 4.4
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.3.5';
+    protected $version = '4.4';
 
     /**
      * @var string
@@ -453,8 +453,8 @@ class PHPloy
                 // Look for .phploy config file
                 if (file_exists($this->getPasswordFile())) {
                     $options['pass'] = $this->getPasswordFromIniFile($name);
-                } elseif (!empty(getenv('PHPLOY_PASSWORD'))) {
-                    $options['pass'] = getenv('PHPLOY_PASSWORD');
+                } elseif (!empty(getenv('PHPLOY_PASS'))) {
+                    $options['pass'] = getenv('PHPLOY_PASS');
                 } else {
                     fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
                     $options['pass'] = $this->getPassword();

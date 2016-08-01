@@ -1,7 +1,7 @@
 # PHPloy
-**Version 4.3.5**
+**Version 4.4**
 
-PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 5.4+** and **Git 1.8+**.
+PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 5.5+** and **Git 1.8+**.
 
 ## How it works
 
@@ -87,15 +87,15 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
 ```
 
-If your password is missing in the `phploy.ini` file or the `PHPLOY_PASSWORD` environment variable, PHPloy will interactively ask you for your password.
+If your password is missing in the `phploy.ini` file or the `PHPLOY_PASS` environment variable, PHPloy will interactively ask you for your password.
 There is also an option to store the password in a file called `.phploy`.
 
 ```
 [staging]
-    password=password
+    pass="thePassword"
     
 [production]
-    password=password
+    pass="thePassword"
 ```
 
 This feature is especially useful if you would like to share your phploy.ini via Git but hide your password from the public.
@@ -105,13 +105,13 @@ These variables will be used if they do not exist in the `phploy.ini` file:
 ```
 PHPLOY_HOST
 PHPLOY_PORT
-PHPLOY_PASSWORD
+PHPLOY_PASS
 PHPLOY_USER
 ```
 
 These variables can be used like this;
 ```
-$ PHPLOY_PORT="21" PHPLOY_HOST="myftphost.com" PHPLOY_USER="ftp" PHPLOY_PASSWORD="ftp-password" phploy -s servername
+$ PHPLOY_PORT="21" PHPLOY_HOST="myftphost.com" PHPLOY_USER="ftp" PHPLOY_PASS="ftp-password" phploy -s servername
 ```
 
 Or export them like this, the script will automatically use them:
@@ -119,7 +119,7 @@ Or export them like this, the script will automatically use them:
 $ export PHPLOY_PORT="21"
 $ export PHPLOY_HOST="myftphost.com"
 $ export PHPLOY_USER="ftp"
-$ export PHPLOY_PASSWORD="ftp-password"
+$ export PHPLOY_PASS="ftp-password"
 $ phploy -s servername
 ```
 
