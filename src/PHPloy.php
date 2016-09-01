@@ -462,6 +462,11 @@ class PHPloy
                 }
             }
 
+            // Set the path from environment variable if it does not exist in the config
+            if (empty($options['path']) && !empty(getenv('PHPLOY_PATH'))) {
+                $options['path'] = getenv('PHPLOY_PATH');
+            }
+
             $this->servers[$name] = $options;
         }
     }
