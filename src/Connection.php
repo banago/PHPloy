@@ -101,7 +101,7 @@ class Connection
     {
         try {
             $options = $this->getCommonOptions($server);
-            if ('~' === $server['privkey'][0] && getenv('HOME') !== null) {
+            if (!empty($server['privkey']) && '~' === $server['privkey'][0] && getenv('HOME') !== null) {
                 $server['privkey'] = substr_replace($server['privkey'], getenv('HOME'), 0, 1);
             }
 
