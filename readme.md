@@ -47,6 +47,8 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     branch = develop
     ; File permission set on the uploaded files/directories
     permissions = 0700
+    ; File permissions set on newly created directories
+    directoryPerm = 0775
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
     exclude[] = 'src/*.scss'
     exclude[] = '*.ini'
@@ -74,6 +76,8 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     branch = master
     ; File permission set on the uploaded files/directories
     permissions = 0774
+    ; File permissions set on newly created directories
+    directoryPerm = 0755
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
     exclude[] = 'libs/*'
     exclude[] = 'config/*'

@@ -363,6 +363,7 @@ class PHPloy
             'permPublic' => 0774,
             'permPrivate' => 0700,
             'permissions' => null,
+            'directoryPerm' => 0755,
             'branch' => '',
             'include' => [],
             'exclude' => [],

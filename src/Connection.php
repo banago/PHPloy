@@ -48,6 +48,7 @@ class Connection
             'password' => $server['pass'],
             'root' => $server['path'],
             'timeout' => ($server['timeout'] ?: 30),
+            'directoryPerm' => $server['directoryPerm'],
         ];
         if ($server['permissions']) {
             $key = sprintf('perm%s', ucfirst($server['visibility']));
@@ -58,6 +59,9 @@ class Connection
         }
         if ($server['permPublic']) {
             $options['permPublic'] = intval($server['permPublic'], 0);
+        }
+        if ($server['directoryPerm']) {
+            $options['directoryPerm'] = intval($server['directoryPerm'], 0);
         }
 
         return $options;
