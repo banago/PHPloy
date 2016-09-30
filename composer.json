@@ -18,8 +18,8 @@
         "league/flysystem-sftp": "^1.0"
     },
     "require-dev": {
-	     "phpunit/phpunit": "4.8.*",
-	      "teqneers/php-stream-wrapper-for-git": "1.0.*"
+        "phpunit/phpunit": "4.8.*",
+        "teqneers/php-stream-wrapper-for-git": "1.0.*"
     },
     "autoload": {
         "psr-4": {
