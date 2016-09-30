@@ -10,7 +10,6 @@
  *
  * @version 4.4
  */
-
 namespace Banago\PHPloy;
 
 class PHPloy
@@ -324,9 +323,9 @@ class PHPloy
      *
      * @param string $iniFile
      *
-     * @return array
-     *
      * @throws \Exception
+     *
+     * @return array
      */
     public function parseIniFile($iniFile)
     {
@@ -1284,29 +1283,26 @@ class PHPloy
      */
     public function executeOnRemoteServer(array $commands)
     {
-        /**
+        /*
          * @var \phpseclib\Net\SFTP
          */
         $connection = $this->connection->getAdapter()->getConnection();
 
         if ($this->servers[$this->currentlyDeploying]['scheme'] != 'sftp'
             || get_class($connection) != \phpseclib\Net\SFTP::class
-        )
-        {
+        ) {
             $this->cli->yellow()->out("\r\nConnection scheme is not 'sftp' ignoring [pre/post]-deploy-remote");
 
             return;
         }
 
-        if (!$connection->isConnected())
-        {
+        if (!$connection->isConnected()) {
             $this->cli->red()->out("\r\nSFTP adapter connection problem skipping '[pre/post]-deploy-remote' commands");
 
             return;
         }
 
-        foreach ($commands as $command)
-        {
+        foreach ($commands as $command) {
             $this->cli->out("Execute remote : <white>{$command}");
             $output = $connection->exec($command);
             $this->cli->out("Result remote: <white>{$output}");

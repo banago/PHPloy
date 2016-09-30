@@ -92,9 +92,7 @@ class Options
         ]);
     }
 
-    /**
-     *
-     */
+
     protected function parse()
     {
         $this->cli->arguments->parse();
