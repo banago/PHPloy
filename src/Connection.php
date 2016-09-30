@@ -21,9 +21,9 @@ class Connection
      *
      * @param string $server
      *
-     * @return Connection
-     *
      * @throws \Exception
+     *
+     * @return Connection
      */
     public function __construct($server)
     {
@@ -72,9 +72,9 @@ class Connection
      *
      * @param string $server
      *
-     * @return Filesystem|null
-     *
      * @throws \Exception if it can't connect to FTP server
+     *
+     * @return Filesystem|null
      */
     protected function connectToFtp($server)
     {
@@ -88,8 +88,6 @@ class Connection
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
-
-        return;
     }
 
     /**
@@ -97,9 +95,9 @@ class Connection
      *
      * @param string $server
      *
-     * @return Filesystem|null
-     *
      * @throws \Exception if it can't connect to FTP server
+     *
+     * @return Filesystem|null
      */
     protected function connectToSftp($server)
     {
@@ -120,7 +118,5 @@ class Connection
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
-
-        return;
     }
 }
