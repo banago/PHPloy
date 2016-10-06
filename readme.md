@@ -1,7 +1,7 @@
 # PHPloy
-**Version 4.3.5**
+**Version 4.4**
 
-PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 5.4+** and **Git 1.8+**.
+PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 5.5+** and **Git 1.8+**.
 
 ## How it works
 
@@ -47,6 +47,8 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     branch = develop
     ; File permission set on the uploaded files/directories
     permissions = 0700
+    ; File permissions set on newly created directories
+    directoryPerm = 0775
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
     exclude[] = 'src/*.scss'
     exclude[] = '*.ini'
@@ -61,6 +63,10 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     ; Pre- and Post-deploy hooks
     pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
     post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
+    ; Works only via SSH2 connection
+    pre-deploy-remote[] = "touch .maintenance"
+    post-deploy-remote[] = "mv cache cache2"
+    post-deploy-remote[] = "rm .maintenance"
 
 [production]
     quickmode = ftp://example:password@production-example.com:21/path/to/installation
@@ -70,6 +76,8 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     branch = master
     ; File permission set on the uploaded files/directories
     permissions = 0774
+    ; File permissions set on newly created directories
+    directoryPerm = 0755
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
     exclude[] = 'libs/*'
     exclude[] = 'config/*'
@@ -83,18 +91,43 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
 ```
 
-If your password is missing in the `phploy.ini` file, PHPloy will interactively ask you for your password.
+If your password is missing in the `phploy.ini` file or the `PHPLOY_PASS` environment variable, PHPloy will interactively ask you for your password.
 There is also an option to store the password in a file called `.phploy`.
 
 ```
 [staging]
-    password=password
+    pass="thePassword"
     
 [production]
-    password=password
+    pass="thePassword"
 ```
 
 This feature is especially useful if you would like to share your phploy.ini via Git but hide your password from the public.
+
+You can also use environment variables to deploy without storing your credentials in a file.
+These variables will be used if they do not exist in the `phploy.ini` file:
+```
+PHPLOY_HOST
+PHPLOY_PORT
+PHPLOY_PASS
+PHPLOY_PATH
+PHPLOY_USER
+```
+
+These variables can be used like this;
+```
+$ PHPLOY_PORT="21" PHPLOY_HOST="myftphost.com" PHPLOY_USER="ftp" PHPLOY_PASS="ftp-password" PHPLOY_PATH="/home/user/public_html/example.com" phploy -s servername
+```
+
+Or export them like this, the script will automatically use them:
+```
+$ export PHPLOY_PORT="21"
+$ export PHPLOY_HOST="myftphost.com"
+$ export PHPLOY_USER="ftp"
+$ export PHPLOY_PASS="ftp-password"
+$ export PHPLOY_PATH="/home/user/public_html/example.com"
+$ phploy -s servername
+```
 
 ## Multiple servers
 

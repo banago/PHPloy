@@ -21,9 +21,9 @@ class Connection
      *
      * @param string $server
      *
-     * @return Connection
-     *
      * @throws \Exception
+     *
+     * @return Connection
      */
     public function __construct($server)
     {
@@ -48,6 +48,7 @@ class Connection
             'password' => $server['pass'],
             'root' => $server['path'],
             'timeout' => ($server['timeout'] ?: 30),
+            'directoryPerm' => $server['directoryPerm'],
         ];
         if ($server['permissions']) {
             $key = sprintf('perm%s', ucfirst($server['visibility']));
@@ -59,6 +60,9 @@ class Connection
         if ($server['permPublic']) {
             $options['permPublic'] = intval($server['permPublic'], 0);
         }
+        if ($server['directoryPerm']) {
+            $options['directoryPerm'] = intval($server['directoryPerm'], 0);
+        }
 
         return $options;
     }
@@ -68,9 +72,9 @@ class Connection
      *
      * @param string $server
      *
-     * @return Filesystem|null
-     *
      * @throws \Exception if it can't connect to FTP server
+     *
+     * @return Filesystem|null
      */
     protected function connectToFtp($server)
     {
@@ -84,8 +88,6 @@ class Connection
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
-
-        return;
     }
 
     /**
@@ -93,14 +95,22 @@ class Connection
      *
      * @param string $server
      *
-     * @return Filesystem|null
-     *
      * @throws \Exception if it can't connect to FTP server
+     *
+     * @return Filesystem|null
      */
     protected function connectToSftp($server)
     {
         try {
             $options = $this->getCommonOptions($server);
+            if (!empty($server['privkey']) && '~' === $server['privkey'][0] && getenv('HOME') !== null) {
+                $server['privkey'] = substr_replace($server['privkey'], getenv('HOME'), 0, 1);
+            }
+
+            if (!empty($server['privkey']) && !is_file($server['privkey'])) {
+                throw new \Exception("Private key {$server['privkey']} doesn't exists.");
+            }
+
             $options['privateKey'] = $server['privkey'];
             $options['port'] = ($server['port'] ?: 22);
 
@@ -108,7 +118,5 @@ class Connection
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
-
-        return;
     }
 }
