@@ -24,6 +24,7 @@ $phar = new Phar(
 $phar->startBuffering();
 
 // Adding folders
+// https://bugs.php.net/bug.php?id=58169
 $phar->buildFromDirectory(
     dirname(__FILE__), 
     '/(src|vendor\/composer|vendor\/league|vendor\/phpseclib)\/.*$/'
