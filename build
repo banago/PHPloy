@@ -25,11 +25,12 @@ $phar->startBuffering();
 
 // Adding folders
 $phar->buildFromDirectory(
-    dirname(__FILE__),
-    '/(src|vendor)\/.*$/'
+    dirname(__FILE__), 
+    '/(src|vendor\/composer|vendor\/league|vendor\/phpseclib)\/.*$/'
 );
 
 // Adding main file
+$phar->addFile('vendor/autoload.php');
 $phar->addFile('phploy.php');
 
 // Create a stub and add the shebang
