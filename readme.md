@@ -201,7 +201,8 @@ In many cases, we need to purge the contents of a directory after a deployment. 
     purge[] = "cache/"
     
 Note that it will delete nested folders only one level deep (won't delete nested *sub*folders).
-E.g.: 
+E.g.:
+
     cache/
         a/                        <- will be deleted
             some_file             <- will be deleted
