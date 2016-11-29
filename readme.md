@@ -205,8 +205,7 @@ E.g.:
 
     cache/
         a/                        <- will be deleted
-            some_file             <- will be deleted
-            
+            some_file             <- will be deleted
         b/                        <- will not be deleted
             c/                    <- will not be deleted
                 some_other_file   <- will not be deleted
