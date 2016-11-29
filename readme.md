@@ -59,6 +59,7 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     ; Directories that should be copied after deploy, from->to
     copy[] = 'public->www'
     ; Directories that should be purged after deploy
+    ; Will delete nested folders only one level deep (won't delete with nested subfolders)
     purge[] = "cache/"
     ; Pre- and Post-deploy hooks
     pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
@@ -199,6 +200,15 @@ In many cases, we need to purge the contents of a directory after a deployment. 
     ; relative to the deployment path
     purge[] = "cache/"
     
+Note that it will delete nested folders only one level deep (won't delete nested *sub*folders).
+E.g.: 
+    cache/
+        a/                        <- will be deleted
+            some_file             <- will be deleted
+            
+        b/                        <- will not be deleted
+            c/                    <- will not be deleted
+                some_other_file   <- will not be deleted
 ## Hooks
 
 PHPloy allows you to execute commands before and after the deployment. For example you can use `wget`  call a script on my server to execute a `composer update`.
