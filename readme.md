@@ -216,7 +216,8 @@ PHPloy supports simple logging of the activity. Logging is saved in a `phploy.lo
 
 To turn logging on, add this to `phploy.ini`:
 
-    logger = on
+    [production]
+        logger = on
 
 ## Contribute
 
