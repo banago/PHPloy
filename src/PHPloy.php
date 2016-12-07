@@ -1304,9 +1304,10 @@ class PHPloy
         }
 
         foreach ($commands as $command) {
-            $this->cli->out("Execute remote : <white>{$command}");
+            $this->cli->blue()->out("Executing on remote server: <bold>{$command}");
+            $command = "cd {$this->servers[$this->currentlyDeploying]['path']}; {$command}";
             $output = $connection->exec($command);
-            $this->cli->out("Result remote: <white>{$output}");
+            $this->cli->lightBlue()->out("<bold>{$output}");
         }
     }
 
