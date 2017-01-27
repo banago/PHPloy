@@ -2,7 +2,7 @@
 <?php
 
 $filename = 'phploy.phar';
-$output_dir = __DIR__ . '/bin/';
+$output_dir = __DIR__ . '/dist/';
 $output_file = $output_dir . $filename;
 
 // Remove existing file, recursively create directories if needed
@@ -27,12 +27,16 @@ $phar->startBuffering();
 // https://bugs.php.net/bug.php?id=58169
 $phar->buildFromDirectory(
     dirname(__FILE__), 
-    '/(src|vendor\/composer|vendor\/league|vendor\/phpseclib)\/.*$/'
+    '/(vendor\/composer|vendor\/league|vendor\/phpseclib|vendor\/seld)\/.*/'
 );
 
 // Adding main file
-$phar->addFile('vendor/autoload.php');
 $phar->addFile('phploy.php');
+$phar->addFile('src/Git.php');
+$phar->addFile('src/PHPloy.php');
+$phar->addFile('src/Options.php');
+$phar->addFile('src/Connection.php');
+$phar->addFile('vendor/autoload.php');
 
 // Create a stub and add the shebang
 $default = $phar->createDefaultStub('phploy.php');
