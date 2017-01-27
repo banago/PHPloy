@@ -1,5 +1,5 @@
 # PHPloy
-**Version 4.5**
+**Version 4.6**
 
 PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 5.5+** and **Git 1.8+**.
 
@@ -9,7 +9,20 @@ PHPloy stores a file called `.revision` on your server. This file contains the h
 
 ## Install 
 
-You can install PHPloy globally, in your `/usr/local/bin` directory or, locally, in your project directory. Rename `phploy.phar` to `phploy` for ease of use.
+### Via Composer
+
+If you have composer installed in your machine, you can pull PHPloy globally like this:
+
+```bash
+composer global require "banago/phploy"
+```
+
+Make sure to place the `$HOME/.composer/vendor/bin` directory (or the [equivalent directory](http://stackoverflow.com/a/40470979/512277) for your OS) 
+in your `$PATH` so the PHPloy executable can be located by your system.
+
+### Via Phar Archive
+
+You can install PHPloy Phar globally, in your `/usr/local/bin` directory or, locally, in your project directory. Rename `phploy.phar` to `phploy` for ease of use.
 
 1. **Globally:** Move `phploy` into `/usr/local/bin`. Make it executable by running `sudo chmod +x phploy`.
 2. **Locally** Move `phploy` into your project directory. 
@@ -17,8 +30,8 @@ You can install PHPloy globally, in your `/usr/local/bin` directory or, locally,
 ## Usage 
 *When using PHPloy locally, proceed the command with `php `*
 
-1. Run `(php) phploy --init` in the terminal to create the `phploy.ini` file or create one manually.
-2. Run `(php) phploy` in terminal to deploy.
+1. Run `phploy --init` in the terminal to create the `phploy.ini` file or create one manually.
+2. Run `phploy` in terminal to deploy.
 
 Windows Users: [Installing PHPloy globally on Windows](https://github.com/banago/PHPloy/issues/214)
 
