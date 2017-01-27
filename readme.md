@@ -22,7 +22,7 @@ in your `$PATH` so the PHPloy executable can be located by your system.
 
 ### Via Phar Archive
 
-You can install PHPloy Phar globally, in your `/usr/local/bin` directory or, locally, in your project directory. Rename `phploy.phar` to `phploy` for ease of use.
+You can install PHPloy Phar globally, in your `/usr/local/bin` directory or, locally, in your project directory. **Rename** `phploy.phar` to `phploy` for ease of use.
 
 1. **Globally:** Move `phploy` into `/usr/local/bin`. Make it executable by running `sudo chmod +x phploy`.
 2. **Locally** Move `phploy` into your project directory. 
