@@ -990,7 +990,14 @@ class PHPloy
         }
 
         if (count($filesToUpload) > 0 or count($filesToDelete) > 0) {
-            $this->setRevision($localRevision);
+            // If $this->revision is not HEAD, it means the rollback command was provided
+            if ($this->revision != 'HEAD') {
+                // Get rollback revision (current HEAD is on rollback revision)
+                $revision = $this->git->command('rev-parse HEAD');
+                $this->setRevision($revision[0]);
+            } else {
+                $this->setRevision($localRevision);
+            }
         } else {
             $this->cli->gray()->out('   No files to upload or delete.');
         }
