@@ -66,6 +66,11 @@ class Options
                 'description' => 'Creates sample deploy.ini file',
                 'noValue' => true,
             ],
+            'force' => [
+                'longPrefix' => 'force',
+                'description' => 'Creates directory to the deployment path if it does not exist',
+                'noValue' => true,
+            ],
             'all' => [
                 'longPrefix' => 'all',
                 'description' => 'Deploys to all specified servers when a default exists',

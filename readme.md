@@ -1,5 +1,5 @@
 # PHPloy
-**Version 4.6**
+**Version 4.6.1**
 
 PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 5.5+** and **Git 1.8+**.
 
@@ -198,6 +198,12 @@ If you want to update the `.revision` file on the server to match your current l
 If you want to set it to a previous commit revision, just specify the revision like this:
 
     phploy --sync="your-revision-hash-here"
+
+## Creating deployment directory on first deploy
+
+If the deployment directory does not exits, you can instruct PHPloy to create it for you:
+
+    phploy --force
 
 ## Submodules
 

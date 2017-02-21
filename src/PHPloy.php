@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.6
+ * @version 4.6.1
  */
 namespace Banago\PHPloy;
 
@@ -17,7 +17,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.6';
+    protected $version = '4.6.1';
 
     /**
      * @var string
@@ -134,14 +134,14 @@ class PHPloy
      *
      * @var string
      */
-    public $dotRevisionFilename = '.revision';
+    public $dotRevisionFileName = '.revision';
 
     /**
      * The filename from which to read remote server details.
      *
      * @var string
      */
-    public $iniFilename = 'phploy.ini';
+    public $iniFileName = 'phploy.ini';
 
     /**
      * The filename from which to read server password.
@@ -177,7 +177,7 @@ class PHPloy
 
     /**
      * Holds the path to the .revision file
-     * For the main repository this will be the value of $dotRevisionFilename ('.revision' by default)
+     * For the main repository this will be the value of $dotRevisionFileName ('.revision' by default)
      * but for submodules, the submodule path will be prepended.
      *
      * @var string
@@ -233,6 +233,13 @@ class PHPloy
      * @var bool init
      */
     protected $init = false;
+
+    /**
+     * Whether the --makepath command line option was given.
+     *
+     * @var bool init
+     */
+    protected $force = false;
 
     /**
      * Constructor.
@@ -314,6 +321,10 @@ class PHPloy
             $this->init = true;
         }
 
+        if ($this->cli->arguments->defined('force')) {
+            $this->force = true;
+        }
+
         $this->repo = getcwd();
         $this->mainRepo = $this->repo;
     }
@@ -374,7 +385,7 @@ class PHPloy
             'post-deploy-remote' => [],
         ];
 
-        $iniFile = $this->repo.DIRECTORY_SEPARATOR.$this->iniFilename;
+        $iniFile = $this->repo.DIRECTORY_SEPARATOR.$this->iniFileName;
 
         $servers = $this->parseIniFile($iniFile);
 
@@ -399,7 +410,7 @@ class PHPloy
 
             // Ignoring for the win
             $this->filesToExclude[$name] = $this->globalFilesToExclude;
-            $this->filesToExclude[$name][] = $this->iniFilename;
+            $this->filesToExclude[$name][] = $this->iniFileName;
 
             if (!empty($servers[$name]['exclude'])) {
                 $this->filesToExclude[$name] = array_merge($this->filesToExclude[$name], $servers[$name]['exclude']);
@@ -604,7 +615,7 @@ class PHPloy
 
         // Exit with an error if the specified server does not exist in phploy.ini
         if ($this->server != '' && !array_key_exists($this->server, $this->servers)) {
-            throw new \Exception("The server \"{$this->server}\" is not defined in {$this->iniFilename}.");
+            throw new \Exception("The server \"{$this->server}\" is not defined in {$this->iniFileName}.");
         }
 
         // Loop through all the servers in phploy.ini
@@ -622,11 +633,27 @@ class PHPloy
                 continue;
             }
 
+            if ($this->force) {
+                $this->cli->comment("Creating deployment directory: '". $server['path'] ."'.");
+ 
+                $givePath = $server['path']; 
+                $server['path'] = '/';
+
+                $connection = new \Banago\PHPloy\Connection($server);
+                $this->connection = $connection->server;
+
+                $this->connection->createDir($givePath);
+                $this->cli->green("Deployment directory created. Ready to deploy.");
+                
+                $this->connection = null;
+                $server['path'] = $givePath;
+            }
+
             $connection = new \Banago\PHPloy\Connection($server);
             $this->connection = $connection->server;
 
             if ($this->sync) {
-                $this->dotRevision = $this->dotRevisionFilename;
+                $this->dotRevision = $this->dotRevisionFileName;
                 $this->setRevision();
                 continue;
             }
@@ -771,19 +798,16 @@ class PHPloy
         $filesToDelete = [];
 
         if ($this->currentSubmoduleName) {
-            $this->dotRevision = $this->currentSubmoduleName.'/'.$this->dotRevisionFilename;
+            $this->dotRevision = $this->currentSubmoduleName.'/'.$this->dotRevisionFileName;
         } else {
-            $this->dotRevision = $this->dotRevisionFilename;
+            $this->dotRevision = $this->dotRevisionFileName;
         }
-
-        // Fetch the .revision file from the server and write it to $tmpFile
-        $this->debug("Fetching {$this->dotRevision} file");
-
+        
         if ($this->connection->has($this->dotRevision)) {
             $remoteRevision = $this->connection->read($this->dotRevision);
             $this->debug('Remote revision: <bold>'.$remoteRevision);
         } else {
-            $this->cli->comment('No revision found - uploading everything...');
+            $this->cli->comment('No revision found on server. Uploading everything...');
         }
 
         // Checkout the specified Git branch
@@ -1434,6 +1458,7 @@ class PHPloy
      */
     protected function createSampleIniFile()
     {
+        $iniFile = getcwd().DIRECTORY_SEPARATOR.$this->iniFileName;
         $data = "; NOTE: If non-alphanumeric characters are present, enclose in value in quotes.\n
 [staging]
     quickmode = ftp://example:password@production-example.com:21/path/to/installation\n
@@ -1445,7 +1470,12 @@ class PHPloy
     path = /path/to/installation
     port = 22";
 
-        if (file_put_contents(getcwd().DIRECTORY_SEPARATOR.'phploy.ini', $data)) {
+        if(file_exists($iniFile)) {
+            $this->cli->info("\nphploy.ini file already exists.\n");
+            return;
+        }
+        
+        if (file_put_contents($iniFile, $data)) {
             $this->cli->info("\nSample phploy.ini file created.\n");
         }
     }
