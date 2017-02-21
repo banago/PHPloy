@@ -71,6 +71,11 @@ class Options
                 'description' => 'Creates directory to the deployment path if it does not exist',
                 'noValue' => true,
             ],
+            'fresh' => [
+                'longPrefix' => 'fresh',
+                'description' => 'Deploys all files even if some already exist on server. Ignores server revision.',
+                'noValue' => true,
+            ],
             'all' => [
                 'longPrefix' => 'all',
                 'description' => 'Deploys to all specified servers when a default exists',
@@ -96,7 +101,6 @@ class Options
             ],
         ]);
     }
-
 
     protected function parse()
     {

@@ -8,8 +8,9 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.6.2
+ * @version 4.6.3
  */
+
 namespace Banago\PHPloy;
 
 class PHPloy
@@ -17,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.6.2';
+    protected $version = '4.6.3';
 
     /**
      * @var string
@@ -235,11 +236,18 @@ class PHPloy
     protected $init = false;
 
     /**
-     * Whether the --makepath command line option was given.
+     * Whether the --force command line option was given.
      *
      * @var bool init
      */
     protected $force = false;
+
+    /**
+     * Whether the --fresh command line option was given.
+     *
+     * @var bool init
+     */
+    protected $fresh = false;
 
     /**
      * Constructor.
@@ -323,6 +331,10 @@ class PHPloy
 
         if ($this->cli->arguments->defined('force')) {
             $this->force = true;
+        }
+
+        if ($this->cli->arguments->defined('fresh')) {
+            $this->fresh = true;
         }
 
         $this->repo = getcwd();
@@ -634,17 +646,17 @@ class PHPloy
             }
 
             if ($this->force) {
-                $this->cli->comment("Creating deployment directory: '". $server['path'] ."'.");
- 
-                $givePath = $server['path']; 
+                $this->cli->comment("Creating deployment directory: '".$server['path']."'.");
+
+                $givePath = $server['path'];
                 $server['path'] = '/';
 
                 $connection = new \Banago\PHPloy\Connection($server);
                 $this->connection = $connection->server;
 
                 $this->connection->createDir($givePath);
-                $this->cli->green("Deployment directory created. Ready to deploy.");
-                
+                $this->cli->green('Deployment directory created. Ready to deploy.');
+
                 $this->connection = null;
                 $server['path'] = $givePath;
             }
@@ -802,15 +814,16 @@ class PHPloy
         } else {
             $this->dotRevision = $this->dotRevisionFileName;
         }
-        
-        if ($this->connection->has($this->dotRevision)) {
+
+        if ($this->fresh) {
+            $this->cli->out('Manual fresh upload...');
+        } elseif ($this->connection->has($this->dotRevision)) {
             $remoteRevision = $this->connection->read($this->dotRevision);
             $this->debug('Remote revision: <bold>'.$remoteRevision);
         } else {
-            $this->cli->comment('No revision found on server. Uploading everything...');
+            $this->cli->out('No revision found. Fresh upload...');
         }
 
-        // Checkout the specified Git branch
         if (!empty($this->servers[$this->currentlyDeploying]['branch'])) {
             $output = $this->git->checkout($this->servers[$this->currentlyDeploying]['branch'], $this->repo);
 
@@ -1477,11 +1490,12 @@ class PHPloy
     path = /path/to/installation
     port = 22";
 
-        if(file_exists($iniFile)) {
+        if (file_exists($iniFile)) {
             $this->cli->info("\nphploy.ini file already exists.\n");
+
             return;
         }
-        
+
         if (file_put_contents($iniFile, $data)) {
             $this->cli->info("\nSample phploy.ini file created.\n");
         }
