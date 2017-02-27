@@ -207,7 +207,7 @@ If the deployment directory does not exits, you can instruct PHPloy to create it
 
 ## Manual fresh upload
 
-If you want to do a fresh uplaod, evne if you have deployed earlier, use the `--fresh` argument like this:
+If you want to do a fresh upload, even if you have deployed earlier, use the `--fresh` argument like this:
 
     phploy --fresh
 
