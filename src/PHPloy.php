@@ -1281,7 +1281,7 @@ class PHPloy
 
             $output = $this->git->exec($command);
 
-            $output = implode(' ', $output);
+            $output = implode("\n\r", $output);
             $this->cli->out("Result : <white>{$output}");
         }
     }
@@ -1298,7 +1298,7 @@ class PHPloy
 
             $output = $this->git->exec($command);
 
-            $output = implode(' ', $output);
+            $output = implode("\n\r", $output);
             $this->cli->out("Result : <white>{$output}");
         }
     }
