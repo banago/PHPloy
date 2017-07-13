@@ -602,18 +602,23 @@ class PHPloy
      * Filter included files.
      *
      * @param array $files Array of files which needed to be filtered
+     * @param array $changedFiles Array of files changed since last upload
      *
      * @return array $filteredFiles
      */
-    private function filterIncludedFiles($files)
+    private function filterIncludedFiles($files, $changedFiles)
     {
         $filteredFiles = [];
         foreach ($files as $i => $file) {
-            $name = getcwd() . '/' . $file;
-            if (is_dir($name)) {
-                $filteredFiles = array_merge($filteredFiles, array_map([$this, 'relPath'], $this->directoryToArray($name, true)));
-            } else {
-                $filteredFiles[] = $file;
+            list($file, $condition) = explode(':', $file);
+
+            if (empty($condition) || in_array($condition, $changedFiles)) {
+                $name = getcwd().'/'.$file;
+                if (is_dir($name)) {
+                    $filteredFiles = array_merge($filteredFiles, array_map([$this, 'relPath'], $this->directoryToArray($name, true)));
+                } else {
+                    $filteredFiles[] = $file;
+                }
             }
         }
 
@@ -894,7 +899,7 @@ class PHPloy
 
         $filteredFilesToUpload = $this->filterIgnoredFiles($filesToUpload);
         $filteredFilesToDelete = $this->filterIgnoredFiles($filesToDelete);
-        $filteredFilesToInclude = isset($this->filesToInclude[$this->currentlyDeploying]) ? $this->filterIncludedFiles($this->filesToInclude[$this->currentlyDeploying]) : [];
+        $filteredFilesToInclude = isset($this->filesToInclude[$this->currentlyDeploying]) ? $this->filterIncludedFiles($this->filesToInclude[$this->currentlyDeploying], $filesToUpload) : [];
 
         $filesToUpload = array_merge($filteredFilesToUpload['files'], $filteredFilesToInclude);
         $filesToDelete = $filteredFilesToDelete['files'];
@@ -1289,7 +1294,7 @@ class PHPloy
 
             $output = $this->git->exec($command);
 
-            $output = implode(' ', $output);
+            $output = implode("\n\r", $output);
             $this->cli->out("Result : <white>{$output}");
         }
     }
@@ -1306,7 +1311,7 @@ class PHPloy
 
             $output = $this->git->exec($command);
 
-            $output = implode(' ', $output);
+            $output = implode("\n\r", $output);
             $this->cli->out("Result : <white>{$output}");
         }
     }
