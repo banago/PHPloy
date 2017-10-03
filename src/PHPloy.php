@@ -53,6 +53,14 @@ class PHPloy
     public $currentlyDeploying = '';
 
     /**
+     * The local directory that corresponds to the remote root directory. Defaults to an empty string, which corresponds
+     * to the Git repository root. This needs to end with '/' or be the empty string.
+     *
+     * @var string
+     */
+    public $root = '';
+
+    /**
      * A list of files that should NOT be uploaded to any of the servers.
      *
      * @var array
@@ -424,6 +432,15 @@ class PHPloy
             $this->filesToExclude[$name] = $this->globalFilesToExclude;
             $this->filesToExclude[$name][] = $this->iniFileName;
 
+            if (!empty($servers[$name]['root'])) {
+                $this->root = $servers[$name]['root'];
+                if (empty($this->root) || !is_string($this->root)) {
+                    $this->root = '';
+                } else if (substr($this->root, -1) !== '/') {
+                    $this->root .= '/';
+                }
+            }
+
             if (!empty($servers[$name]['exclude'])) {
                 $this->filesToExclude[$name] = array_merge($this->filesToExclude[$name], $servers[$name]['exclude']);
             }
@@ -559,6 +576,28 @@ class PHPloy
         shell_exec('stty '.$oldStyle);
 
         return $password;
+    }
+
+    /**
+     * Only returns files under the `root` directory and strips that from the path.
+     *
+     * @param array $files Array of files which needed to be transformed and filtered
+     *
+     * @return array of the remaining, transformed files
+     */
+    private function applyLocalRoot($files)
+    {
+        if (empty($this->root)) {
+            return $files;
+        }
+
+        $newFiles = [];
+        foreach ($files as $file) {
+            if (strpos($file, $this->root) === 0) {
+                $newFiles[] = substr($file, strlen($this->root));
+            }
+        }
+        return $newFiles;
     }
 
     /**
@@ -884,8 +923,8 @@ class PHPloy
             $filesToUpload = $output;
         }
 
-        $filteredFilesToUpload = $this->filterIgnoredFiles($filesToUpload);
-        $filteredFilesToDelete = $this->filterIgnoredFiles($filesToDelete);
+        $filteredFilesToUpload = $this->filterIgnoredFiles($this->applyLocalRoot($filesToUpload));
+        $filteredFilesToDelete = $this->filterIgnoredFiles($this->applyLocalRoot($filesToDelete));
         $filteredFilesToInclude = isset($this->filesToInclude[$this->currentlyDeploying]) ? $this->filterIncludedFiles($this->filesToInclude[$this->currentlyDeploying]) : [];
 
         $filesToUpload = array_merge($filteredFilesToUpload['files'], $filteredFilesToInclude);
@@ -906,7 +945,7 @@ class PHPloy
      * Update the current remote server with the array of files provided.
      *
      * @param array $files 2-dimensional array with 2 indices: 'upload' and 'delete'
-     *                     Each of these contains an array of filenames and paths (relative to repository root)
+     *                     Each of these contains an array of filenames and paths (relative to the 'root')
      */
     public function push($files, $localRevision = null)
     {
@@ -967,7 +1006,7 @@ class PHPloy
                     }
                 }
 
-                $filePath = $this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file);
+                $filePath = $this->repo.'/'.$this->root.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file);
                 $data = @file_get_contents($filePath);
 
                 // It can happen the path is wrong, especially with included files.
