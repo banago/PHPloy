@@ -466,6 +466,10 @@ class PHPloy
                 $options['user'] = getenv('PHPLOY_USER');
             }
 
+            if (empty($options['privkey']) && !empty(getenv('PHPLOY_PRIVKEY'))) {
+                $options['privkey'] = getenv('PHPLOY_PRIVKEY');
+            }
+
             // Ask for a password if it is empty and a private key is not provided
             if ($options['pass'] === '' && $options['privkey'] === '') {
                 // Look for .phploy config file
@@ -473,8 +477,6 @@ class PHPloy
                     $options['pass'] = $this->getPasswordFromIniFile($name);
                 } elseif (!empty(getenv('PHPLOY_PASS'))) {
                     $options['pass'] = getenv('PHPLOY_PASS');
-                } elseif (!empty(getenv('PHPLOY_PRIVKEY'))) {
-                    $options['privkey'] = getenv('PHPLOY_PRIVKEY');
                 } else {
                     fwrite(STDOUT, 'No password has been provided for user "' . $options['user'] . '". Please enter a password: ');
                     $options['pass'] = $this->getPassword();
