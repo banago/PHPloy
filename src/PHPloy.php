@@ -473,6 +473,8 @@ class PHPloy
                     $options['pass'] = $this->getPasswordFromIniFile($name);
                 } elseif (!empty(getenv('PHPLOY_PASS'))) {
                     $options['pass'] = getenv('PHPLOY_PASS');
+                } elseif (!empty(getenv('PHPLOY_PRIVKEY'))) {
+                    $options['privkey'] = getenv('PHPLOY_PRIVKEY');
                 } else {
                     fwrite(STDOUT, 'No password has been provided for user "' . $options['user'] . '". Please enter a password: ');
                     $options['pass'] = $this->getPassword();
@@ -613,7 +615,7 @@ class PHPloy
             list($file, $condition) = explode(':', $file);
 
             if (empty($condition) || in_array($condition, $changedFiles)) {
-                $name = getcwd().'/'.$file;
+                $name = getcwd() . '/' . $file;
                 if (is_dir($name)) {
                     $filteredFiles = array_merge($filteredFiles, array_map([$this, 'relPath'], $this->directoryToArray($name, true)));
                 } else {
