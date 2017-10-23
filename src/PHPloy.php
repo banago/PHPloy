@@ -356,7 +356,7 @@ class PHPloy
             throw new \Exception("'$iniFile' does not exist.");
         } else {
             define("QUOTE", "'");
-            define("DQUOTE", "\"")
+            define("DQUOTE", "\"");
             $values = parse_ini_file($iniFile, true);
 
             if (!$values) {
