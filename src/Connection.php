@@ -80,7 +80,9 @@ class Connection
     {
         try {
             $options = $this->getCommonOptions($server);
-            $options['passive'] = ($server['passive'] ?: true);
+            $options['passive'] = isset($server['passive'])
+              ? (bool) $server['passive']
+              : true;
             $options['ssl'] = ($server['ssl'] ?: false);
             $options['port'] = ($server['port'] ?: 21);
 
