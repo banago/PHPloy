@@ -74,6 +74,10 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     ; Directories that should be purged after deploy
     purge[] = "cache/"
     ; Pre- and Post-deploy hooks
+    ; Use "DQOUTE" inside your double-quoted strings to insert a literal double quote
+    ; Use 'QUOTE' inside your qouted strings to insert a literal quote
+    ; For example pre-deploy[] = 'echo "that'QUOTE's nice"' to get a literal "that's".
+    ; That workaround is based on http://php.net/manual/de/function.parse-ini-file.php#70847
     pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
     post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
     ; Works only via SSH2 connection
