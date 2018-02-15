@@ -125,6 +125,7 @@ PHPLOY_PORT
 PHPLOY_PASS
 PHPLOY_PATH
 PHPLOY_USER
+PHPLOY_PRIVKEY
 ```
 
 These variables can be used like this;
@@ -139,6 +140,7 @@ $ export PHPLOY_HOST="myftphost.com"
 $ export PHPLOY_USER="ftp"
 $ export PHPLOY_PASS="ftp-password"
 $ export PHPLOY_PATH="/home/user/public_html/example.com"
+$ export PHPLOY_PRIVKEY="path/to/or/contents/of/privatekey"
 $ phploy -s servername
 ```
 

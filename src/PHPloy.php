@@ -277,7 +277,7 @@ class PHPloy
         }
 
         if ($this->cli->arguments->defined('version')) {
-            $this->cli->bold()->info('PHPloy v'.$this->version);
+            $this->cli->bold()->info('PHPloy v' . $this->version);
 
             return;
         }
@@ -397,7 +397,7 @@ class PHPloy
             'post-deploy-remote' => [],
         ];
 
-        $iniFile = $this->repo.DIRECTORY_SEPARATOR.$this->iniFileName;
+        $iniFile = $this->repo . DIRECTORY_SEPARATOR . $this->iniFileName;
 
         $servers = $this->parseIniFile($iniFile);
 
@@ -413,11 +413,6 @@ class PHPloy
             // Determine if a default server is configured
             if ($name == 'default') {
                 $this->defaultServer = true;
-            }
-
-            // Re-merge parsed URL in quickmode
-            if (isset($options['quickmode'])) {
-                $options = array_merge($options, parse_url($options['quickmode']));
             }
 
             // Ignoring for the win
@@ -471,7 +466,11 @@ class PHPloy
                 $options['user'] = getenv('PHPLOY_USER');
             }
 
-           // Ask for a password if it is empty and a private key is not provided
+            if (empty($options['privkey']) && !empty(getenv('PHPLOY_PRIVKEY'))) {
+                $options['privkey'] = getenv('PHPLOY_PRIVKEY');
+            }
+
+            // Ask for a password if it is empty and a private key is not provided
             if ($options['pass'] === '' && $options['privkey'] === '') {
                 // Look for .phploy config file
                 if (file_exists($this->getPasswordFile())) {
@@ -479,15 +478,28 @@ class PHPloy
                 } elseif (!empty(getenv('PHPLOY_PASS'))) {
                     $options['pass'] = getenv('PHPLOY_PASS');
                 } else {
-                    fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
+                    fwrite(STDOUT, 'No password has been provided for user "' . $options['user'] . '". Please enter a password: ');
                     $options['pass'] = $this->getPassword();
-                    $this->cli->lightGreen()->out("\r\n".'Password received. Continuing deployment ...');
+                    $this->cli->lightGreen()->out("\r\n" . 'Password received. Continuing deployment ...');
                 }
             }
 
             // Set the path from environment variable if it does not exist in the config
-            if (empty($options['path']) && !empty(getenv('PHPLOY_PATH'))) {
+            if ($options['path'] === '/' && !empty(getenv('PHPLOY_PATH'))) {
                 $options['path'] = getenv('PHPLOY_PATH');
+            }
+
+            // Re-merge parsed URL in quickmode
+            if (isset($options['quickmode'])) {
+
+                if ($options['quickmode'] == true) {
+                    $url = "ftp://{$options['user']}:{$options['pass']}@{$options['host']}";
+                    $url = !isset($options['port']) ? $url : "{$url}:{$options['port']}";
+                    $url = !isset($options['path']) ? $url : "{$url}/{$options['path']}";
+                    $options['quickmode'] = str_replace(" ", "", $url);
+                }
+
+                $options = array_merge($options, parse_url($options['quickmode']));
             }
 
             $this->servers[$name] = $options;
@@ -501,7 +513,7 @@ class PHPloy
      */
     public function getPasswordFile()
     {
-        return $this->repo.DIRECTORY_SEPARATOR.$this->passFile;
+        return $this->repo . DIRECTORY_SEPARATOR . $this->passFile;
     }
 
     /**
@@ -519,7 +531,7 @@ class PHPloy
         }
 
         if (isset($values[$servername]['password']) === true) {
-            throw new \Exception('Please rename password to pass in '.$this->getPasswordFile());
+            throw new \Exception('Please rename password to pass in ' . $this->getPasswordFile());
         }
 
         return '';
@@ -556,7 +568,7 @@ class PHPloy
             }
         }
 
-        shell_exec('stty '.$oldStyle);
+        shell_exec('stty ' . $oldStyle);
 
         return $password;
     }
@@ -605,7 +617,7 @@ class PHPloy
             list($file, $condition) = explode(':', $file);
 
             if (empty($condition) || in_array($condition, $changedFiles)) {
-                $name = getcwd().'/'.$file;
+                $name = getcwd() . '/' . $file;
                 if (is_dir($name)) {
                     $filteredFiles = array_merge($filteredFiles, array_map([$this, 'relPath'], $this->directoryToArray($name, true)));
                 } else {
@@ -651,7 +663,7 @@ class PHPloy
             }
 
             if ($this->force) {
-                $this->cli->comment("Creating deployment directory: '".$server['path']."'.");
+                $this->cli->comment("Creating deployment directory: '" . $server['path'] . "'.");
 
                 $givePath = $server['path'];
                 $server['path'] = '/';
@@ -677,7 +689,7 @@ class PHPloy
 
             $files = $this->compare($this->revision);
 
-            $this->cli->bold()->white()->out("\r\nSERVER: ".$name);
+            $this->cli->bold()->white()->out("\r\nSERVER: " . $name);
 
             if ($this->listFiles) {
                 $this->listFiles($files[$this->currentlyDeploying]);
@@ -698,7 +710,7 @@ class PHPloy
                         $this->repo = $submodule['path'];
                         $this->currentSubmoduleName = $submodule['name'];
 
-                        $this->cli->gray()->out("\r\nSUBMODULE: ".$this->currentSubmoduleName);
+                        $this->cli->gray()->out("\r\nSUBMODULE: " . $this->currentSubmoduleName);
                         $files = $this->compare($submodule['revision']);
 
                         if ($this->listFiles === true) {
@@ -731,7 +743,7 @@ class PHPloy
 
             // Done
             if (!$this->listFiles) {
-                $this->cli->bold()->lightGreen("\r\n|---------------[ ".$this->humanFilesize($this->deploymentSize).' Deployed ]---------------|');
+                $this->cli->bold()->lightGreen("\r\n|---------------[ " . $this->humanFilesize($this->deploymentSize) . ' Deployed ]---------------|');
                 $this->deploymentSize = 0;
             }
         }
@@ -750,7 +762,7 @@ class PHPloy
         $sz = 'BKMGTP';
         $factor = floor((strlen($bytes) - 1) / 3);
 
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).@$sz[$factor];
+        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
     }
 
     /**
@@ -763,7 +775,7 @@ class PHPloy
      */
     public function patternMatch($pattern, $string)
     {
-        return preg_match('#^'.strtr(preg_quote($pattern, '#'), ['\*' => '.*', '\?' => '.']).'$#i', $string);
+        return preg_match('#^' . strtr(preg_quote($pattern, '#'), ['\*' => '.*', '\?' => '.']) . '$#i', $string);
     }
 
     /**
@@ -781,7 +793,7 @@ class PHPloy
             $this->cli->shout('   Files that will be deleted in next deployment:');
 
             foreach ($files['delete'] as $file_to_delete) {
-                $this->cli->out('      '.$file_to_delete);
+                $this->cli->out('      ' . $file_to_delete);
             }
         }
 
@@ -789,7 +801,7 @@ class PHPloy
             $this->cli->lightGreen('   Files that will be uploaded in next deployment:');
 
             foreach ($files['upload'] as $file_to_upload) {
-                $this->cli->out('      '.$file_to_upload);
+                $this->cli->out('      ' . $file_to_upload);
             }
         }
     }
@@ -815,7 +827,7 @@ class PHPloy
         $filesToDelete = [];
 
         if ($this->currentSubmoduleName) {
-            $this->dotRevision = $this->currentSubmoduleName.'/'.$this->dotRevisionFileName;
+            $this->dotRevision = $this->currentSubmoduleName . '/' . $this->dotRevisionFileName;
         } else {
             $this->dotRevision = $this->dotRevisionFileName;
         }
@@ -824,7 +836,7 @@ class PHPloy
             $this->cli->out('Manual fresh upload...');
         } elseif ($this->connection->has($this->dotRevision)) {
             $remoteRevision = $this->connection->read($this->dotRevision);
-            $this->debug('Remote revision: <bold>'.$remoteRevision);
+            $this->debug('Remote revision: <bold>' . $remoteRevision);
         } else {
             $this->cli->out('No revision found. Fresh upload...');
         }
@@ -929,7 +941,7 @@ class PHPloy
 
             // BUG: This does NOT work correctly for submodules & subsubmodules (and leaves them in an incorrect state)
             //      It technically should do a submodule update in the parent, not a checkout inside the submodule
-            $this->git->command('checkout '.$this->revision, $this->repo);
+            $this->git->command('checkout ' . $this->revision, $this->repo);
         }
 
         $filesToDelete = $files['delete'];
@@ -946,7 +958,7 @@ class PHPloy
         if (count($filesToUpload) > 0) {
             foreach ($filesToUpload as $fileNo => $file) {
                 if ($this->currentSubmoduleName) {
-                    $file = $this->currentSubmoduleName.'/'.$file;
+                    $file = $this->currentSubmoduleName . '/' . $file;
                 }
 
                 // Make sure the folder exists in the FTP server.
@@ -959,7 +971,7 @@ class PHPloy
                     // Loop through each folder in the path /a/b/c/d.txt to ensure that it exists
                     // @TODO Can be improved by using: $filesystem->write('path/to/file.txt', 'contents');
                     for ($i = 0, $count = count($dir); $i < $count; ++$i) {
-                        $path .= $dir[$i].'/';
+                        $path .= $dir[$i] . '/';
                         if (!isset($pathsThatExist[$path])) {
                             if (!$this->connection->has($path)) {
                                 $this->connection->createDir($path);
@@ -972,12 +984,12 @@ class PHPloy
                     }
                 }
 
-                $filePath = $this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file);
+                $filePath = $this->repo . '/' . ($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName . '/', '', $file) : $file);
                 $data = @file_get_contents($filePath);
 
                 // It can happen the path is wrong, especially with included files.
                 if ($data === false) {
-                    $this->cli->error(' ! File not found - please check path: '.$filePath);
+                    $this->cli->error(' ! File not found - please check path: ' . $filePath);
                     continue;
                 }
 
@@ -987,7 +999,7 @@ class PHPloy
                 if (!$uploaded) {
                     $this->cli->error(" ! Failed to upload {$file}.");
                 } else {
-                    $this->deploymentSize += filesize($this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file));
+                    $this->deploymentSize += filesize($this->repo . '/' . ($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName . '/', '', $file) : $file));
                 }
 
                 $numberOfFilesToUpdate = count($filesToUpload);
@@ -1001,7 +1013,7 @@ class PHPloy
         if (count($filesToDelete) > 0) {
             foreach ($filesToDelete as $fileNo => $file) {
                 if ($this->currentSubmoduleName) {
-                    $file = $this->currentSubmoduleName.'/'.$file;
+                    $file = $this->currentSubmoduleName . '/' . $file;
                 }
                 $numberOfFilesToDelete = count($filesToDelete);
                 $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
@@ -1018,7 +1030,7 @@ class PHPloy
         if (count($dirsToDelete) > 0) {
             foreach ($dirsToDelete as $dirNo => $dir) {
                 if ($this->currentSubmoduleName) {
-                    $dir = $this->currentSubmoduleName.'/'.$dir;
+                    $dir = $this->currentSubmoduleName . '/' . $dir;
                 }
                 $numberOfdirsToDelete = count($dirsToDelete);
                 $dirNo = str_pad(++$dirNo, strlen($numberOfdirsToDelete), ' ', STR_PAD_LEFT);
@@ -1048,11 +1060,11 @@ class PHPloy
         // The working copy was rolled back earlier to run the deployment, and we
         // now want to return the working copy back to its original state.
         if ($this->revision != 'HEAD') {
-            $this->git->command('checkout '.($initialBranch ?: 'master'));
+            $this->git->command('checkout ' . ($initialBranch ?: 'master'));
         }
 
-        $this->log('[SHA: '.$localRevision.'] Deployment to server: "'.$this->currentlyDeploying.'" from branch "'.
-            $initialBranch.'". '.count($filesToUpload).' files uploaded; '.count($filesToDelete).' files deleted.');
+        $this->log('[SHA: ' . $localRevision . '] Deployment to server: "' . $this->currentlyDeploying . '" from branch "' .
+            $initialBranch . '". ' . count($filesToUpload) . ' files uploaded; ' . count($filesToDelete) . ' files deleted.');
     }
 
     /**
@@ -1113,7 +1125,7 @@ class PHPloy
         $output = $this->git->command('submodule status', $repo);
 
         if ($this->scanSubmodules) {
-            $this->cli->out('   Found '.count($output).' submodules.');
+            $this->cli->out('   Found ' . count($output) . ' submodules.');
         }
 
         if (count($output) > 0) {
@@ -1125,9 +1137,9 @@ class PHPloy
                     $this->submodules[] = [
                         'revision' => $line[0],
                         'name' => $line[1],
-                        'path' => $repo.'/'.$line[1],
+                        'path' => $repo . '/' . $line[1],
                     ];
-                    $this->cli->out(sprintf('   Found submodule %s. %s', $line[1], $this->scanSubSubmodules ? PHP_EOL.'      Scanning for sub-submodules...' : null
+                    $this->cli->out(sprintf('   Found submodule %s. %s', $line[1], $this->scanSubSubmodules ? PHP_EOL . '      Scanning for sub-submodules...' : null
                     ));
                 }
 
@@ -1168,8 +1180,8 @@ class PHPloy
                 if ($this->scanSubmodules && $this->scanSubSubmodules) {
                     $this->submodules[] = [
                         'revision' => $line[0],
-                        'name' => $name.'/'.$line[1],
-                        'path' => $repo.'/'.$name.'/'.$line[1],
+                        'name' => $name . '/' . $line[1],
+                        'path' => $repo . '/' . $name . '/' . $line[1],
                     ];
                     $this->cli->out(sprintf('      Found sub-submodule %s.', "$name/$line[1]"));
                 }
@@ -1258,7 +1270,7 @@ class PHPloy
 
             foreach ($contents as $item) {
                 if ($item['type'] === 'file') {
-                    $newPath = $toDir.'/'.pathinfo($item['path'], PATHINFO_BASENAME);
+                    $newPath = $toDir . '/' . pathinfo($item['path'], PATHINFO_BASENAME);
                     if ($this->connection->has($newPath)) {
                         $this->connection->delete($newPath);
                     }
@@ -1266,7 +1278,7 @@ class PHPloy
                     $this->cli->out("<red> × {$item['path']} is copied to {$newPath}");
                 } elseif ($item['type'] === 'dir') {
                     $dirParts = explode('/', $item['path']);
-                    $this->copy([$fromDir.'/'.end($dirParts).'->'.$toDir.'/'.end($dirParts)]);
+                    $this->copy([$fromDir . '/' . end($dirParts) . '->' . $toDir . '/' . end($dirParts)]);
                 }
             }
 
@@ -1381,14 +1393,14 @@ class PHPloy
                 $prefix = '';
                 // Add the parent directories to directory name
                 for ($x = 0; $x < $i; ++$x) {
-                    $prefix .= $parts[$x].'/';
+                    $prefix .= $parts[$x] . '/';
                 }
 
-                $part = $prefix.$part;
+                $part = $prefix . $part;
 
                 // If directory doesn't exist, add to files to delete
                 // Relative path won't work consistently, thus getcwd().
-                if (!is_dir(getcwd().'/'.$part)) {
+                if (!is_dir(getcwd() . '/' . $part)) {
                     $dirsToDelete[] = $part;
                 }
             }
@@ -1400,7 +1412,7 @@ class PHPloy
         // Reverse order to delete inner children before parents
         $dirsToDeleteOrder = array_reverse($dirsToDeleteUnique);
 
-        $this->debug('Directories to be deleted: '.print_r($dirsToDeleteOrder, true));
+        $this->debug('Directories to be deleted: ' . print_r($dirsToDeleteOrder, true));
 
         return $dirsToDeleteOrder;
     }
@@ -1423,10 +1435,10 @@ class PHPloy
      * Credit: http://php.net/manual/en/function.scandir.php#109140.
      *
      * @param string $directory Directory path
-     * @param bool   $recursive Include sub directories
-     * @param bool   $listDirs  Include directories on listing
-     * @param bool   $listFiles Include files on listing
-     * @param string $exclude   Exclude paths that matches this regex
+     * @param bool $recursive Include sub directories
+     * @param bool $listDirs Include directories on listing
+     * @param bool $listFiles Include files on listing
+     * @param string $exclude Exclude paths that matches this regex
      *
      * @return array
      */
@@ -1442,17 +1454,17 @@ class PHPloy
                     preg_match($exclude, $file, $skipByExclude);
                 }
                 if (!$skip && !$skipByExclude) {
-                    if (is_dir($directory.'/'.$file)) {
+                    if (is_dir($directory . '/' . $file)) {
                         if ($recursive) {
-                            $arrayItems = array_merge($arrayItems, $this->directoryToArray($directory.'/'.$file, $recursive, $listDirs, $listFiles, $exclude));
+                            $arrayItems = array_merge($arrayItems, $this->directoryToArray($directory . '/' . $file, $recursive, $listDirs, $listFiles, $exclude));
                         }
                         if ($listDirs) {
-                            $file = $directory.'/'.$file;
+                            $file = $directory . '/' . $file;
                             $arrayItems[] = $file;
                         }
                     } else {
                         if ($listFiles) {
-                            $file = $directory.'/'.$file;
+                            $file = $directory . '/' . $file;
                             $arrayItems[] = $file;
                         }
                     }
@@ -1473,7 +1485,7 @@ class PHPloy
      */
     protected function relPath($el)
     {
-        $abs = getcwd().'/';
+        $abs = getcwd() . '/';
 
         return str_replace($abs, '', $el);
     }
@@ -1483,7 +1495,7 @@ class PHPloy
      */
     protected function createSampleIniFile()
     {
-        $iniFile = getcwd().DIRECTORY_SEPARATOR.$this->iniFileName;
+        $iniFile = getcwd() . DIRECTORY_SEPARATOR . $this->iniFileName;
         $data = "; NOTE: If non-alphanumeric characters are present, enclose in value in quotes.\n
 [staging]
     quickmode = ftp://example:password@production-example.com:21/path/to/installation\n
@@ -1510,18 +1522,18 @@ class PHPloy
      * Log a message to file.
      *
      * @param string $message The message to write
-     * @param string $type    The type of log message (e.g. INFO, DEBUG, ERROR, etc.)
+     * @param string $type The type of log message (e.g. INFO, DEBUG, ERROR, etc.)
      */
     protected function log($message, $type = 'INFO')
     {
         if (isset($this->servers[$this->currentlyDeploying]['logger']) && $this->servers[$this->currentlyDeploying]['logger']) {
-            $filename = getcwd().DIRECTORY_SEPARATOR.'phploy.log';
+            $filename = getcwd() . DIRECTORY_SEPARATOR . 'phploy.log';
             if (!file_exists($filename)) {
                 touch($filename);
             }
 
             // Format: time --- type: message
-            file_put_contents($filename, date('Y-m-d H:i:sP').' --- '.$type.': '.$message.PHP_EOL, FILE_APPEND);
+            file_put_contents($filename, date('Y-m-d H:i:sP') . ' --- ' . $type . ': ' . $message . PHP_EOL, FILE_APPEND);
         }
     }
 }
