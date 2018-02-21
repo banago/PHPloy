@@ -264,6 +264,15 @@ class PHPloy
         // Setup PHPloy
         $this->setup();
 
+        // Check if only valid arguments are given
+        $arg = $this->checkarguments();
+        if($arg) {
+            $this->cli->bold()->error("Argument '{$arg}' is unknown.");
+            $this->cli->usage();
+
+            return;
+        };
+
         if ($this->cli->arguments->defined('help')) {
             $this->cli->usage();
 
@@ -339,6 +348,24 @@ class PHPloy
 
         $this->repo = getcwd();
         $this->mainRepo = $this->repo;
+    }
+
+    /**
+     * Checks if all given arguments are defined
+     *
+     * @return string the argument that is undefined, or FALSE if all arguments are defined
+     */
+    public function checkarguments() {
+        $prefixes = array_reduce($this->cli->arguments->all(), function($result, $a) { if($a->prefix()) { $result[] = '-'.$a->prefix();}; return $result; }, []);
+        $prefixes = array_reduce($this->cli->arguments->all(), function($result, $a) { if($a->longprefix()) { $result[] = '--'.$a->longprefix();}; return $result; }, $prefixes);
+
+        global $argv;
+        foreach($argv as $arg) {
+            if(strpos($arg, '-') === 0 && !in_array($arg, $prefixes)) {
+                return $arg;
+            }
+        }
+        return FALSE; 
     }
 
     /**
