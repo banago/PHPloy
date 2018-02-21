@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.6.3
+ * @version 4.7
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.6.3';
+    protected $version = '4.7';
 
     /**
      * @var string
@@ -265,7 +265,7 @@ class PHPloy
         $this->setup();
 
         // Check if only valid arguments are given
-        $arg = $this->checkarguments();
+        $arg = $this->checkArguments();
         if($arg) {
             $this->cli->bold()->error("Argument '{$arg}' is unknown.");
             $this->cli->usage();
@@ -355,7 +355,7 @@ class PHPloy
      *
      * @return string the argument that is undefined, or FALSE if all arguments are defined
      */
-    public function checkarguments() {
+    public function checkArguments() {
         $prefixes = array_reduce($this->cli->arguments->all(), function($result, $a) { if($a->prefix()) { $result[] = '-'.$a->prefix();}; return $result; }, []);
         $prefixes = array_reduce($this->cli->arguments->all(), function($result, $a) { if($a->longprefix()) { $result[] = '--'.$a->longprefix();}; return $result; }, $prefixes);
 
