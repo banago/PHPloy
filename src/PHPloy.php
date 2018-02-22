@@ -54,11 +54,11 @@ class PHPloy
 
     /**
      * The local directory that corresponds to the remote base directory. Defaults to an empty string, which corresponds
-     * to the Git repository base. This needs to end with '/' or be the empty string.
+     * to the Git repository base. This needs to end with '/'.
      *
      * @var string
      */
-    public $base = '';
+    public $base = false;
 
     /**
      * A list of files that should NOT be uploaded to any of the servers.
@@ -273,6 +273,7 @@ class PHPloy
         $this->setup();
 
         // Check if only valid arguments are given
+        // @Todo: Breaks this format: --sync="asdfasdfads"
         $arg = $this->checkArguments();
         if ($arg) {
             $this->cli->bold()->error("Argument '{$arg}' is unknown.");
@@ -288,7 +289,7 @@ class PHPloy
         }
 
         if ($this->cli->arguments->defined('init')) {
-            $this->createSampleIniFile();
+            $this->createIniFile();
 
             return;
         }
@@ -365,17 +366,19 @@ class PHPloy
      */
     public function checkArguments()
     {
-        $prefixes = array_reduce($this->cli->arguments->all(), function ($result, $a) { 
+        $prefixes = array_reduce($this->cli->arguments->all(), function ($result, $a) {
             if ($a->prefix()) {
                 $result[] = '-'.$a->prefix();
             };
+
             return $result;
         }, []);
 
-        $prefixes = array_reduce($this->cli->arguments->all(), function ($result, $a) { 
+        $prefixes = array_reduce($this->cli->arguments->all(), function ($result, $a) {
             if ($a->longprefix()) {
                 $result[] = '--'.$a->longprefix();
             };
+
             return $result;
         }, $prefixes);
 
@@ -470,12 +473,7 @@ class PHPloy
             $this->filesToExclude[$name][] = $this->iniFileName;
 
             if (!empty($servers[$name]['base'])) {
-                $this->base = $servers[$name]['base'];
-                if (empty($this->base) || !is_string($this->base)) {
-                    $this->base = '';
-                } else if (substr($this->base, -1) !== '/') {
-                    $this->base .= '/';
-                }
+                $this->base = $servers[$name]['base'].(substr($servers[$name]['base'], -1) !== '/' ? '/' : '');
             }
 
             if (!empty($servers[$name]['exclude'])) {
@@ -548,7 +546,8 @@ class PHPloy
                 $options['path'] = getenv('PHPLOY_PATH');
             }
 
-            // Re-merge parsed URL in quickmode
+            /* Causes Errors - no idea why this is here.
+              Re-merge parsed URL in quickmode
             if (isset($options['quickmode'])) {
                 if ($options['quickmode'] == true) {
                     $url = "ftp://{$options['user']}:{$options['pass']}@{$options['host']}";
@@ -556,10 +555,12 @@ class PHPloy
                     $url = !isset($options['path']) ? $url : "{$url}/{$options['path']}";
                     $options['quickmode'] = str_replace(' ', '', $url);
                 }
+            }
+            */
 
+            if (isset($options['quickmode'])) {
                 $options = array_merge($options, parse_url($options['quickmode']));
             }
-
             $this->servers[$name] = $options;
         }
     }
@@ -632,28 +633,6 @@ class PHPloy
     }
 
     /**
-     * Only returns files under the `base` directory and strips that from the path.
-     *
-     * @param array $files Array of files which needed to be transformed and filtered
-     *
-     * @return array of the remaining, transformed files
-     */
-    private function applyLocalBase($files)
-    {
-        if (empty($this->base)) {
-            return $files;
-        }
-
-        $newFiles = [];
-        foreach ($files as $file) {
-            if (strpos($file, $this->base) === 0) {
-                $newFiles[] = substr($file, strlen($this->base));
-            }
-        }
-        return $newFiles;
-    }
-
-    /**
      * Filter ignore files.
      *
      * @param array $files Array of files which needed to be filtered
@@ -673,8 +652,6 @@ class PHPloy
                 }
             }
         }
-
-        // Todo: Move applyLocalBase() here
 
         $files = array_values($files);
 
@@ -696,9 +673,12 @@ class PHPloy
     {
         $filteredFiles = [];
         foreach ($files as $i => $file) {
-            list($file, $condition) = explode(':', $file);
+            $condition = explode(':', $file);
+            if ($listen) {
+                list($file, $changed) = $condition;
+            }
 
-            if (empty($condition) || in_array($condition, $changedFiles)) {
+            if (empty($changed) || in_array($changed, $changedFiles)) {
                 $name = getcwd().'/'.$file;
                 if (is_dir($name)) {
                     $filteredFiles = array_merge($filteredFiles, array_map([$this, 'relPath'], $this->directoryToArray($name, true)));
@@ -983,9 +963,9 @@ class PHPloy
             $filesToUpload = $output;
         }
 
-        $filteredFilesToUpload = $this->filterIgnoredFiles($this->applyLocalBase($filesToUpload));
-        $filteredFilesToDelete = $this->filterIgnoredFiles($this->applyLocalBase($filesToDelete));
-        $filteredFilesToInclude = isset($this->filesToInclude[$this->currentlyDeploying]) ? $this->filterIncludedFiles($this->filesToInclude[$this->currentlyDeploying]) : [];
+        $filteredFilesToUpload = $this->filterIgnoredFiles($filesToUpload);
+        $filteredFilesToDelete = $this->filterIgnoredFiles($filesToDelete);
+        $filteredFilesToInclude = isset($this->filesToInclude[$this->currentlyDeploying]) ? $this->filterIncludedFiles($this->filesToInclude[$this->currentlyDeploying], $filesToUpload) : [];
 
         $filesToUpload = array_merge($filteredFilesToUpload['files'], $filteredFilesToInclude);
         $filesToDelete = $filteredFilesToDelete['files'];
@@ -1005,7 +985,7 @@ class PHPloy
      * Update the current remote server with the array of files provided.
      *
      * @param array $files 2-dimensional array with 2 indices: 'upload' and 'delete'
-     *                     Each of these contains an array of filenames and paths (relative to the 'base')
+     *                     Each of these contains an array of filenames and paths.
      */
     public function push($files, $localRevision = null)
     {
@@ -1066,7 +1046,7 @@ class PHPloy
                     }
                 }
 
-                $filePath = $this->repo.'/'.$this->base.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file);
+                $filePath = $this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file);
                 $data = @file_get_contents($filePath);
 
                 // It can happen the path is wrong, especially with included files.
@@ -1075,7 +1055,9 @@ class PHPloy
                     continue;
                 }
 
-                $remoteFile = $file;
+                // If base is set, remove it from filename
+                $remoteFile = $this->base ? preg_replace('/^'.preg_quote($this->base, '/').'/', '', $file) : $file;
+
                 $uploaded = $this->connection->put($remoteFile, $data);
 
                 if (!$uploaded) {
@@ -1239,7 +1221,6 @@ class PHPloy
      * Check for sub-submodules.
      *
      * @todo This function is quite slow (at least on Windows it often takes several seconds for each call).
-     *       Can it be optimized?
      *       It appears that this is called for EACH submodule, but then also does another `git submodule foreach`
      *
      * @param string $repo
@@ -1575,7 +1556,7 @@ class PHPloy
     /**
      * Creates sample ini file.
      */
-    protected function createSampleIniFile()
+    protected function createIniFile()
     {
         $iniFile = getcwd().DIRECTORY_SEPARATOR.$this->iniFileName;
         $data = "; NOTE: If non-alphanumeric characters are present, enclose in value in quotes.\n

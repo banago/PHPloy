@@ -180,7 +180,7 @@ To roll back to the previous commit, you just run:
 
 To roll back to whatever commit you want, you run:
 
-    phploy --rollback="commit-hash-goes-here"
+    phploy --rollback commit-hash-goes-here
 
 When you run a rollback, the files in your working copy will revert **temporarily** to the version of the rollback you are deploying. When the deployment has finished, everything will go back as it was.
 
@@ -205,7 +205,7 @@ If you want to update the `.revision` file on the server to match your current l
 
 If you want to set it to a previous commit revision, just specify the revision like this:
 
-    phploy --sync="your-revision-hash-here"
+    phploy --sync your-revision-hash-here
 
 ## Creating deployment directory on first deploy
 
