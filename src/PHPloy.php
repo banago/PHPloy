@@ -674,7 +674,7 @@ class PHPloy
         $filteredFiles = [];
         foreach ($files as $i => $file) {
             $condition = explode(':', $file);
-            if ($listen) {
+            if (isset($condition[1])) {
                 list($file, $changed) = $condition;
             }
 
