@@ -1,5 +1,5 @@
 # PHPloy
-**Version 4.7**
+**Version 4.7.1-base**
 
 PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 5.5+** and **Git 1.8+**.
 
@@ -62,6 +62,8 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     permissions = 0700
     ; File permissions set on newly created directories
     directoryPerm = 0775
+    ; Deploy only this directory as base directory
+    base = 'directory-name/'
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
     exclude[] = 'src/*.scss'
     exclude[] = '*.ini'
