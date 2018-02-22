@@ -48,3 +48,5 @@ $phar->stopBuffering();
 
 // Set file permissions
 chmod($output_file, 0755);
+
+echo 'Build was successful: dist/phploy.phar' . PHP_EOL;

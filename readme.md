@@ -1,5 +1,5 @@
 # PHPloy
-**Version 4.7.1-base**
+**Version 4.8**
 
 PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 5.5+** and **Git 1.8+**.
 
@@ -28,6 +28,7 @@ You can install PHPloy Phar globally, in your `/usr/local/bin` directory or, loc
 2. **Locally** Move `phploy` into your project directory. 
 
 ## Usage 
+
 *When using PHPloy locally, proceed the command with `php `*
 
 1. Run `phploy --init` in the terminal to create the `phploy.ini` file or create one manually.
