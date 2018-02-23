@@ -32,6 +32,7 @@ $phar->buildFromDirectory(
 
 // Adding main file
 $phar->addFile('phploy.php');
+$phar->addFile('phploy.ini');
 $phar->addFile('src/Git.php');
 $phar->addFile('src/PHPloy.php');
 $phar->addFile('src/Options.php');

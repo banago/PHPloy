@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.8
+ * @version 4.8.1
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.8';
+    protected $version = '4.8.1';
 
     /**
      * @var string
@@ -456,16 +456,52 @@ class PHPloy
 
         foreach ($servers as $name => $options) {
 
-            // If a server is specified, we can skip adding the others
+            // If a server is specified, skip others
             if ($this->server != '' && $this->server != $name) {
                 continue;
             }
 
-            $options = array_merge($defaults, $options);
-
-            // Determine if a default server is configured
             if ($name == 'default') {
                 $this->defaultServer = true;
+            }
+
+            $options = array_merge($defaults, $options);            
+            
+            if (isset($options['quickmode'])) {
+                $options = array_merge($options, parse_url($options['quickmode']));
+            }
+
+            // Set host from environment variable if it does not exist in the config
+            if (empty($options['host']) && !empty(getenv('PHPLOY_HOST'))) {
+                $options['host'] = getenv('PHPLOY_HOST');
+            }
+
+            // Set port number from environment variable if it does not exist in the config
+            if (empty($options['port']) && !empty(getenv('PHPLOY_PORT'))) {
+                $options['port'] = getenv('PHPLOY_PORT');
+            }
+
+            // Set username from environment variable if it does not exist in the config
+            if (empty($options['user']) && !empty(getenv('PHPLOY_USER'))) {
+                $options['user'] = getenv('PHPLOY_USER');
+            }
+
+            if (empty($options['privkey']) && !empty(getenv('PHPLOY_PRIVKEY'))) {
+                $options['privkey'] = getenv('PHPLOY_PRIVKEY');
+            }
+
+            // Ask for a password if it is empty and a private key is not provided
+            if ($options['pass'] === '' && $options['privkey'] === '') {
+                // Look for .phploy config file
+                if (file_exists($this->getPasswordFile())) {
+                    $options['pass'] = $this->getPasswordFromIniFile($name);
+                } elseif (!empty(getenv('PHPLOY_PASS'))) {
+                    $options['pass'] = getenv('PHPLOY_PASS');
+                } else {
+                    fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
+                    $options['pass'] = $this->getPassword();
+                    $this->cli->lightGreen()->out("\r\n".'Password received. Continuing deployment ...');
+                }
             }
 
             // Ignoring for the win
@@ -508,59 +544,11 @@ class PHPloy
                 $this->postDeployRemote[$name] = $servers[$name]['post-deploy-remote'];
             }
 
-            // Set host from environment variable if it does not exist in the config
-            if (empty($options['host']) && !empty(getenv('PHPLOY_HOST'))) {
-                $options['host'] = getenv('PHPLOY_HOST');
-            }
-
-            // Set port number from environment variable if it does not exist in the config
-            if (empty($options['port']) && !empty(getenv('PHPLOY_PORT'))) {
-                $options['port'] = getenv('PHPLOY_PORT');
-            }
-
-            // Set username from environment variable if it does not exist in the config
-            if (empty($options['user']) && !empty(getenv('PHPLOY_USER'))) {
-                $options['user'] = getenv('PHPLOY_USER');
-            }
-
-            if (empty($options['privkey']) && !empty(getenv('PHPLOY_PRIVKEY'))) {
-                $options['privkey'] = getenv('PHPLOY_PRIVKEY');
-            }
-
-            // Ask for a password if it is empty and a private key is not provided
-            if ($options['pass'] === '' && $options['privkey'] === '') {
-                // Look for .phploy config file
-                if (file_exists($this->getPasswordFile())) {
-                    $options['pass'] = $this->getPasswordFromIniFile($name);
-                } elseif (!empty(getenv('PHPLOY_PASS'))) {
-                    $options['pass'] = getenv('PHPLOY_PASS');
-                } else {
-                    fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
-                    $options['pass'] = $this->getPassword();
-                    $this->cli->lightGreen()->out("\r\n".'Password received. Continuing deployment ...');
-                }
-            }
-
             // Set the path from environment variable if it does not exist in the config
             if ($options['path'] === '/' && !empty(getenv('PHPLOY_PATH'))) {
                 $options['path'] = getenv('PHPLOY_PATH');
             }
 
-            /* Causes Errors - no idea why this is here.
-              Re-merge parsed URL in quickmode
-            if (isset($options['quickmode'])) {
-                if ($options['quickmode'] == true) {
-                    $url = "ftp://{$options['user']}:{$options['pass']}@{$options['host']}";
-                    $url = !isset($options['port']) ? $url : "{$url}:{$options['port']}";
-                    $url = !isset($options['path']) ? $url : "{$url}/{$options['path']}";
-                    $options['quickmode'] = str_replace(' ', '', $url);
-                }
-            }
-            */
-
-            if (isset($options['quickmode'])) {
-                $options = array_merge($options, parse_url($options['quickmode']));
-            }
             $this->servers[$name] = $options;
         }
     }
@@ -1413,9 +1401,7 @@ class PHPloy
          */
         $connection = $this->connection->getAdapter()->getConnection();
 
-        if ($this->servers[$this->currentlyDeploying]['scheme'] != 'sftp'
-            || get_class($connection) != \phpseclib\Net\SFTP::class
-        ) {
+        if ($this->servers[$this->currentlyDeploying]['scheme'] != 'sftp' ) {
             $this->cli->yellow()->out("\r\nConnection scheme is not 'sftp' ignoring [pre/post]-deploy-remote");
 
             return;
@@ -1559,16 +1545,8 @@ class PHPloy
     protected function createIniFile()
     {
         $iniFile = getcwd().DIRECTORY_SEPARATOR.$this->iniFileName;
-        $data = "; NOTE: If non-alphanumeric characters are present, enclose in value in quotes.\n
-[staging]
-    quickmode = ftp://example:password@production-example.com:21/path/to/installation\n
-[production]
-    scheme = sftp
-    user = example
-    pass = password
-    host = staging-example.com
-    path = /path/to/installation
-    port = 22";
+
+        $data = file_get_contents(__DIR__.'/../phploy.ini');
 
         if (file_exists($iniFile)) {
             $this->cli->info("\nphploy.ini file already exists.\n");
