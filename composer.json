@@ -24,7 +24,10 @@
     "autoload": {
         "psr-4": {
             "Banago\\PHPloy\\": "src"
-        }
+        },
+        "files": [
+            "src/utils.php"
+        ]
     },
     "bin": ["bin/phploy"]
 }

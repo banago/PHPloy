@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.8.1
+ * @version 4.8.2
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.8.1';
+    protected $version = '4.8.2';
 
     /**
      * @var string
@@ -370,7 +370,6 @@ class PHPloy
             if ($a->prefix()) {
                 $result[] = '-'.$a->prefix();
             };
-
             return $result;
         }, []);
 
@@ -378,7 +377,6 @@ class PHPloy
             if ($a->longprefix()) {
                 $result[] = '--'.$a->longprefix();
             };
-
             return $result;
         }, $prefixes);
 
@@ -499,7 +497,7 @@ class PHPloy
                     $options['pass'] = getenv('PHPLOY_PASS');
                 } else {
                     fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
-                    $options['pass'] = $this->getPassword();
+                    $options['pass'] = input_password();
                     $this->cli->lightGreen()->out("\r\n".'Password received. Continuing deployment ...');
                 }
             }
@@ -585,42 +583,6 @@ class PHPloy
     }
 
     /**
-     * Gets the password from user input, hiding password and replaces it
-     * with stars (*) if user users Unix / Mac.
-     *
-     * @return string the user entered
-     */
-    private function getPassword()
-    {
-        if (strtoupper(substr(PHP_OS, 0, 3)) == 'WIN') {
-            return trim(fgets(STDIN));
-        }
-
-        $oldStyle = shell_exec('stty -g');
-        $password = '';
-
-        shell_exec('stty -icanon -echo min 1 time 0');
-        while (true) {
-            $char = fgetc(STDIN);
-            if ($char === "\n") {
-                break;
-            } elseif (ord($char) === 127) {
-                if (strlen($password) > 0) {
-                    fwrite(STDOUT, "\x08 \x08");
-                    $password = substr($password, 0, -1);
-                }
-            } else {
-                fwrite(STDOUT, '*');
-                $password .= $char;
-            }
-        }
-
-        shell_exec('stty '.$oldStyle);
-
-        return $password;
-    }
-
-    /**
      * Filter ignore files.
      *
      * @param array $files Array of files which needed to be filtered
@@ -633,7 +595,7 @@ class PHPloy
 
         foreach ($files as $i => $file) {
             foreach ($this->filesToExclude[$this->currentlyDeploying] as $pattern) {
-                if ($this->patternMatch($pattern, $file)) {
+                if (pattern_match($pattern, $file)) {
                     unset($files[$i]);
                     $filesToSkip[] = $file;
                     break;
@@ -669,7 +631,7 @@ class PHPloy
             if (empty($changed) || in_array($changed, $changedFiles)) {
                 $name = getcwd().'/'.$file;
                 if (is_dir($name)) {
-                    $filteredFiles = array_merge($filteredFiles, array_map([$this, 'relPath'], $this->directoryToArray($name, true)));
+                    $filteredFiles = array_merge($filteredFiles, array_map('rel_path', dir_tree($name, true)));
                 } else {
                     $filteredFiles[] = $file;
                 }
@@ -793,39 +755,10 @@ class PHPloy
 
             // Done
             if (!$this->listFiles) {
-                $this->cli->bold()->lightGreen("\r\n|---------------[ ".$this->humanFilesize($this->deploymentSize).' Deployed ]---------------|');
+                $this->cli->bold()->lightGreen("\r\n|---------------[ ".human_filesize($this->deploymentSize).' Deployed ]---------------|');
                 $this->deploymentSize = 0;
             }
         }
-    }
-
-    /**
-     * Return a human readable filesize.
-     *
-     * @param int $bytes
-     * @param int $decimals
-     *
-     * @return string
-     */
-    public function humanFilesize($bytes, $decimals = 2)
-    {
-        $sz = 'BKMGTP';
-        $factor = floor((strlen($bytes) - 1) / 3);
-
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).@$sz[$factor];
-    }
-
-    /**
-     * Glob the file path.
-     *
-     * @param string $pattern
-     * @param string $string
-     *
-     * @return string
-     */
-    public function patternMatch($pattern, $string)
-    {
-        return preg_match('#^'.strtr(preg_quote($pattern, '#'), ['\*' => '.*', '\?' => '.']).'$#i', $string);
     }
 
     /**
@@ -1477,66 +1410,6 @@ class PHPloy
         if ($this->debug) {
             $this->cli->comment("$message");
         }
-    }
-
-    /**
-     * Get an array that represents directory tree
-     * Credit: http://php.net/manual/en/function.scandir.php#109140.
-     *
-     * @param string $directory Directory path
-     * @param bool   $recursive Include sub directories
-     * @param bool   $listDirs  Include directories on listing
-     * @param bool   $listFiles Include files on listing
-     * @param string $exclude   Exclude paths that matches this regex
-     *
-     * @return array
-     */
-    public function directoryToArray($directory, $recursive = true, $listDirs = false, $listFiles = true, $exclude = '')
-    {
-        $arrayItems = [];
-        $skipByExclude = false;
-        $handle = opendir($directory);
-        if ($handle) {
-            while (false !== ($file = readdir($handle))) {
-                preg_match("/(^(([\.]){1,2})$|(\.(svn|git|md))|(Thumbs\.db|\.DS_STORE))$/iu", $file, $skip);
-                if ($exclude) {
-                    preg_match($exclude, $file, $skipByExclude);
-                }
-                if (!$skip && !$skipByExclude) {
-                    if (is_dir($directory.'/'.$file)) {
-                        if ($recursive) {
-                            $arrayItems = array_merge($arrayItems, $this->directoryToArray($directory.'/'.$file, $recursive, $listDirs, $listFiles, $exclude));
-                        }
-                        if ($listDirs) {
-                            $file = $directory.'/'.$file;
-                            $arrayItems[] = $file;
-                        }
-                    } else {
-                        if ($listFiles) {
-                            $file = $directory.'/'.$file;
-                            $arrayItems[] = $file;
-                        }
-                    }
-                }
-            }
-            closedir($handle);
-        }
-
-        return $arrayItems;
-    }
-
-    /**
-     * Strip Absolute Path.
-     *
-     * @param string $el
-     *
-     * @return string
-     */
-    protected function relPath($el)
-    {
-        $abs = getcwd().'/';
-
-        return str_replace($abs, '', $el);
     }
 
     /**
