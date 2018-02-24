@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.8.2
+ * @version 4.8.3
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.8.2';
+    protected $version = '4.8.3';
 
     /**
      * @var string
@@ -50,7 +50,7 @@ class PHPloy
      *
      * @var string
      */
-    public $currentlyDeploying = '';
+    public $currentServerName = '';
 
     /**
      * The local directory that corresponds to the remote base directory. Defaults to an empty string, which corresponds
@@ -370,6 +370,7 @@ class PHPloy
             if ($a->prefix()) {
                 $result[] = '-'.$a->prefix();
             };
+
             return $result;
         }, []);
 
@@ -377,6 +378,7 @@ class PHPloy
             if ($a->longprefix()) {
                 $result[] = '--'.$a->longprefix();
             };
+
             return $result;
         }, $prefixes);
 
@@ -463,8 +465,8 @@ class PHPloy
                 $this->defaultServer = true;
             }
 
-            $options = array_merge($defaults, $options);            
-            
+            $options = array_merge($defaults, $options);
+
             if (isset($options['quickmode'])) {
                 $options = array_merge($options, parse_url($options['quickmode']));
             }
@@ -594,7 +596,7 @@ class PHPloy
         $filesToSkip = [];
 
         foreach ($files as $i => $file) {
-            foreach ($this->filesToExclude[$this->currentlyDeploying] as $pattern) {
+            foreach ($this->filesToExclude[$this->currentServerName] as $pattern) {
                 if (pattern_match($pattern, $file)) {
                     unset($files[$i]);
                     $filesToSkip[] = $file;
@@ -642,6 +644,15 @@ class PHPloy
     }
 
     /**
+     * Connect to server.
+     */
+    public function connect($server)
+    {
+        $connection = new Connection($server);
+        $this->connection = $connection->server;
+    }
+
+    /**
      * Deploy (or list) changed files.
      */
     public function deploy()
@@ -661,7 +672,8 @@ class PHPloy
 
         // Loop through all the servers in phploy.ini
         foreach ($this->servers as $name => $server) {
-            $this->currentlyDeploying = $name;
+            $this->currentServerName = $name;
+            $this->currentServerInfo = $server;
 
             // If a server is specified, it's deployed only to that
             if ($this->server != '' && $this->server != $name) {
@@ -677,21 +689,19 @@ class PHPloy
             if ($this->force) {
                 $this->cli->comment("Creating deployment directory: '".$server['path']."'.");
 
-                $givePath = $server['path'];
+                $path = $server['path'];
                 $server['path'] = '/';
 
-                $connection = new \Banago\PHPloy\Connection($server);
-                $this->connection = $connection->server;
+                $this->connect($server);
 
-                $this->connection->createDir($givePath);
+                $this->connection->createDir($path);
                 $this->cli->green('Deployment directory created. Ready to deploy.');
 
                 $this->connection = null;
-                $server['path'] = $givePath;
+                $server['path'] = $path;
             }
 
-            $connection = new \Banago\PHPloy\Connection($server);
-            $this->connection = $connection->server;
+            $this->connect($server);
 
             if ($this->sync) {
                 $this->dotRevision = $this->dotRevisionFileName;
@@ -704,7 +714,7 @@ class PHPloy
             $this->cli->bold()->white()->out("\r\nSERVER: ".$name);
 
             if ($this->listFiles) {
-                $this->listFiles($files[$this->currentlyDeploying]);
+                $this->listFiles($files[$this->currentServerName]);
             } else {
                 // Pre Deploy
                 if (isset($this->preDeploy[$name]) && count($this->preDeploy[$name]) > 0) {
@@ -715,7 +725,7 @@ class PHPloy
                     $this->preDeployRemote($this->preDeployRemote[$name]);
                 }
                 // Push repository
-                $this->push($files[$this->currentlyDeploying]);
+                $this->push($files[$this->currentServerName]);
                 // Push Submodules
                 if ($this->scanSubmodules && count($this->submodules) > 0) {
                     foreach ($this->submodules as $submodule) {
@@ -726,9 +736,9 @@ class PHPloy
                         $files = $this->compare($submodule['revision']);
 
                         if ($this->listFiles === true) {
-                            $this->listFiles($files[$this->currentlyDeploying]);
+                            $this->listFiles($files[$this->currentServerName]);
                         } else {
-                            $this->push($files[$this->currentlyDeploying], $submodule['revision']);
+                            $this->push($files[$this->currentServerName], $submodule['revision']);
                         }
                     }
                     // We've finished deploying submodules, reset settings for the next server
@@ -824,8 +834,8 @@ class PHPloy
             $this->cli->out('No revision found. Fresh upload...');
         }
 
-        if (!empty($this->servers[$this->currentlyDeploying]['branch'])) {
-            $output = $this->git->checkout($this->servers[$this->currentlyDeploying]['branch'], $this->repo);
+        if (!empty($this->servers[$this->currentServerName]['branch'])) {
+            $output = $this->git->checkout($this->servers[$this->currentServerName]['branch'], $this->repo);
 
             if (isset($output[0])) {
                 if (strpos($output[0], 'error') === 0) {
@@ -886,7 +896,7 @@ class PHPloy
 
         $filteredFilesToUpload = $this->filterIgnoredFiles($filesToUpload);
         $filteredFilesToDelete = $this->filterIgnoredFiles($filesToDelete);
-        $filteredFilesToInclude = isset($this->filesToInclude[$this->currentlyDeploying]) ? $this->filterIncludedFiles($this->filesToInclude[$this->currentlyDeploying], $filesToUpload) : [];
+        $filteredFilesToInclude = isset($this->filesToInclude[$this->currentServerName]) ? $this->filterIncludedFiles($this->filesToInclude[$this->currentServerName], $filesToUpload) : [];
 
         $filesToUpload = array_merge($filteredFilesToUpload['files'], $filteredFilesToInclude);
         $filesToDelete = $filteredFilesToDelete['files'];
@@ -894,7 +904,7 @@ class PHPloy
         $filesToSkip = array_merge($filteredFilesToUpload['filesToSkip'], $filteredFilesToDelete['filesToSkip']);
 
         return [
-            $this->currentlyDeploying => [
+            $this->currentServerName => [
                 'delete' => $filesToDelete,
                 'upload' => $filesToUpload,
                 'exclude' => $filesToSkip,
@@ -983,14 +993,18 @@ class PHPloy
 
                 if (!$uploaded) {
                     $this->cli->error(" ! Failed to upload {$file}.");
-                } else {
-                    $this->deploymentSize += filesize($this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file));
+
+                    if (!$this->connection) {
+                        $this->cli->info(' * Connection lost, trying to reconnect...');
+                        $this->connect($this->currentServerInfo);
+                        $uploaded = $this->connection->put($remoteFile, $data);
+                    }
                 }
 
-                $numberOfFilesToUpdate = count($filesToUpload);
-
-                $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToUpdate), ' ', STR_PAD_LEFT);
-                $this->cli->lightGreen(" ^ $fileNo of $numberOfFilesToUpdate <white>{$file}");
+                $this->deploymentSize += filesize($this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file));
+                $total = count($filesToUpload);
+                $fileNo = str_pad(++$fileNo, strlen($total), ' ', STR_PAD_LEFT);
+                $this->cli->lightGreen(" ^ $fileNo of $total <white>{$file}");
             }
         }
 
@@ -1048,7 +1062,7 @@ class PHPloy
             $this->git->command('checkout '.($initialBranch ?: 'master'));
         }
 
-        $this->log('[SHA: '.$localRevision.'] Deployment to server: "'.$this->currentlyDeploying.'" from branch "'.
+        $this->log('[SHA: '.$localRevision.'] Deployment to server: "'.$this->currentServerName.'" from branch "'.
             $initialBranch.'". '.count($filesToUpload).' files uploaded; '.count($filesToDelete).' files deleted.');
     }
 
@@ -1334,7 +1348,7 @@ class PHPloy
          */
         $connection = $this->connection->getAdapter()->getConnection();
 
-        if ($this->servers[$this->currentlyDeploying]['scheme'] != 'sftp' ) {
+        if ($this->servers[$this->currentServerName]['scheme'] != 'sftp') {
             $this->cli->yellow()->out("\r\nConnection scheme is not 'sftp' ignoring [pre/post]-deploy-remote");
 
             return;
@@ -1348,7 +1362,7 @@ class PHPloy
 
         foreach ($commands as $command) {
             $this->cli->blue()->out("Executing on remote server: <bold>{$command}");
-            $command = "cd {$this->servers[$this->currentlyDeploying]['path']}; {$command}";
+            $command = "cd {$this->servers[$this->currentServerName]['path']}; {$command}";
             $output = $connection->exec($command);
             $this->cli->lightBlue()->out("<bold>{$output}");
         }
@@ -1440,7 +1454,7 @@ class PHPloy
      */
     protected function log($message, $type = 'INFO')
     {
-        if (isset($this->servers[$this->currentlyDeploying]['logger']) && $this->servers[$this->currentlyDeploying]['logger']) {
+        if (isset($this->servers[$this->currentServerName]['logger']) && $this->servers[$this->currentServerName]['logger']) {
             $filename = getcwd().DIRECTORY_SEPARATOR.'phploy.log';
             if (!file_exists($filename)) {
                 touch($filename);
