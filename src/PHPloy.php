@@ -30,7 +30,7 @@ class PHPloy
      */
     public $cli;
 
-    /**
+    /**²
      * @var Git
      */
     public $git;
@@ -603,6 +603,14 @@ class PHPloy
                     break;
                 }
             }
+            if (isset($files[$i]) && $this->base) {
+                // Remove files located outside $this->base
+                if (!preg_match('/^'.preg_quote($this->base, '/').'/', $file)) {
+                    $this->debug('File ' . $file . ' not in folder ' . $this->base . '. This file is ignored.');
+                    unset($files[$i]);
+                    $filesToSkip[] = $file;
+                }
+            }
         }
 
         $files = array_values($files);
@@ -829,6 +837,7 @@ class PHPloy
             $this->cli->out('Manual fresh upload...');
         } elseif ($this->connection->has($this->dotRevision)) {
             $remoteRevision = $this->connection->read($this->dotRevision);
+            $remoteRevision = trim(preg_replace('/\s+/', ' ', $remoteRevision));
             $this->debug('Remote revision: <bold>'.$remoteRevision);
         } else {
             $this->cli->out('No revision found. Fresh upload...');
@@ -853,7 +862,8 @@ class PHPloy
                 $this->cli->out($output[0]);
             }
         }
-
+        
+        $this->debug('Local revision: <bold>'.$localRevision);
         $output = $this->git->diff($remoteRevision, $localRevision, $this->repo);
         $this->debug(implode("\r\n", $output));
 
@@ -954,8 +964,11 @@ class PHPloy
                     $file = $this->currentSubmoduleName.'/'.$file;
                 }
 
+                // If base is set, remove it from filename
+                $remoteFile = $this->base ? preg_replace('/^'.preg_quote($this->base, '/').'/', '', $file) : $file;
+                
                 // Make sure the folder exists in the FTP server.
-                $dir = explode('/', dirname($file));
+                $dir = explode('/', dirname($remoteFile));
                 $path = '';
                 $ret = true;
 
@@ -986,9 +999,6 @@ class PHPloy
                     continue;
                 }
 
-                // If base is set, remove it from filename
-                $remoteFile = $this->base ? preg_replace('/^'.preg_quote($this->base, '/').'/', '', $file) : $file;
-
                 $uploaded = $this->connection->put($remoteFile, $data);
 
                 if (!$uploaded) {
@@ -1004,7 +1014,7 @@ class PHPloy
                 $this->deploymentSize += filesize($this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file));
                 $total = count($filesToUpload);
                 $fileNo = str_pad(++$fileNo, strlen($total), ' ', STR_PAD_LEFT);
-                $this->cli->lightGreen(" ^ $fileNo of $total <white>{$file}");
+                $this->cli->lightGreen(" ^ $fileNo of $total <white>{$file} => {$remoteFile}");
             }
         }
 
