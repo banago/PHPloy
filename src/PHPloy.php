@@ -30,7 +30,7 @@ class PHPloy
      */
     public $cli;
 
-    /**²
+    /**
      * @var Git
      */
     public $git;
