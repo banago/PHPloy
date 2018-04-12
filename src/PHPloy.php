@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.8.3';
+    protected $version = '4.8.4-tangkoko';
 
     /**
      * @var string
@@ -266,7 +266,7 @@ class PHPloy
         $this->cli = $this->opt->cli;
 
         $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
-        $this->cli->backgroundGreen()->bold()->out('|                     PHPloy                    |');
+        $this->cli->backgroundGreen()->bold()->out('PHPloy version ' . $this->version);
         $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
 
         // Setup PHPloy
