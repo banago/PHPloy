@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.8.3
+ * @version 4.8.4
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.8.3';
+    protected $version = '4.8.4';
 
     /**
      * @var string
@@ -262,6 +262,9 @@ class PHPloy
      */
     public function __construct()
     {
+        define('QUOTE', "'");
+        define('DQUOTE', '"');
+
         $this->opt = new \Banago\PHPloy\Options(new \League\CLImate\CLImate());
         $this->cli = $this->opt->cli;
 
@@ -406,10 +409,7 @@ class PHPloy
         if (!file_exists($iniFile)) {
             throw new \Exception("'$iniFile' does not exist.");
         } else {
-            define('QUOTE', "'");
-            define('DQUOTE', '"');
             $values = parse_ini_file($iniFile, true);
-
             if (!$values) {
                 throw new \Exception("'$iniFile' is not a valid .ini file.");
             } else {
