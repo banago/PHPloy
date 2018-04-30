@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.8.6-tangkoko';
+    protected $version = '4.8.7-tangkoko';
 
     /**
      * @var string
@@ -326,15 +326,16 @@ class PHPloy
 
         if ($this->cli->arguments->defined('debug')) {
             $this->debug = true;
+            $this->debug('Debug mode set.');
         }
 
         if ($this->cli->arguments->defined('list')) {
             $this->listFiles = true;
         }
 
-        if ($this->cli->arguments->defined('server')) {
+        if ($this->cli->arguments->defined('')) {
             $this->server = $this->cli->arguments->get('server');
-            print_r($this->cli->arguments->get('server'));
+            $this->debug('server:' . $this->cli->arguments->get('server'));
             
         }
 
@@ -369,6 +370,7 @@ class PHPloy
         if ($this->cli->arguments->defined('inifile')) {
             $test = $this->cli->arguments->get('inifile');
             $this->iniFile = getcwd() . DIRECTORY_SEPARATOR . 'data/phploy/phploy.ini';
+            $this->debug('initFile: ' . $this->iniFile);
         }
         
         $this->repo = getcwd();
