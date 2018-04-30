@@ -882,6 +882,12 @@ class PHPloy
             if (isset($output[0])) {
                 $this->cli->out($output[0]);
             }
+            
+            $output = $this->git->command('pull', $this->repo);
+        
+            if (isset($output[0])) {
+                $this->cli->out($output[0]);
+            }
         }
         
         $this->debug('Local revision: <bold>'.$localRevision);
