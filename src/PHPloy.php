@@ -886,6 +886,7 @@ class PHPloy
         
         $this->debug('Local revision: <bold>'.$localRevision);
         $output = $this->git->diff($remoteRevision, $localRevision, $this->repo);
+        $this->debug('Output:');
         $this->debug(implode("\r\n", $output));
 
         /*

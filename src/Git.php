@@ -44,9 +44,12 @@ class Git
     public function exec($command)
     {
         $output = null;
-
-        exec('('.$command.') 2>&1', $output);
-
+        $retVal = null;
+        echo "command: $command";
+        exec('('.$command.') 2>&1', $output, $retVal);
+        echo "output: implode(',', $command)";
+        echo "retVal: $retVal";
+        
         return $output;
     }
 
@@ -66,7 +69,6 @@ class Git
 
         // "-c core.quotepath=false" in fixes special characters issue like ë, ä, ü etc., in file names
         $command = 'git -c core.quotepath=false --git-dir="'.$repoPath.'/.git" --work-tree="'.$repoPath.'" '.$command;
-echo $command . '\n';
         return $this->exec($command);
     }
 
