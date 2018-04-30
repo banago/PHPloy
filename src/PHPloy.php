@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.8.8
+ * @version 4.8.9
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.8.8-tangkoko';
+    protected $version = '4.8.9-tangkoko';
 
     /**
      * @var string
@@ -333,7 +333,7 @@ class PHPloy
             $this->listFiles = true;
         }
 
-        if ($this->cli->arguments->defined('')) {
+        if ($this->cli->arguments->defined('server')) {
             $this->server = $this->cli->arguments->get('server');
             $this->debug('server:' . $this->cli->arguments->get('server'));
             
@@ -563,6 +563,11 @@ class PHPloy
             // Set the path from environment variable if it does not exist in the config
             if ($options['path'] === '/' && !empty(getenv('PHPLOY_PATH'))) {
                 $options['path'] = getenv('PHPLOY_PATH');
+            }
+            
+            $this->debug('Server: ' . $name);
+            foreach ($options as $key => $value) {
+                $this->debug("$key: " . (is_array($value) ? implode(',', $value) : $value));
             }
 
             $this->servers[$name] = $options;
