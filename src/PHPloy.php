@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.8.5-tangkoko';
+    protected $version = '4.8.6-tangkoko';
 
     /**
      * @var string
@@ -151,6 +151,15 @@ class PHPloy
      * @var string
      */
     public $iniFileName = 'phploy.ini';
+    
+    /**
+     * The file from which to read remote server details.
+     *
+     * @var string
+     */
+    public $iniFile;
+    
+    
 
     /**
      * The filename from which to read server password.
@@ -325,6 +334,8 @@ class PHPloy
 
         if ($this->cli->arguments->defined('server')) {
             $this->server = $this->cli->arguments->get('server');
+            print_r($this->cli->arguments->get('server'));
+            
         }
 
         if ($this->cli->arguments->defined('sync')) {
@@ -355,6 +366,11 @@ class PHPloy
             $this->fresh = true;
         }
 
+        if ($this->cli->arguments->defined('inifile')) {
+            $test = $this->cli->arguments->get('inifile');
+            $this->iniFile = getcwd() . DIRECTORY_SEPARATOR . 'data/phploy/phploy.ini';
+        }
+        
         $this->repo = getcwd();
         $this->mainRepo = $this->repo;
     }
@@ -395,14 +411,14 @@ class PHPloy
     /**
      * Parse an ini file and return values as array.
      *
-     * @param string $iniFile
-     *
      * @throws \Exception
      *
      * @return array
      */
-    public function parseIniFile($iniFile)
+    public function parseIniFile()
     {
+        $iniFile = $this->getIniFile();
+        
         if (!file_exists($iniFile)) {
             throw new \Exception("'$iniFile' does not exist.");
         } else {
@@ -450,9 +466,7 @@ class PHPloy
             'post-deploy-remote' => [],
         ];
 
-        $iniFile = $this->repo.DIRECTORY_SEPARATOR.$this->iniFileName;
-
-        $servers = $this->parseIniFile($iniFile);
+        $servers = $this->parseIniFile();
 
         foreach ($servers as $name => $options) {
 
@@ -506,7 +520,7 @@ class PHPloy
 
             // Ignoring for the win
             $this->filesToExclude[$name] = $this->globalFilesToExclude;
-            $this->filesToExclude[$name][] = $this->iniFileName;
+            $this->filesToExclude[$name][] = $this->getIniFile();
 
             if (!empty($servers[$name]['base'])) {
                 $this->base = $servers[$name]['base'].(substr($servers[$name]['base'], -1) !== '/' ? '/' : '');
@@ -1435,13 +1449,24 @@ class PHPloy
             $this->cli->comment("$message");
         }
     }
+    
+    /**
+     * Retrieve ini file full path.
+     */
+    protected function getIniFile()
+    {
+        if (!isset($this->iniFile)) {
+            $this->iniFile = getcwd() . DIRECTORY_SEPARATOR . $this->iniFileName;
+        }
+        return $this->iniFile;
+    }
 
     /**
      * Creates sample ini file.
      */
     protected function createIniFile()
     {
-        $iniFile = getcwd().DIRECTORY_SEPARATOR.$this->iniFileName;
+        $iniFile = $this->getIniFile();
 
         $data = file_get_contents(__DIR__.'/../phploy.ini');
 
