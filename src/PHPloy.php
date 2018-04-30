@@ -1014,7 +1014,7 @@ class PHPloy
                 $this->deploymentSize += filesize($this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file));
                 $total = count($filesToUpload);
                 $fileNo = str_pad(++$fileNo, strlen($total), ' ', STR_PAD_LEFT);
-                $this->cli->lightGreen(" ^ $fileNo of $total <white>{$file} => {$remoteFile}");
+                $this->debug(" ^ $fileNo of $total <white>{$file} => {$remoteFile}");
             }
         }
 
