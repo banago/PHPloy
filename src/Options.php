@@ -97,7 +97,6 @@ class Options
                 'prefix' => 'i',
                 'longPrefix' => 'inifile',
                 'description' => 'Use the given ini file',
-                'noValue' => true,
             ],
             'help' => [
                 'prefix' => 'h',

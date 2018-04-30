@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.8.5
+ * @version 4.8.8
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.8.7-tangkoko';
+    protected $version = '4.8.8-tangkoko';
 
     /**
      * @var string
@@ -157,7 +157,7 @@ class PHPloy
      *
      * @var string
      */
-    public $iniFile;
+    public $iniFile = '';
     
     
 
@@ -368,9 +368,9 @@ class PHPloy
         }
 
         if ($this->cli->arguments->defined('inifile')) {
-            $test = $this->cli->arguments->get('inifile');
-            $this->iniFile = getcwd() . DIRECTORY_SEPARATOR . 'data/phploy/phploy.ini';
-            $this->debug('initFile: ' . $this->iniFile);
+            $iniFile = $this->cli->arguments->get('inifile');
+            $this->iniFile = getcwd() . DIRECTORY_SEPARATOR . $iniFile;
+            $this->debug('iniFile: ' . $this->iniFile);
         }
         
         $this->repo = getcwd();
@@ -1457,7 +1457,7 @@ class PHPloy
      */
     protected function getIniFile()
     {
-        if (!isset($this->iniFile)) {
+        if (empty($this->iniFile)) {
             $this->iniFile = getcwd() . DIRECTORY_SEPARATOR . $this->iniFileName;
         }
         return $this->iniFile;
