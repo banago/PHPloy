@@ -48,7 +48,7 @@ class Git
 //        echo "command: $command";
         exec('('.$command.') 2>&1', $output, $retVal);
 //        echo "output: " . implode(',', $output);
-        echo "retVal: $retVal";
+//        echo "retVal: $retVal";
         
         return $output;
     }
