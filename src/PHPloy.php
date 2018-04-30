@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.8.9
+ * @version 4.8.10
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.8.9-tangkoko';
+    protected $version = '4.8.10-tangkoko';
 
     /**
      * @var string
@@ -892,7 +892,6 @@ class PHPloy
         
         $this->debug('Local revision: <bold>'.$localRevision);
         $output = $this->git->diff($remoteRevision, $localRevision, $this->repo);
-        $this->debug('Output:');
         $this->debug(implode("\r\n", $output));
 
         /*
