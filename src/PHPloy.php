@@ -1071,6 +1071,9 @@ class PHPloy
                 if ($this->currentSubmoduleName) {
                     $dir = $this->currentSubmoduleName.'/'.$dir;
                 }
+                // If base is set, remove it from filename
+                $dir = $this->base ? preg_replace('/^'.preg_quote($this->base, '/').'/', '', $dir) : $dir;
+                
                 $numberOfdirsToDelete = count($dirsToDelete);
                 $dirNo = str_pad(++$dirNo, strlen($numberOfdirsToDelete), ' ', STR_PAD_LEFT);
                 if ($this->connection->has($dir)) {
