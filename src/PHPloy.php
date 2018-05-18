@@ -1051,6 +1051,9 @@ class PHPloy
                 if ($this->currentSubmoduleName) {
                     $file = $this->currentSubmoduleName.'/'.$file;
                 }
+                // If base is set, remove it from filename
+                $file = $this->base ? preg_replace('/^'.preg_quote($this->base, '/').'/', '', $file) : $file;
+                
                 $numberOfFilesToDelete = count($filesToDelete);
                 $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
                 if ($this->connection->has($file)) {
