@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.6.3
+ * @version 4.8.5
  */
 
 namespace Banago\PHPloy;
@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.6.3';
+    protected $version = '4.8.5';
 
     /**
      * @var string
@@ -50,7 +50,15 @@ class PHPloy
      *
      * @var string
      */
-    public $currentlyDeploying = '';
+    public $currentServerName = '';
+
+    /**
+     * The local directory that corresponds to the remote base directory. Defaults to an empty string, which corresponds
+     * to the Git repository base. This needs to end with '/'.
+     *
+     * @var string
+     */
+    public $base = false;
 
     /**
      * A list of files that should NOT be uploaded to any of the servers.
@@ -254,6 +262,9 @@ class PHPloy
      */
     public function __construct()
     {
+        define('QUOTE', "'");
+        define('DQUOTE', '"');
+
         $this->opt = new \Banago\PHPloy\Options(new \League\CLImate\CLImate());
         $this->cli = $this->opt->cli;
 
@@ -264,6 +275,16 @@ class PHPloy
         // Setup PHPloy
         $this->setup();
 
+        // Check if only valid arguments are given
+        // @Todo: Breaks this format: --sync="asdfasdfads"
+        $arg = $this->checkArguments();
+        if ($arg) {
+            $this->cli->bold()->error("Argument '{$arg}' is unknown.");
+            $this->cli->usage();
+
+            return;
+        };
+
         if ($this->cli->arguments->defined('help')) {
             $this->cli->usage();
 
@@ -271,7 +292,7 @@ class PHPloy
         }
 
         if ($this->cli->arguments->defined('init')) {
-            $this->createSampleIniFile();
+            $this->createIniFile();
 
             return;
         }
@@ -342,6 +363,39 @@ class PHPloy
     }
 
     /**
+     * Checks if all given arguments are defined.
+     *
+     * @return string the argument that is undefined, or FALSE if all arguments are defined
+     */
+    public function checkArguments()
+    {
+        $prefixes = array_reduce($this->cli->arguments->all(), function ($result, $a) {
+            if ($a->prefix()) {
+                $result[] = '-'.$a->prefix();
+            };
+
+            return $result;
+        }, []);
+
+        $prefixes = array_reduce($this->cli->arguments->all(), function ($result, $a) {
+            if ($a->longprefix()) {
+                $result[] = '--'.$a->longprefix();
+            };
+
+            return $result;
+        }, $prefixes);
+
+        global $argv;
+        foreach ($argv as $arg) {
+            if (strpos($arg, '-') === 0 && !in_array($arg, $prefixes)) {
+                return $arg;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Parse an ini file and return values as array.
      *
      * @param string $iniFile
@@ -356,7 +410,6 @@ class PHPloy
             throw new \Exception("'$iniFile' does not exist.");
         } else {
             $values = parse_ini_file($iniFile, true);
-
             if (!$values) {
                 throw new \Exception("'$iniFile' is not a valid .ini file.");
             } else {
@@ -403,26 +456,61 @@ class PHPloy
 
         foreach ($servers as $name => $options) {
 
-            // If a server is specified, we can skip adding the others
+            // If a server is specified, skip others
             if ($this->server != '' && $this->server != $name) {
                 continue;
             }
 
-            $options = array_merge($defaults, $options);
-
-            // Determine if a default server is configured
             if ($name == 'default') {
                 $this->defaultServer = true;
             }
 
-            // Re-merge parsed URL in quickmode
+            $options = array_merge($defaults, $options);
+
             if (isset($options['quickmode'])) {
                 $options = array_merge($options, parse_url($options['quickmode']));
+            }
+
+            // Set host from environment variable if it does not exist in the config
+            if (empty($options['host']) && !empty(getenv('PHPLOY_HOST'))) {
+                $options['host'] = getenv('PHPLOY_HOST');
+            }
+
+            // Set port number from environment variable if it does not exist in the config
+            if (empty($options['port']) && !empty(getenv('PHPLOY_PORT'))) {
+                $options['port'] = getenv('PHPLOY_PORT');
+            }
+
+            // Set username from environment variable if it does not exist in the config
+            if (empty($options['user']) && !empty(getenv('PHPLOY_USER'))) {
+                $options['user'] = getenv('PHPLOY_USER');
+            }
+
+            if (empty($options['privkey']) && !empty(getenv('PHPLOY_PRIVKEY'))) {
+                $options['privkey'] = getenv('PHPLOY_PRIVKEY');
+            }
+
+            // Ask for a password if it is empty and a private key is not provided
+            if ($options['pass'] === '' && $options['privkey'] === '') {
+                // Look for .phploy config file
+                if (file_exists($this->getPasswordFile())) {
+                    $options['pass'] = $this->getPasswordFromIniFile($name);
+                } elseif (!empty(getenv('PHPLOY_PASS'))) {
+                    $options['pass'] = getenv('PHPLOY_PASS');
+                } else {
+                    fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
+                    $options['pass'] = input_password();
+                    $this->cli->lightGreen()->out("\r\n".'Password received. Continuing deployment ...');
+                }
             }
 
             // Ignoring for the win
             $this->filesToExclude[$name] = $this->globalFilesToExclude;
             $this->filesToExclude[$name][] = $this->iniFileName;
+
+            if (!empty($servers[$name]['base'])) {
+                $this->base = $servers[$name]['base'].(substr($servers[$name]['base'], -1) !== '/' ? '/' : '');
+            }
 
             if (!empty($servers[$name]['exclude'])) {
                 $this->filesToExclude[$name] = array_merge($this->filesToExclude[$name], $servers[$name]['exclude']);
@@ -456,37 +544,8 @@ class PHPloy
                 $this->postDeployRemote[$name] = $servers[$name]['post-deploy-remote'];
             }
 
-            // Set host from environment variable if it does not exist in the config
-            if (empty($options['host']) && !empty(getenv('PHPLOY_HOST'))) {
-                $options['host'] = getenv('PHPLOY_HOST');
-            }
-
-            // Set port number from environment variable if it does not exist in the config
-            if (empty($options['port']) && !empty(getenv('PHPLOY_PORT'))) {
-                $options['port'] = getenv('PHPLOY_PORT');
-            }
-
-            // Set username from environment variable if it does not exist in the config
-            if (empty($options['user']) && !empty(getenv('PHPLOY_USER'))) {
-                $options['user'] = getenv('PHPLOY_USER');
-            }
-
-           // Ask for a password if it is empty and a private key is not provided
-            if ($options['pass'] === '' && $options['privkey'] === '') {
-                // Look for .phploy config file
-                if (file_exists($this->getPasswordFile())) {
-                    $options['pass'] = $this->getPasswordFromIniFile($name);
-                } elseif (!empty(getenv('PHPLOY_PASS'))) {
-                    $options['pass'] = getenv('PHPLOY_PASS');
-                } else {
-                    fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
-                    $options['pass'] = $this->getPassword();
-                    $this->cli->lightGreen()->out("\r\n".'Password received. Continuing deployment ...');
-                }
-            }
-
             // Set the path from environment variable if it does not exist in the config
-            if (empty($options['path']) && !empty(getenv('PHPLOY_PATH'))) {
+            if ($options['path'] === '/' && !empty(getenv('PHPLOY_PATH'))) {
                 $options['path'] = getenv('PHPLOY_PATH');
             }
 
@@ -526,42 +585,6 @@ class PHPloy
     }
 
     /**
-     * Gets the password from user input, hiding password and replaces it
-     * with stars (*) if user users Unix / Mac.
-     *
-     * @return string the user entered
-     */
-    private function getPassword()
-    {
-        if (strtoupper(substr(PHP_OS, 0, 3)) == 'WIN') {
-            return trim(fgets(STDIN));
-        }
-
-        $oldStyle = shell_exec('stty -g');
-        $password = '';
-
-        shell_exec('stty -icanon -echo min 1 time 0');
-        while (true) {
-            $char = fgetc(STDIN);
-            if ($char === "\n") {
-                break;
-            } elseif (ord($char) === 127) {
-                if (strlen($password) > 0) {
-                    fwrite(STDOUT, "\x08 \x08");
-                    $password = substr($password, 0, -1);
-                }
-            } else {
-                fwrite(STDOUT, '*');
-                $password .= $char;
-            }
-        }
-
-        shell_exec('stty '.$oldStyle);
-
-        return $password;
-    }
-
-    /**
      * Filter ignore files.
      *
      * @param array $files Array of files which needed to be filtered
@@ -573,8 +596,8 @@ class PHPloy
         $filesToSkip = [];
 
         foreach ($files as $i => $file) {
-            foreach ($this->filesToExclude[$this->currentlyDeploying] as $pattern) {
-                if ($this->patternMatch($pattern, $file)) {
+            foreach ($this->filesToExclude[$this->currentServerName] as $pattern) {
+                if (pattern_match($pattern, $file)) {
                     unset($files[$i]);
                     $filesToSkip[] = $file;
                     break;
@@ -593,7 +616,7 @@ class PHPloy
     /**
      * Filter included files.
      *
-     * @param array $files Array of files which needed to be filtered
+     * @param array $files        Array of files which needed to be filtered
      * @param array $changedFiles Array of files changed since last upload
      *
      * @return array $filteredFiles
@@ -602,12 +625,15 @@ class PHPloy
     {
         $filteredFiles = [];
         foreach ($files as $i => $file) {
-            list($file, $condition) = explode(':', $file);
+            $condition = explode(':', $file);
+            if (isset($condition[1])) {
+                list($file, $changed) = $condition;
+            }
 
-            if (empty($condition) || in_array($condition, $changedFiles)) {
+            if (empty($changed) || in_array($changed, $changedFiles)) {
                 $name = getcwd().'/'.$file;
                 if (is_dir($name)) {
-                    $filteredFiles = array_merge($filteredFiles, array_map([$this, 'relPath'], $this->directoryToArray($name, true)));
+                    $filteredFiles = array_merge($filteredFiles, array_map('rel_path', dir_tree($name, true)));
                 } else {
                     $filteredFiles[] = $file;
                 }
@@ -615,6 +641,15 @@ class PHPloy
         }
 
         return $filteredFiles;
+    }
+
+    /**
+     * Connect to server.
+     */
+    public function connect($server)
+    {
+        $connection = new Connection($server);
+        $this->connection = $connection->server;
     }
 
     /**
@@ -637,7 +672,8 @@ class PHPloy
 
         // Loop through all the servers in phploy.ini
         foreach ($this->servers as $name => $server) {
-            $this->currentlyDeploying = $name;
+            $this->currentServerName = $name;
+            $this->currentServerInfo = $server;
 
             // If a server is specified, it's deployed only to that
             if ($this->server != '' && $this->server != $name) {
@@ -653,21 +689,19 @@ class PHPloy
             if ($this->force) {
                 $this->cli->comment("Creating deployment directory: '".$server['path']."'.");
 
-                $givePath = $server['path'];
+                $path = $server['path'];
                 $server['path'] = '/';
 
-                $connection = new \Banago\PHPloy\Connection($server);
-                $this->connection = $connection->server;
+                $this->connect($server);
 
-                $this->connection->createDir($givePath);
+                $this->connection->createDir($path);
                 $this->cli->green('Deployment directory created. Ready to deploy.');
 
                 $this->connection = null;
-                $server['path'] = $givePath;
+                $server['path'] = $path;
             }
 
-            $connection = new \Banago\PHPloy\Connection($server);
-            $this->connection = $connection->server;
+            $this->connect($server);
 
             if ($this->sync) {
                 $this->dotRevision = $this->dotRevisionFileName;
@@ -680,7 +714,7 @@ class PHPloy
             $this->cli->bold()->white()->out("\r\nSERVER: ".$name);
 
             if ($this->listFiles) {
-                $this->listFiles($files[$this->currentlyDeploying]);
+                $this->listFiles($files[$this->currentServerName]);
             } else {
                 // Pre Deploy
                 if (isset($this->preDeploy[$name]) && count($this->preDeploy[$name]) > 0) {
@@ -691,7 +725,7 @@ class PHPloy
                     $this->preDeployRemote($this->preDeployRemote[$name]);
                 }
                 // Push repository
-                $this->push($files[$this->currentlyDeploying]);
+                $this->push($files[$this->currentServerName]);
                 // Push Submodules
                 if ($this->scanSubmodules && count($this->submodules) > 0) {
                     foreach ($this->submodules as $submodule) {
@@ -702,9 +736,9 @@ class PHPloy
                         $files = $this->compare($submodule['revision']);
 
                         if ($this->listFiles === true) {
-                            $this->listFiles($files[$this->currentlyDeploying]);
+                            $this->listFiles($files[$this->currentServerName]);
                         } else {
-                            $this->push($files[$this->currentlyDeploying], $submodule['revision']);
+                            $this->push($files[$this->currentServerName], $submodule['revision']);
                         }
                     }
                     // We've finished deploying submodules, reset settings for the next server
@@ -731,39 +765,10 @@ class PHPloy
 
             // Done
             if (!$this->listFiles) {
-                $this->cli->bold()->lightGreen("\r\n|---------------[ ".$this->humanFilesize($this->deploymentSize).' Deployed ]---------------|');
+                $this->cli->bold()->lightGreen("\r\n|---------------[ ".human_filesize($this->deploymentSize).' Deployed ]---------------|');
                 $this->deploymentSize = 0;
             }
         }
-    }
-
-    /**
-     * Return a human readable filesize.
-     *
-     * @param int $bytes
-     * @param int $decimals
-     *
-     * @return string
-     */
-    public function humanFilesize($bytes, $decimals = 2)
-    {
-        $sz = 'BKMGTP';
-        $factor = floor((strlen($bytes) - 1) / 3);
-
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).@$sz[$factor];
-    }
-
-    /**
-     * Glob the file path.
-     *
-     * @param string $pattern
-     * @param string $string
-     *
-     * @return string
-     */
-    public function patternMatch($pattern, $string)
-    {
-        return preg_match('#^'.strtr(preg_quote($pattern, '#'), ['\*' => '.*', '\?' => '.']).'$#i', $string);
     }
 
     /**
@@ -829,8 +834,8 @@ class PHPloy
             $this->cli->out('No revision found. Fresh upload...');
         }
 
-        if (!empty($this->servers[$this->currentlyDeploying]['branch'])) {
-            $output = $this->git->checkout($this->servers[$this->currentlyDeploying]['branch'], $this->repo);
+        if (!empty($this->servers[$this->currentServerName]['branch'])) {
+            $output = $this->git->checkout($this->servers[$this->currentServerName]['branch'], $this->repo);
 
             if (isset($output[0])) {
                 if (strpos($output[0], 'error') === 0) {
@@ -891,7 +896,7 @@ class PHPloy
 
         $filteredFilesToUpload = $this->filterIgnoredFiles($filesToUpload);
         $filteredFilesToDelete = $this->filterIgnoredFiles($filesToDelete);
-        $filteredFilesToInclude = isset($this->filesToInclude[$this->currentlyDeploying]) ? $this->filterIncludedFiles($this->filesToInclude[$this->currentlyDeploying], $filesToUpload) : [];
+        $filteredFilesToInclude = isset($this->filesToInclude[$this->currentServerName]) ? $this->filterIncludedFiles($this->filesToInclude[$this->currentServerName], $filesToUpload) : [];
 
         $filesToUpload = array_merge($filteredFilesToUpload['files'], $filteredFilesToInclude);
         $filesToDelete = $filteredFilesToDelete['files'];
@@ -899,7 +904,7 @@ class PHPloy
         $filesToSkip = array_merge($filteredFilesToUpload['filesToSkip'], $filteredFilesToDelete['filesToSkip']);
 
         return [
-            $this->currentlyDeploying => [
+            $this->currentServerName => [
                 'delete' => $filesToDelete,
                 'upload' => $filesToUpload,
                 'exclude' => $filesToSkip,
@@ -911,7 +916,7 @@ class PHPloy
      * Update the current remote server with the array of files provided.
      *
      * @param array $files 2-dimensional array with 2 indices: 'upload' and 'delete'
-     *                     Each of these contains an array of filenames and paths (relative to repository root)
+     *                     Each of these contains an array of filenames and paths.
      */
     public function push($files, $localRevision = null)
     {
@@ -981,19 +986,25 @@ class PHPloy
                     continue;
                 }
 
-                $remoteFile = $file;
+                // If base is set, remove it from filename
+                $remoteFile = $this->base ? preg_replace('/^'.preg_quote($this->base, '/').'/', '', $file) : $file;
+
                 $uploaded = $this->connection->put($remoteFile, $data);
 
                 if (!$uploaded) {
                     $this->cli->error(" ! Failed to upload {$file}.");
-                } else {
-                    $this->deploymentSize += filesize($this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file));
+
+                    if (!$this->connection) {
+                        $this->cli->info(' * Connection lost, trying to reconnect...');
+                        $this->connect($this->currentServerInfo);
+                        $uploaded = $this->connection->put($remoteFile, $data);
+                    }
                 }
 
-                $numberOfFilesToUpdate = count($filesToUpload);
-
-                $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToUpdate), ' ', STR_PAD_LEFT);
-                $this->cli->lightGreen(" ^ $fileNo of $numberOfFilesToUpdate <white>{$file}");
+                $this->deploymentSize += filesize($this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file));
+                $total = count($filesToUpload);
+                $fileNo = str_pad(++$fileNo, strlen($total), ' ', STR_PAD_LEFT);
+                $this->cli->lightGreen(" ^ $fileNo of $total <white>{$file}");
             }
         }
 
@@ -1051,7 +1062,7 @@ class PHPloy
             $this->git->command('checkout '.($initialBranch ?: 'master'));
         }
 
-        $this->log('[SHA: '.$localRevision.'] Deployment to server: "'.$this->currentlyDeploying.'" from branch "'.
+        $this->log('[SHA: '.$localRevision.'] Deployment to server: "'.$this->currentServerName.'" from branch "'.
             $initialBranch.'". '.count($filesToUpload).' files uploaded; '.count($filesToDelete).' files deleted.');
     }
 
@@ -1145,7 +1156,6 @@ class PHPloy
      * Check for sub-submodules.
      *
      * @todo This function is quite slow (at least on Windows it often takes several seconds for each call).
-     *       Can it be optimized?
      *       It appears that this is called for EACH submodule, but then also does another `git submodule foreach`
      *
      * @param string $repo
@@ -1338,9 +1348,7 @@ class PHPloy
          */
         $connection = $this->connection->getAdapter()->getConnection();
 
-        if ($this->servers[$this->currentlyDeploying]['scheme'] != 'sftp'
-            || get_class($connection) != \phpseclib\Net\SFTP::class
-        ) {
+        if ($this->servers[$this->currentServerName]['scheme'] != 'sftp') {
             $this->cli->yellow()->out("\r\nConnection scheme is not 'sftp' ignoring [pre/post]-deploy-remote");
 
             return;
@@ -1354,7 +1362,7 @@ class PHPloy
 
         foreach ($commands as $command) {
             $this->cli->blue()->out("Executing on remote server: <bold>{$command}");
-            $command = "cd {$this->servers[$this->currentlyDeploying]['path']}; {$command}";
+            $command = "cd {$this->servers[$this->currentServerName]['path']}; {$command}";
             $output = $connection->exec($command);
             $this->cli->lightBlue()->out("<bold>{$output}");
         }
@@ -1419,81 +1427,13 @@ class PHPloy
     }
 
     /**
-     * Get an array that represents directory tree
-     * Credit: http://php.net/manual/en/function.scandir.php#109140.
-     *
-     * @param string $directory Directory path
-     * @param bool   $recursive Include sub directories
-     * @param bool   $listDirs  Include directories on listing
-     * @param bool   $listFiles Include files on listing
-     * @param string $exclude   Exclude paths that matches this regex
-     *
-     * @return array
-     */
-    public function directoryToArray($directory, $recursive = true, $listDirs = false, $listFiles = true, $exclude = '')
-    {
-        $arrayItems = [];
-        $skipByExclude = false;
-        $handle = opendir($directory);
-        if ($handle) {
-            while (false !== ($file = readdir($handle))) {
-                preg_match("/(^(([\.]){1,2})$|(\.(svn|git|md))|(Thumbs\.db|\.DS_STORE))$/iu", $file, $skip);
-                if ($exclude) {
-                    preg_match($exclude, $file, $skipByExclude);
-                }
-                if (!$skip && !$skipByExclude) {
-                    if (is_dir($directory.'/'.$file)) {
-                        if ($recursive) {
-                            $arrayItems = array_merge($arrayItems, $this->directoryToArray($directory.'/'.$file, $recursive, $listDirs, $listFiles, $exclude));
-                        }
-                        if ($listDirs) {
-                            $file = $directory.'/'.$file;
-                            $arrayItems[] = $file;
-                        }
-                    } else {
-                        if ($listFiles) {
-                            $file = $directory.'/'.$file;
-                            $arrayItems[] = $file;
-                        }
-                    }
-                }
-            }
-            closedir($handle);
-        }
-
-        return $arrayItems;
-    }
-
-    /**
-     * Strip Absolute Path.
-     *
-     * @param string $el
-     *
-     * @return string
-     */
-    protected function relPath($el)
-    {
-        $abs = getcwd().'/';
-
-        return str_replace($abs, '', $el);
-    }
-
-    /**
      * Creates sample ini file.
      */
-    protected function createSampleIniFile()
+    protected function createIniFile()
     {
         $iniFile = getcwd().DIRECTORY_SEPARATOR.$this->iniFileName;
-        $data = "; NOTE: If non-alphanumeric characters are present, enclose in value in quotes.\n
-[staging]
-    quickmode = ftp://example:password@production-example.com:21/path/to/installation\n
-[production]
-    scheme = sftp
-    user = example
-    pass = password
-    host = staging-example.com
-    path = /path/to/installation
-    port = 22";
+
+        $data = file_get_contents(__DIR__.'/../phploy.ini');
 
         if (file_exists($iniFile)) {
             $this->cli->info("\nphploy.ini file already exists.\n");
@@ -1514,7 +1454,7 @@ class PHPloy
      */
     protected function log($message, $type = 'INFO')
     {
-        if (isset($this->servers[$this->currentlyDeploying]['logger']) && $this->servers[$this->currentlyDeploying]['logger']) {
+        if (isset($this->servers[$this->currentServerName]['logger']) && $this->servers[$this->currentServerName]['logger']) {
             $filename = getcwd().DIRECTORY_SEPARATOR.'phploy.log';
             if (!file_exists($filename)) {
                 touch($filename);

@@ -32,7 +32,9 @@ $phar->buildFromDirectory(
 
 // Adding main file
 $phar->addFile('phploy.php');
+$phar->addFile('phploy.ini');
 $phar->addFile('src/Git.php');
+$phar->addFile('src/utils.php');
 $phar->addFile('src/PHPloy.php');
 $phar->addFile('src/Options.php');
 $phar->addFile('src/Connection.php');
@@ -48,3 +50,5 @@ $phar->stopBuffering();
 
 // Set file permissions
 chmod($output_file, 0755);
+
+echo 'Build was successful: dist/phploy.phar' . PHP_EOL;

@@ -1,5 +1,5 @@
 # PHPloy
-**Version 4.6.3**
+**Version 4.8.5**
 
 PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 5.5+** and **Git 1.8+**.
 
@@ -28,6 +28,7 @@ You can install PHPloy Phar globally, in your `/usr/local/bin` directory or, loc
 2. **Locally** Move `phploy` into your project directory. 
 
 ## Usage 
+
 *When using PHPloy locally, proceed the command with `php `*
 
 1. Run `phploy --init` in the terminal to create the `phploy.ini` file or create one manually.
@@ -62,18 +63,25 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     permissions = 0700
     ; File permissions set on newly created directories
     directoryPerm = 0775
+    ; Deploy only this directory as base directory
+    base = 'directory-name/'
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
     exclude[] = 'src/*.scss'
     exclude[] = '*.ini'
     ; Files that are ignored by Git, but you want to send the the server
     include[] = 'js/scripts.min.js'
-    include[] = 'js/style.min.css'
     include[] = 'directory-name/'
+    ; conditional include - if source file has changed, inclue file
+    include[] = 'css/style.min.css:src/style.css' 
     ; Directories that should be copied after deploy, from->to
     copy[] = 'public->www'
     ; Directories that should be purged after deploy
     purge[] = "cache/"
     ; Pre- and Post-deploy hooks
+    ; Use "DQOUTE" inside your double-quoted strings to insert a literal double quote
+    ; Use 'QUOTE' inside your qouted strings to insert a literal quote
+    ; For example pre-deploy[] = 'echo "that'QUOTE's nice"' to get a literal "that's".
+    ; That workaround is based on http://php.net/manual/de/function.parse-ini-file.php#70847
     pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
     post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
     ; Works only via SSH2 connection
@@ -125,6 +133,7 @@ PHPLOY_PORT
 PHPLOY_PASS
 PHPLOY_PATH
 PHPLOY_USER
+PHPLOY_PRIVKEY
 ```
 
 These variables can be used like this;
@@ -139,6 +148,7 @@ $ export PHPLOY_HOST="myftphost.com"
 $ export PHPLOY_USER="ftp"
 $ export PHPLOY_PASS="ftp-password"
 $ export PHPLOY_PATH="/home/user/public_html/example.com"
+$ export PHPLOY_PRIVKEY="path/to/or/contents/of/privatekey"
 $ phploy -s servername
 ```
 
@@ -172,7 +182,7 @@ To roll back to the previous commit, you just run:
 
 To roll back to whatever commit you want, you run:
 
-    phploy --rollback="commit-hash-goes-here"
+    phploy --rollback commit-hash-goes-here
 
 When you run a rollback, the files in your working copy will revert **temporarily** to the version of the rollback you are deploying. When the deployment has finished, everything will go back as it was.
 
@@ -197,7 +207,7 @@ If you want to update the `.revision` file on the server to match your current l
 
 If you want to set it to a previous commit revision, just specify the revision like this:
 
-    phploy --sync="your-revision-hash-here"
+    phploy --sync your-revision-hash-here
 
 ## Creating deployment directory on first deploy
 

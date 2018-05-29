@@ -80,7 +80,9 @@ class Connection
     {
         try {
             $options = $this->getCommonOptions($server);
-            $options['passive'] = ($server['passive'] ?: true);
+            $options['passive'] = isset($server['passive'])
+              ? (bool) $server['passive']
+              : true;
             $options['ssl'] = ($server['ssl'] ?: false);
             $options['port'] = ($server['port'] ?: 21);
 
@@ -107,7 +109,7 @@ class Connection
                 $server['privkey'] = substr_replace($server['privkey'], getenv('HOME'), 0, 1);
             }
 
-            if (!empty($server['privkey']) && !is_file($server['privkey'])) {
+            if (!empty($server['privkey']) && !is_file($server['privkey']) && "---" !== substr($server['privkey'], 0, 3)) {
                 throw new \Exception("Private key {$server['privkey']} doesn't exists.");
             }
 
