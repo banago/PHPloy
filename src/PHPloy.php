@@ -8,7 +8,7 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.8.10
+ * @version 4.8.11
  */
 
 namespace Banago\PHPloy;
