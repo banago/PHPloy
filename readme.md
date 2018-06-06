@@ -20,6 +20,16 @@ composer global require "banago/phploy"
 Make sure to place the `$HOME/.composer/vendor/bin` directory (or the [equivalent directory](http://stackoverflow.com/a/40470979/512277) for your OS) 
 in your `$PATH` so the PHPloy executable can be located by your system.
 
+### Rebuild phar
+
+To rebuild phar, you need to do it with with a php 7 cli. Do a 'composer install' in local and after do the command line 'php build'.
+To test thar the phar is compiled successful do :
+```
+cd dist
+./phploy.phar -v
+```
+
+
 ### Via Phar Archive
 
 You can install PHPloy Phar globally, in your `/usr/local/bin` directory or, locally, in your project directory. **Rename** `phploy.phar` to `phploy` for ease of use.
