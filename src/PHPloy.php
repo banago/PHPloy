@@ -8,17 +8,20 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.8.5
+ * @version 4.9.0
  */
 
 namespace Banago\PHPloy;
+
+define('QUOTE', "'");
+define('DQUOTE', '"');
 
 class PHPloy
 {
     /**
      * @var string
      */
-    protected $version = '4.8.5';
+    protected $version = '4.9.0';
 
     /**
      * @var string
@@ -258,19 +261,28 @@ class PHPloy
     protected $fresh = false;
 
     /**
-     * Constructor.
+     * @var Options
      */
-    public function __construct()
-    {
-        define('QUOTE', "'");
-        define('DQUOTE', '"');
+    protected $opt;
 
-        $this->opt = new \Banago\PHPloy\Options(new \League\CLImate\CLImate());
+    /**
+     * Constructor.
+     *
+     * @param Options|null $opt an optional set of Options, if null options will be read from CLI args
+     * @throws \Exception
+     */
+    public function __construct(\Banago\PHPloy\Options $opt = null)
+    {
+        $this->opt = $opt !== null ? $opt : new \Banago\PHPloy\Options(new \League\CLImate\CLImate());
         $this->cli = $this->opt->cli;
 
         $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
         $this->cli->backgroundGreen()->bold()->out('|                     PHPloy                    |');
         $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
+
+        if ($this->cli->arguments->defined('dryrun')) {
+            $this->cli->bold()->yellow('DRY RUN, PHPloy will not alter the remote servers');
+        }
 
         // Setup PHPloy
         $this->setup();
@@ -285,20 +297,26 @@ class PHPloy
             return;
         };
 
-        if ($this->cli->arguments->defined('help')) {
+        if ($this->cli->arguments->get('help')) {
             $this->cli->usage();
 
             return;
         }
 
-        if ($this->cli->arguments->defined('init')) {
+        if ($this->cli->arguments->get('init')) {
             $this->createIniFile();
 
             return;
         }
 
-        if ($this->cli->arguments->defined('version')) {
+        if ($this->cli->arguments->get('version')) {
             $this->cli->bold()->info('PHPloy v'.$this->version);
+
+            return;
+        }
+
+        if ($this->cli->arguments->get('dryrun')) {
+            $this->cli->bold()->yellow('DRY RUN, PHPloy will not go any further');
 
             return;
         }
@@ -404,7 +422,7 @@ class PHPloy
      *
      * @return array
      */
-    public function parseIniFile($iniFile)
+    protected function parseIniFile($iniFile)
     {
         if (!file_exists($iniFile)) {
             throw new \Exception("'$iniFile' does not exist.");
@@ -419,9 +437,12 @@ class PHPloy
     }
 
     /**
-     * Reads the phploy.ini file and populates the $this->servers array.
+     * Prepares the default value with an optional shared configuration
+     *
+     * @param array $iniShared the shared configuration read from the ini file with the '*' special server name
+     * @return array an array of default values
      */
-    public function prepareServers()
+    public function prepareDefaults($iniShared = [])
     {
         $defaults = [
             'scheme' => 'ftp',
@@ -449,10 +470,36 @@ class PHPloy
             'pre-deploy-remote' => [],
             'post-deploy-remote' => [],
         ];
+        if (!empty($iniShared)) {
+            foreach ($defaults as $name => $value) {
+                if (isset($iniShared[$name])) {
+                    $defaults[$name] = $iniShared[$name];
+                }
+            }
+        }
 
-        $iniFile = $this->repo.DIRECTORY_SEPARATOR.$this->iniFileName;
+        return $defaults;
+    }
+
+    /**
+     * Reads the phploy.ini file and populates the $this->servers array.
+     *
+     * @param string $iniFile an optional ini file path to read server configuration from, defaults to null which means
+     * it will use the CLI args
+     * @return array an associative array of server names and options
+     * @throws \Exception
+     */
+    public function prepareServers($iniFile = null)
+    {
+        if (empty($iniFile)) {
+            $iniFile = $this->repo . DIRECTORY_SEPARATOR . $this->iniFileName;
+        }
 
         $servers = $this->parseIniFile($iniFile);
+
+        $defaults = $this->prepareDefaults(isset($servers['*']) ? $servers['*'] : []);
+
+        unset($servers['*']);
 
         foreach ($servers as $name => $options) {
 
@@ -551,6 +598,8 @@ class PHPloy
 
             $this->servers[$name] = $options;
         }
+
+        return $this->servers;
     }
 
     /**

@@ -1,5 +1,5 @@
 # PHPloy
-**Version 4.8.5**
+**Version 4.9.0**
 
 PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 5.5+** and **Git 1.8+**.
 
@@ -88,6 +88,9 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     pre-deploy-remote[] = "touch .maintenance"
     post-deploy-remote[] = "mv cache cache2"
     post-deploy-remote[] = "rm .maintenance"
+    ; You can specify a timeout for the underlying connection which might be useful for long running remote 
+    ; operations (cache clear, dependency update, etc.)
+    timeout = 60
 
 [production]
     quickmode = ftp://example:password@production-example.com:21/path/to/installation
@@ -169,6 +172,25 @@ or:
 If you have a 'default' server configured, you can specify to deploy to all configured servers by running:
 
     phploy --all
+
+## Shared configuration (custom defaults)
+
+I you specify a server configuration named `*`, all options configured in this section will be shared with other servers.
+This basically allows you to inject custom default values.
+
+```ini
+; The special '*' configuration is shared between all other configurations (think include)
+[*]
+    exclude[] = 'src/*'
+    include[] = "dist/app.css"
+
+; As a result both shard1 and shard2 will have the same exclude[] and include[] "default" values
+[shard1]
+    quickmode = ftp://example:password@shard1-example.com:21/path/to/installation
+
+[shard2]
+    quickmode = ftp://example:password@shard2-example.com:21/path/to/installation
+```
 
 ## Rollbacks
 

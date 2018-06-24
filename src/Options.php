@@ -18,17 +18,20 @@ class Options
      * Options constructor.
      *
      * @param CLImate $climate
+     * @param array $argv an optional argv array, otherwise arguments will be read from CLI
+     * @throws \Exception
      */
-    public function __construct($climate)
+    public function __construct($climate, array $argv = null)
     {
         $this->cli = $climate;
 
         $this->build();
-        $this->parse();
+        $this->parse($argv);
     }
 
     /**
      * Register available options.
+     * @throws \Exception
      */
     protected function build()
     {
@@ -99,11 +102,20 @@ class Options
                 'description' => 'Lists commands and their usage',
                 'noValue' => true,
             ],
+            'dryrun' => [
+                'longPrefix' => 'dryrun',
+                'description' => 'Stops after parsing arguments and do not alter the remote servers',
+                'noValue' => true,
+            ]
         ]);
     }
 
-    protected function parse()
+    /**
+     * @param array|null $argv
+     * @throws \Exception
+     */
+    protected function parse(array $argv = null)
     {
-        $this->cli->arguments->parse();
+        $this->cli->arguments->parse($argv);
     }
 }
