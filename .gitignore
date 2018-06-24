@@ -1,6 +1,7 @@
 /.idea
+/.settings
+/.vscode
 /vendor
 /dev
-composer.lock
 *~
 *.swp
