@@ -21,6 +21,6 @@ before_install:
   - docker run --name ftp_testserver -d -v /tmp/PHPloyTestWorkspace/ftp_share:/home/ftpusers/ftpuser -v $TRAVIS_BUILD_DIR/tests/ftp_setup.sh:/root/ftp_setup.sh -p 21:21 -p 30000-30009:30000-30009 -e "PUBLICHOST=localhost"  stilliard/pure-ftpd:hardened /root/ftp_setup.sh
 
 install:
-  - travis_retry composer install --no-interaction --prefer-source --prefer-lowest
+  - travis_retry composer install --no-interaction --prefer-source
 
 script: ./vendor/bin/phpunit tests
