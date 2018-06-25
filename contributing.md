@@ -17,7 +17,7 @@ To preserve compatibility with PHP 5.5 when you add new dependencies, you should
 ```bash
 composer update --prefer-lowest
 ```
-The downside is that you to have to set nearly exact version for your dependencies.
+The downside is that you to have to set nearly exact versions for your dependencies.
 
 ## Testing
 
@@ -92,3 +92,7 @@ class CommitFileTest extends PHPUnit_Framework_TestCase
 ```
 The PHPLoyTestHelper is parametrized to provide different configurations based on the type passed to the test method by the PHPunit framework.
 This is especially helpful if you want to test shared functionality available for multiple protocols.
+
+### Travis CI
+A [`.travis.yml`](.travis.yml) file is present on the repositoriy. You can configure your Github account and forked 
+branch to run this file using the [travis-ci.org](https://travis-ci.org) platform.   
