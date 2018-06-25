@@ -6,11 +6,18 @@ Before proposing a pull request, please check the following:
 * Your code should follow the [PSR-2 coding standard](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-2-coding-style-guide.md). Use [php-cs-fixer](https://github.com/FriendsOfPHP/PHP-CS-Fixer) to fix inconsistencies.
 * If you commit a new feature, be prepared to help maintaining it. Watch the project on GitHub, and please comment on issues or PRs regarding the feature you contributed.
 * You should test your feature well.
-* You should run `php build` and commit the PHAR file so it is part of your pull request. You may need to change `phar.readonly` php.ini setting to `0` or run the command as `php -d phar.readonly=0 build`.
+* You should run `php build` and check the PHAR file works before submitting your pull request. You may need to change `phar.readonly` php.ini setting to `0` or run the command as `php -d phar.readonly=0 build`.
 
 Once your code is merged, it is available for free to everybody under the MIT License. Publishing your pull request on the PHPloy GitHub repository means that you agree with this license for your contribution.
 
 Thank you for your contribution! PHPloy wouldn't be so great without you.
+
+## Dependencies
+To preserve compatibility with PHP 5.5 when you add new dependencies, you should try to update your composer.lock file with the `--prefer-lowest` option. 
+```bash
+composer update --prefer-lowest
+```
+The downside is that you to have to set nearly exact version for your dependencies.
 
 ## Testing
 
