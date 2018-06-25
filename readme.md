@@ -175,8 +175,8 @@ If you have a 'default' server configured, you can specify to deploy to all conf
 
 ## Shared configuration (custom defaults)
 
-I you specify a server configuration named `*`, all options configured in this section will be shared with other servers.
-This basically allows you to inject custom default values.
+If you specify a server configuration named `*`, all options configured in this section will be shared with other 
+servers. This basically allows you to inject custom default values.
 
 ```ini
 ; The special '*' configuration is shared between all other configurations (think include)
