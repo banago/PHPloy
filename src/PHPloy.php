@@ -266,14 +266,19 @@ class PHPloy
     protected $opt;
 
     /**
+     * @var array
+     */
+    private $currentServerInfo;
+
+    /**
      * Constructor.
      *
      * @param Options|null $opt an optional set of Options, if null options will be read from CLI args
      * @throws \Exception
      */
-    public function __construct(\Banago\PHPloy\Options $opt = null)
+    public function __construct(Options $opt = null)
     {
-        $this->opt = $opt !== null ? $opt : new \Banago\PHPloy\Options(new \League\CLImate\CLImate());
+        $this->opt = $opt !== null ? $opt : new Options(new \League\CLImate\CLImate());
         $this->cli = $this->opt->cli;
 
         $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
@@ -281,7 +286,7 @@ class PHPloy
         $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
 
         if ($this->cli->arguments->defined('dryrun')) {
-            $this->cli->bold()->yellow('DRY RUN, PHPloy will not alter the remote servers');
+            $this->cli->bold()->yellow('DRY RUN, PHPloy will not check or alter the remote servers');
         }
 
         // Setup PHPloy
@@ -618,6 +623,7 @@ class PHPloy
      * @param string $servername Server to fetch password for
      *
      * @return string
+     * @throws \Exception
      */
     public function getPasswordFromIniFile($servername)
     {
@@ -694,6 +700,7 @@ class PHPloy
 
     /**
      * Connect to server.
+     * @throws \Exception
      */
     public function connect($server)
     {
@@ -703,6 +710,7 @@ class PHPloy
 
     /**
      * Deploy (or list) changed files.
+     * @throws \Exception
      */
     public function deploy()
     {
@@ -966,6 +974,7 @@ class PHPloy
      *
      * @param array $files 2-dimensional array with 2 indices: 'upload' and 'delete'
      *                     Each of these contains an array of filenames and paths.
+     * @throws \Exception
      */
     public function push($files, $localRevision = null)
     {
@@ -1243,6 +1252,7 @@ class PHPloy
      * Purge given directory's contents.
      *
      * @var string
+     * @throws \League\Flysystem\FileNotFoundException
      */
     public function purge($purgeDirs)
     {
@@ -1285,6 +1295,8 @@ class PHPloy
      * Copy given directory's contents.
      *
      * @var string
+     * @throws \League\Flysystem\FileNotFoundException
+     * @throws \League\Flysystem\FileExistsException
      */
     public function copy($copyDirs)
     {
