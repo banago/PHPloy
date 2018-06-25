@@ -3,5 +3,6 @@
 /.vscode
 /vendor
 /dev
+/dist
 *~
 *.swp
