@@ -499,7 +499,7 @@ class PHPloy
         $merged = $existing;
         foreach($existing as $k => $v) {
             if (!$overwriteArrayValues && is_array($v) && isset($new[$k]) && is_array($new[$k])) {
-                $merged[$k] = array_merge($existing[$k], $new[$k]);
+                $merged[$k] = array_merge($v, $new[$k]);
             }
             else if (isset($new[$k])) {
                 $merged[$k] = $new[$k];
