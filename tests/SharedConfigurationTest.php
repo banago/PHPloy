@@ -99,6 +99,8 @@ class SharedConfigurationTest extends PHPUnit_Framework_TestCase
         self::assertCount(2, $shared1['exclude']);
         self::assertCount(2, $shared2['exclude']);
         self::assertContains('exclude_always.txt', $shared1['exclude']);
+        self::assertContains('exclude_1.txt', $shared1['exclude']);
         self::assertContains('exclude_always.txt', $shared2['exclude']);
+        self::assertContains('exclude_2.txt', $shared2['exclude']);
     }
 }
