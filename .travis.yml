@@ -23,6 +23,7 @@ before_install:
 install:
   - travis_retry composer install --no-interaction --prefer-source
 
-script: 
+script:
+  - shellcheck tests/*.sh
   - ./vendor/bin/phpunit tests
   - php -d phar.readonly=0 build
