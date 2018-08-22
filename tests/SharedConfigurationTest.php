@@ -30,15 +30,15 @@ class SharedConfigurationTest extends PHPUnit_Framework_TestCase
     {
         $phploy = new \Banago\PHPloy\PHPloy(self::getTestOptions());
         $servers = $phploy->prepareServers(__DIR__ . '/resources/shared_phploy.ini');
-        self::assertArrayHasKey('shard1', $servers);
-        self::assertArrayHasKey('shard2', $servers);
+        self::assertArrayHasKey('shared1', $servers);
+        self::assertArrayHasKey('shared2', $servers);
 
-        $shard1 = $servers['shard1'];
-        $shard2 = $servers['shard2'];
+        $shared1 = $servers['shared1'];
+        $shared2 = $servers['shared2'];
 
-        self::assertArrayHasKey('path', $shard1);
-        self::assertArrayHasKey('path', $shard2);
-        self::assertEquals($shard1['path'], $shard2['path']);
+        self::assertArrayHasKey('path', $shared1);
+        self::assertArrayHasKey('path', $shared2);
+        self::assertEquals($shared1['path'], $shared2['path']);
     }
 
     /**
@@ -48,17 +48,17 @@ class SharedConfigurationTest extends PHPUnit_Framework_TestCase
     {
         $phploy = new \Banago\PHPloy\PHPloy(self::getTestOptions());
         $servers = $phploy->prepareServers(__DIR__ . '/resources/shared_phploy.ini');
-        self::assertArrayHasKey('shard1', $servers);
-        self::assertArrayHasKey('shard2', $servers);
+        self::assertArrayHasKey('shared1', $servers);
+        self::assertArrayHasKey('shared2', $servers);
 
-        $shard1 = $servers['shard1'];
-        $shard2 = $servers['shard2'];
+        $shared1 = $servers['shared1'];
+        $shared2 = $servers['shared2'];
 
-        self::assertArrayHasKey('port', $shard1);
-        self::assertArrayHasKey('port', $shard2);
-        self::assertNotEquals($shard1['port'], $shard2['port']);
-        self::assertNotEquals('2222', $shard1['branch']);
-        self::assertNotEquals('2223', $shard2['branch']);
+        self::assertArrayHasKey('port', $shared1);
+        self::assertArrayHasKey('port', $shared2);
+        self::assertNotEquals($shared1['port'], $shared2['port']);
+        self::assertNotEquals('2222', $shared1['branch']);
+        self::assertNotEquals('2223', $shared2['branch']);
     }
 
     /**
@@ -68,16 +68,37 @@ class SharedConfigurationTest extends PHPUnit_Framework_TestCase
     {
         $phploy = new \Banago\PHPloy\PHPloy(self::getTestOptions());
         $servers = $phploy->prepareServers(__DIR__ . '/resources/shared_phploy.ini');
-        self::assertArrayHasKey('shard1', $servers);
-        self::assertArrayHasKey('shard2', $servers);
+        self::assertArrayHasKey('shared1', $servers);
+        self::assertArrayHasKey('shared2', $servers);
 
-        $shard1 = $servers['shard1'];
-        $shard2 = $servers['shard2'];
+        $shared1 = $servers['shared1'];
+        $shared2 = $servers['shared2'];
 
-        self::assertArrayHasKey('branch', $shard1);
-        self::assertArrayHasKey('branch', $shard2);
-        self::assertNotEquals('dev', $shard1['branch']);
-        self::assertNotEquals('dev', $shard2['branch']);
-        self::assertNotEquals($shard1['branch'], $shard2['branch']);
+        self::assertArrayHasKey('branch', $shared1);
+        self::assertArrayHasKey('branch', $shared2);
+        self::assertNotEquals('dev', $shared1['branch']);
+        self::assertNotEquals('dev', $shared2['branch']);
+        self::assertNotEquals($shared1['branch'], $shared2['branch']);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function testConfigurationExclusionsAreMerged()
+    {
+        $phploy = new \Banago\PHPloy\PHPloy(self::getTestOptions());
+        $servers = $phploy->prepareServers(__DIR__ . '/resources/shared_phploy.ini');
+        self::assertArrayHasKey('shared1', $servers);
+        self::assertArrayHasKey('shared2', $servers);
+
+        $shared1 = $servers['shared1'];
+        $shared2 = $servers['shared2'];
+
+        self::assertArrayHasKey('exclude', $shared1);
+        self::assertArrayHasKey('exclude', $shared2);
+        self::assertCount(2, $shared1['exclude']);
+        self::assertCount(2, $shared2['exclude']);
+        self::assertContains('exclude_always.txt', $shared1['exclude']);
+        self::assertContains('exclude_always.txt', $shared2['exclude']);
     }
 }

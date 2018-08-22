@@ -487,6 +487,36 @@ class PHPloy
     }
 
     /**
+     * Merges two array options. This method should be used to merge shared configurations and preserve "array" values
+     * like "exclude" or "include" keys.
+     *
+     * @param array $existing the existing options in which to merge the new options
+     * @param array $new the new options to merge into the existing options
+     * @param bool $overwriteArrayValues true to overwrite (not merge) values which are arrays, false otherwise
+     * @return array
+     */
+    private function mergeOptions($existing, $new, $overwriteArrayValues = false) {
+        $merged = $existing;
+        foreach($existing as $k => $v) {
+            if (!$overwriteArrayValues && is_array($v) && isset($new[$k]) && is_array($new[$k])) {
+                $merged[$k] = array_merge($existing[$k], $new[$k]);
+            }
+            else if (isset($new[$k])) {
+                $merged[$k] = $new[$k];
+            }
+            else {
+                $merged[$k] = $v;
+            }
+        }
+        foreach($new as $k => $v) {
+            if (!is_array($v)) {
+                $merged[$k] = $v;
+            }
+        }
+        return $merged;
+    }
+
+    /**
      * Reads the phploy.ini file and populates the $this->servers array.
      *
      * @param string $iniFile an optional ini file path to read server configuration from, defaults to null which means
@@ -517,7 +547,7 @@ class PHPloy
                 $this->defaultServer = true;
             }
 
-            $options = array_merge($defaults, $options);
+            $options = $this->mergeOptions($defaults, $options);
 
             if (isset($options['quickmode'])) {
                 $options = array_merge($options, parse_url($options['quickmode']));
