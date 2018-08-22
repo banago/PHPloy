@@ -590,40 +590,40 @@ class PHPloy
             $this->filesToExclude[$name] = $this->globalFilesToExclude;
             $this->filesToExclude[$name][] = $this->iniFileName;
 
-            if (!empty($servers[$name]['base'])) {
-                $this->base = $servers[$name]['base'].(substr($servers[$name]['base'], -1) !== '/' ? '/' : '');
+            if (!empty($options['base'])) {
+                $this->base = $options['base'].(substr($options['base'], -1) !== '/' ? '/' : '');
             }
 
-            if (!empty($servers[$name]['exclude'])) {
-                $this->filesToExclude[$name] = array_merge($this->filesToExclude[$name], $servers[$name]['exclude']);
+            if (!empty($options['exclude'])) {
+                $this->filesToExclude[$name] = array_merge($this->filesToExclude[$name], $options['exclude']);
             }
 
-            if (!empty($servers[$name]['include'])) {
-                $this->filesToInclude[$name] = $servers[$name]['include'];
+            if (!empty($options['include'])) {
+                $this->filesToInclude[$name] = $options['include'];
             }
 
-            if (!empty($servers[$name]['copy'])) {
-                $this->copyDirs[$name] = $servers[$name]['copy'];
+            if (!empty($options['copy'])) {
+                $this->copyDirs[$name] = $options['copy'];
             }
 
-            if (!empty($servers[$name]['purge'])) {
-                $this->purgeDirs[$name] = $servers[$name]['purge'];
+            if (!empty($options['purge'])) {
+                $this->purgeDirs[$name] = $options['purge'];
             }
 
-            if (!empty($servers[$name]['pre-deploy'])) {
-                $this->preDeploy[$name] = $servers[$name]['pre-deploy'];
+            if (!empty($options['pre-deploy'])) {
+                $this->preDeploy[$name] = $options['pre-deploy'];
             }
 
-            if (!empty($servers[$name]['post-deploy'])) {
-                $this->postDeploy[$name] = $servers[$name]['post-deploy'];
+            if (!empty($options['post-deploy'])) {
+                $this->postDeploy[$name] = $options['post-deploy'];
             }
 
-            if (!empty($servers[$name]['pre-deploy-remote'])) {
-                $this->preDeployRemote[$name] = $servers[$name]['pre-deploy-remote'];
+            if (!empty($options['pre-deploy-remote'])) {
+                $this->preDeployRemote[$name] = $options['pre-deploy-remote'];
             }
 
-            if (!empty($servers[$name]['post-deploy-remote'])) {
-                $this->postDeployRemote[$name] = $servers[$name]['post-deploy-remote'];
+            if (!empty($options['post-deploy-remote'])) {
+                $this->postDeployRemote[$name] = $options['post-deploy-remote'];
             }
 
             // Set the path from environment variable if it does not exist in the config
