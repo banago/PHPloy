@@ -828,7 +828,7 @@ class PHPloy
         if ($this->fresh) {
             $this->cli->out('Manual fresh upload...');
         } elseif ($this->connection->has($this->dotRevision)) {
-            $remoteRevision = $this->connection->read($this->dotRevision);
+            $remoteRevision = trim($this->connection->read($this->dotRevision));
             $this->debug('Remote revision: <bold>'.$remoteRevision);
         } else {
             $this->cli->out('No revision found. Fresh upload...');
