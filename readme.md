@@ -34,7 +34,7 @@ You can install PHPloy Phar globally, in your `/usr/local/bin` directory or, loc
 1. Run `phploy --init` in the terminal to create the `phploy.ini` file or create one manually.
 2. Run `phploy` in terminal to deploy.
 
-Windows Users: [Installing PHPloy globally on Windows](https://github.com/banago/PHPloy/issues/214)
+Windows Users: [Installing PHPloy globally on Windows](https://github.com/banago/PHPloy/wiki/Installing-PHPloy-globally-in-Windows)
 
 ## phploy.ini
 
