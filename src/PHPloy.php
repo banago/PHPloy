@@ -8,17 +8,20 @@
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
  *
- * @version 4.8.5
+ * @version 4.9.0
  */
 
 namespace Banago\PHPloy;
+
+define('QUOTE', "'");
+define('DQUOTE', '"');
 
 class PHPloy
 {
     /**
      * @var string
      */
-    protected $version = '4.8.5';
+    protected $version = '4.9.0';
 
     /**
      * @var string
@@ -258,19 +261,33 @@ class PHPloy
     protected $fresh = false;
 
     /**
-     * Constructor.
+     * @var Options
      */
-    public function __construct()
-    {
-        define('QUOTE', "'");
-        define('DQUOTE', '"');
+    protected $opt;
 
-        $this->opt = new \Banago\PHPloy\Options(new \League\CLImate\CLImate());
+    /**
+     * @var array
+     */
+    private $currentServerInfo;
+
+    /**
+     * Constructor.
+     *
+     * @param Options|null $opt an optional set of Options, if null options will be read from CLI args
+     * @throws \Exception
+     */
+    public function __construct(Options $opt = null)
+    {
+        $this->opt = $opt !== null ? $opt : new Options(new \League\CLImate\CLImate());
         $this->cli = $this->opt->cli;
 
         $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
         $this->cli->backgroundGreen()->bold()->out('|                     PHPloy                    |');
         $this->cli->backgroundGreen()->bold()->out('-------------------------------------------------');
+
+        if ($this->cli->arguments->defined('dryrun')) {
+            $this->cli->bold()->yellow('DRY RUN, PHPloy will not check or alter the remote servers');
+        }
 
         // Setup PHPloy
         $this->setup();
@@ -285,20 +302,26 @@ class PHPloy
             return;
         };
 
-        if ($this->cli->arguments->defined('help')) {
+        if ($this->cli->arguments->get('help')) {
             $this->cli->usage();
 
             return;
         }
 
-        if ($this->cli->arguments->defined('init')) {
+        if ($this->cli->arguments->get('init')) {
             $this->createIniFile();
 
             return;
         }
 
-        if ($this->cli->arguments->defined('version')) {
+        if ($this->cli->arguments->get('version')) {
             $this->cli->bold()->info('PHPloy v'.$this->version);
+
+            return;
+        }
+
+        if ($this->cli->arguments->get('dryrun')) {
+            $this->cli->bold()->yellow('DRY RUN, PHPloy will not go any further');
 
             return;
         }
@@ -404,7 +427,7 @@ class PHPloy
      *
      * @return array
      */
-    public function parseIniFile($iniFile)
+    protected function parseIniFile($iniFile)
     {
         if (!file_exists($iniFile)) {
             throw new \Exception("'$iniFile' does not exist.");
@@ -419,9 +442,12 @@ class PHPloy
     }
 
     /**
-     * Reads the phploy.ini file and populates the $this->servers array.
+     * Prepares the default value with an optional shared configuration
+     *
+     * @param array $iniShared the shared configuration read from the ini file with the '*' special server name
+     * @return array an array of default values
      */
-    public function prepareServers()
+    public function prepareDefaults($iniShared = [])
     {
         $defaults = [
             'scheme' => 'ftp',
@@ -449,10 +475,66 @@ class PHPloy
             'pre-deploy-remote' => [],
             'post-deploy-remote' => [],
         ];
+        if (!empty($iniShared)) {
+            foreach ($defaults as $name => $value) {
+                if (isset($iniShared[$name])) {
+                    $defaults[$name] = $iniShared[$name];
+                }
+            }
+        }
 
-        $iniFile = $this->repo.DIRECTORY_SEPARATOR.$this->iniFileName;
+        return $defaults;
+    }
+
+    /**
+     * Merges two array options. This method should be used to merge shared configurations and preserve "array" values
+     * like "exclude" or "include" keys.
+     *
+     * @param array $existing the existing options in which to merge the new options
+     * @param array $new the new options to merge into the existing options
+     * @param bool $overwriteArrayValues true to overwrite (not merge) values which are arrays, false otherwise
+     * @return array
+     */
+    private function mergeOptions($existing, $new, $overwriteArrayValues = false) {
+        $merged = $existing;
+        foreach($existing as $k => $v) {
+            if (!$overwriteArrayValues && is_array($v) && isset($new[$k]) && is_array($new[$k])) {
+                $merged[$k] = array_merge($v, $new[$k]);
+            }
+            else if (isset($new[$k])) {
+                $merged[$k] = $new[$k];
+            }
+            else {
+                $merged[$k] = $v;
+            }
+        }
+        foreach($new as $k => $v) {
+            if (!is_array($v)) {
+                $merged[$k] = $v;
+            }
+        }
+        return $merged;
+    }
+
+    /**
+     * Reads the phploy.ini file and populates the $this->servers array.
+     *
+     * @param string $iniFile an optional ini file path to read server configuration from, defaults to null which means
+     * it will use the CLI args
+     * @return array an associative array of server names and options
+     * @throws \Exception
+     */
+    public function prepareServers($iniFile = null)
+    {
+        if (empty($iniFile)) {
+            $iniFile = $this->repo . DIRECTORY_SEPARATOR . $this->iniFileName;
+        }
 
         $servers = $this->parseIniFile($iniFile);
+
+        $defaults = $this->prepareDefaults(isset($servers['*']) ? $servers['*'] : []);
+
+        unset($servers['*']);
 
         foreach ($servers as $name => $options) {
 
@@ -465,7 +547,7 @@ class PHPloy
                 $this->defaultServer = true;
             }
 
-            $options = array_merge($defaults, $options);
+            $options = $this->mergeOptions($defaults, $options);
 
             if (isset($options['quickmode'])) {
                 $options = array_merge($options, parse_url($options['quickmode']));
@@ -508,40 +590,40 @@ class PHPloy
             $this->filesToExclude[$name] = $this->globalFilesToExclude;
             $this->filesToExclude[$name][] = $this->iniFileName;
 
-            if (!empty($servers[$name]['base'])) {
-                $this->base = $servers[$name]['base'].(substr($servers[$name]['base'], -1) !== '/' ? '/' : '');
+            if (!empty($options['base'])) {
+                $this->base = $options['base'].(substr($options['base'], -1) !== '/' ? '/' : '');
             }
 
-            if (!empty($servers[$name]['exclude'])) {
-                $this->filesToExclude[$name] = array_merge($this->filesToExclude[$name], $servers[$name]['exclude']);
+            if (!empty($options['exclude'])) {
+                $this->filesToExclude[$name] = array_merge($this->filesToExclude[$name], $options['exclude']);
             }
 
-            if (!empty($servers[$name]['include'])) {
-                $this->filesToInclude[$name] = $servers[$name]['include'];
+            if (!empty($options['include'])) {
+                $this->filesToInclude[$name] = $options['include'];
             }
 
-            if (!empty($servers[$name]['copy'])) {
-                $this->copyDirs[$name] = $servers[$name]['copy'];
+            if (!empty($options['copy'])) {
+                $this->copyDirs[$name] = $options['copy'];
             }
 
-            if (!empty($servers[$name]['purge'])) {
-                $this->purgeDirs[$name] = $servers[$name]['purge'];
+            if (!empty($options['purge'])) {
+                $this->purgeDirs[$name] = $options['purge'];
             }
 
-            if (!empty($servers[$name]['pre-deploy'])) {
-                $this->preDeploy[$name] = $servers[$name]['pre-deploy'];
+            if (!empty($options['pre-deploy'])) {
+                $this->preDeploy[$name] = $options['pre-deploy'];
             }
 
-            if (!empty($servers[$name]['post-deploy'])) {
-                $this->postDeploy[$name] = $servers[$name]['post-deploy'];
+            if (!empty($options['post-deploy'])) {
+                $this->postDeploy[$name] = $options['post-deploy'];
             }
 
-            if (!empty($servers[$name]['pre-deploy-remote'])) {
-                $this->preDeployRemote[$name] = $servers[$name]['pre-deploy-remote'];
+            if (!empty($options['pre-deploy-remote'])) {
+                $this->preDeployRemote[$name] = $options['pre-deploy-remote'];
             }
 
-            if (!empty($servers[$name]['post-deploy-remote'])) {
-                $this->postDeployRemote[$name] = $servers[$name]['post-deploy-remote'];
+            if (!empty($options['post-deploy-remote'])) {
+                $this->postDeployRemote[$name] = $options['post-deploy-remote'];
             }
 
             // Set the path from environment variable if it does not exist in the config
@@ -551,6 +633,8 @@ class PHPloy
 
             $this->servers[$name] = $options;
         }
+
+        return $this->servers;
     }
 
     /**
@@ -569,6 +653,7 @@ class PHPloy
      * @param string $servername Server to fetch password for
      *
      * @return string
+     * @throws \Exception
      */
     public function getPasswordFromIniFile($servername)
     {
@@ -645,6 +730,7 @@ class PHPloy
 
     /**
      * Connect to server.
+     * @throws \Exception
      */
     public function connect($server)
     {
@@ -654,6 +740,7 @@ class PHPloy
 
     /**
      * Deploy (or list) changed files.
+     * @throws \Exception
      */
     public function deploy()
     {
@@ -917,6 +1004,7 @@ class PHPloy
      *
      * @param array $files 2-dimensional array with 2 indices: 'upload' and 'delete'
      *                     Each of these contains an array of filenames and paths.
+     * @throws \Exception
      */
     public function push($files, $localRevision = null)
     {
@@ -1194,6 +1282,7 @@ class PHPloy
      * Purge given directory's contents.
      *
      * @var string
+     * @throws \League\Flysystem\FileNotFoundException
      */
     public function purge($purgeDirs)
     {
@@ -1236,6 +1325,8 @@ class PHPloy
      * Copy given directory's contents.
      *
      * @var string
+     * @throws \League\Flysystem\FileNotFoundException
+     * @throws \League\Flysystem\FileExistsException
      */
     public function copy($copyDirs)
     {
