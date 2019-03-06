@@ -591,7 +591,7 @@ class PHPloy
             $this->filesToExclude[$name][] = $this->iniFileName;
 
             if (!empty($options['base'])) {
-                $this->base = $options['base'].(substr($options['base'], -1) !== '/' ? '/' : '');
+                $this->base = rtrim($options['base'], '/').'/';
             }
 
             if (!empty($options['exclude'])) {
