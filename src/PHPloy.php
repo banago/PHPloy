@@ -699,6 +699,42 @@ class PHPloy
     }
 
     /**
+     * Filter files form base path.
+     *
+     * @param array $files Array of files which needed to be filtered
+     *
+     * @return array
+     */
+    private function filterBasePathFiles(array $files) : array {
+        if (!$this->base) {
+            return $files;
+        }
+
+        $base = $this->base;
+
+        
+        return array_values(
+            array_filter(
+                $files,
+                function($file) use ($base) {
+                    return preg_match('/^'.preg_quote($base, '/').'/', $file);
+                }
+            )
+        );
+    }
+
+    /**
+     * Remove bath path from file / path
+     *
+     * @param string $file
+     *
+     * @return string
+     */
+    private function removeBasePath(string $file) : string {
+        return $this->base ? preg_replace('/^'.preg_quote($this->base, '/').'/', '', $file) : $file;
+    }
+
+    /**
      * Filter included files.
      *
      * @param array $files        Array of files which needed to be filtered
@@ -987,6 +1023,9 @@ class PHPloy
 
         $filesToUpload = array_merge($filteredFilesToUpload['files'], $filteredFilesToInclude);
         $filesToDelete = $filteredFilesToDelete['files'];
+
+        $filesToUpload = $this->filterBasePathFiles($filesToUpload);
+        $filesToDelete = $this->filterBasePathFiles($filesToDelete);
 
         $filesToSkip = array_merge($filteredFilesToUpload['filesToSkip'], $filteredFilesToDelete['filesToSkip']);
 
