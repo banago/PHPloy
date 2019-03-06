@@ -1081,8 +1081,11 @@ class PHPloy
                     $file = $this->currentSubmoduleName.'/'.$file;
                 }
 
+                // Remove base path, if set.
+                $fileBaseless = $this->removeBasePath($file);
+
                 // Make sure the folder exists in the FTP server.
-                $dir = explode('/', dirname($file));
+                $dir = explode('/', dirname($fileBaseless));
                 $path = '';
                 $ret = true;
 
@@ -1114,12 +1117,12 @@ class PHPloy
                 }
 
                 // If base is set, remove it from filename
-                $remoteFile = $this->base ? preg_replace('/^'.preg_quote($this->base, '/').'/', '', $file) : $file;
+                $remoteFile = $fileBaseless;
 
                 $uploaded = $this->connection->put($remoteFile, $data);
 
                 if (!$uploaded) {
-                    $this->cli->error(" ! Failed to upload {$file}.");
+                    $this->cli->error(" ! Failed to upload {$fileBaseless}.");
 
                     if (!$this->connection) {
                         $this->cli->info(' * Connection lost, trying to reconnect...');
@@ -1131,7 +1134,7 @@ class PHPloy
                 $this->deploymentSize += filesize($this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file));
                 $total = count($filesToUpload);
                 $fileNo = str_pad(++$fileNo, strlen($total), ' ', STR_PAD_LEFT);
-                $this->cli->lightGreen(" ^ $fileNo of $total <white>{$file}");
+                $this->cli->lightGreen(" ^ $fileNo of $total <white>{$fileBaseless}");
             }
         }
 
