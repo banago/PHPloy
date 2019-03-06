@@ -495,20 +495,19 @@ class PHPloy
      * @param bool $overwriteArrayValues true to overwrite (not merge) values which are arrays, false otherwise
      * @return array
      */
-    private function mergeOptions($existing, $new, $overwriteArrayValues = false) {
+    private function mergeOptions($existing, $new, $overwriteArrayValues = false)
+    {
         $merged = $existing;
-        foreach($existing as $k => $v) {
+        foreach ($existing as $k => $v) {
             if (!$overwriteArrayValues && is_array($v) && isset($new[$k]) && is_array($new[$k])) {
                 $merged[$k] = array_merge($v, $new[$k]);
-            }
-            else if (isset($new[$k])) {
+            } elseif (isset($new[$k])) {
                 $merged[$k] = $new[$k];
-            }
-            else {
+            } else {
                 $merged[$k] = $v;
             }
         }
-        foreach($new as $k => $v) {
+        foreach ($new as $k => $v) {
             if (!is_array($v)) {
                 $merged[$k] = $v;
             }
@@ -705,7 +704,8 @@ class PHPloy
      *
      * @return array
      */
-    private function filterBasePathFiles(array $files) : array {
+    private function filterBasePathFiles(array $files) : array
+    {
         if (!$this->base) {
             return $files;
         }
@@ -716,7 +716,7 @@ class PHPloy
         return array_values(
             array_filter(
                 $files,
-                function($file) use ($base) {
+                function ($file) use ($base) {
                     return preg_match('/^'.preg_quote($base, '/').'/', $file);
                 }
             )
@@ -730,7 +730,8 @@ class PHPloy
      *
      * @return string
      */
-    private function removeBasePath(string $file) : string {
+    private function removeBasePath(string $file) : string
+    {
         return $this->base ? preg_replace('/^'.preg_quote($this->base, '/').'/', '', $file) : $file;
     }
 
@@ -1268,7 +1269,10 @@ class PHPloy
                         'name' => $line[1],
                         'path' => $repo.'/'.$line[1],
                     ];
-                    $this->cli->out(sprintf('   Found submodule %s. %s', $line[1], $this->scanSubSubmodules ? PHP_EOL.'      Scanning for sub-submodules...' : null
+                    $this->cli->out(sprintf(
+                        '   Found submodule %s. %s',
+                        $line[1],
+                        $this->scanSubSubmodules ? PHP_EOL.'      Scanning for sub-submodules...' : null
                     ));
                 }
 
