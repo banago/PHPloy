@@ -119,6 +119,11 @@ class PHPloy
     /**
      * @var array
      */
+    public $purgeBeforeDirs = [];
+
+    /**
+     * @var array
+     */
     public $purgeDirs = [];
 
     /**
@@ -470,6 +475,7 @@ class PHPloy
             'exclude' => [],
             'copy' => [],
             'purge' => [],
+            'purge-before' => [],
             'pre-deploy' => [],
             'post-deploy' => [],
             'pre-deploy-remote' => [],
@@ -604,6 +610,10 @@ class PHPloy
 
             if (!empty($options['copy'])) {
                 $this->copyDirs[$name] = $options['copy'];
+            }
+
+            if (!empty($options['purge-before'])) {
+                $this->purgeBeforeDirs[$name] = $options['purge-before'];
             }
 
             if (!empty($options['purge'])) {
@@ -810,6 +820,10 @@ class PHPloy
                 // Pre Deploy Remote
                 if (isset($this->preDeployRemote[$name]) && count($this->preDeployRemote[$name]) > 0) {
                     $this->preDeployRemote($this->preDeployRemote[$name]);
+                }
+                // Purge before deploy
+                if (isset($this->purgeBeforeDirs[$name]) && count($this->purgeBeforeDirs[$name]) > 0) {
+                    $this->purge($this->purgeBeforeDirs[$name]);
                 }
                 // Push repository
                 $this->push($files[$this->currentServerName]);
