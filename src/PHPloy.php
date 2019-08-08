@@ -569,9 +569,17 @@ class PHPloy
                 $options['port'] = getenv('PHPLOY_PORT');
             }
 
-            // Set username from environment variable if it does not exist in the config
-            if (empty($options['user']) && !empty(getenv('PHPLOY_USER'))) {
-                $options['user'] = getenv('PHPLOY_USER');
+            // Set username from .phploy config file or environment variable if it does not exist in the config
+            if (empty($options['user'])) {
+
+                // Look for .phploy config file
+                if (file_exists($this->getPasswordFile())) {
+                    $options['user'] = $this->getUserFromIniFile($name);
+                } elseif (!empty(getenv('PHPLOY_USER'))) {
+                    $options['user'] = getenv('PHPLOY_USER');
+                } else {
+                    $this->cli->red()->out('No user has been provided.');
+                }
             }
 
             if (empty($options['privkey']) && !empty(getenv('PHPLOY_PRIVKEY'))) {
@@ -674,6 +682,23 @@ class PHPloy
 
         if (isset($values[$servername]['password']) === true) {
             throw new \Exception('Please rename password to pass in '.$this->getPasswordFile());
+        }
+
+        return '';
+    }
+
+    /**
+     * Try to fetch user from .phploy file, if not found an empty string will be returned.
+     *
+     * @param string $servername Server to fetch user for
+     *
+     * @return string
+     */
+    public function getUserFromIniFile($servername)
+    {
+        $values = $this->parseIniFile($this->getPasswordFile());
+        if (isset($values[$servername]['user']) === true) {
+            return $values[$servername]['user'];
         }
 
         return '';
