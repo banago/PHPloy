@@ -501,20 +501,19 @@ class PHPloy
      * @param bool $overwriteArrayValues true to overwrite (not merge) values which are arrays, false otherwise
      * @return array
      */
-    private function mergeOptions($existing, $new, $overwriteArrayValues = false) {
+    private function mergeOptions($existing, $new, $overwriteArrayValues = false)
+    {
         $merged = $existing;
-        foreach($existing as $k => $v) {
+        foreach ($existing as $k => $v) {
             if (!$overwriteArrayValues && is_array($v) && isset($new[$k]) && is_array($new[$k])) {
                 $merged[$k] = array_merge($v, $new[$k]);
-            }
-            else if (isset($new[$k])) {
+            } elseif (isset($new[$k])) {
                 $merged[$k] = $new[$k];
-            }
-            else {
+            } else {
                 $merged[$k] = $v;
             }
         }
-        foreach($new as $k => $v) {
+        foreach ($new as $k => $v) {
             if (!is_array($v)) {
                 $merged[$k] = $v;
             }
@@ -605,7 +604,7 @@ class PHPloy
             $this->filesToExclude[$name][] = $this->iniFileName;
 
             if (!empty($options['base'])) {
-                $this->base = $options['base'].(substr($options['base'], -1) !== '/' ? '/' : '');
+                $this->base = rtrim($options['base'], '/').'/';
             }
 
             if (!empty($options['exclude'])) {
@@ -731,6 +730,44 @@ class PHPloy
             'files' => $files,
             'filesToSkip' => $filesToSkip,
         ];
+    }
+
+    /**
+     * Filter files form base path.
+     *
+     * @param array $files Array of files which needed to be filtered
+     *
+     * @return array
+     */
+    private function filterBasePathFiles(array $files) : array
+    {
+        if (!$this->base) {
+            return $files;
+        }
+
+        $base = $this->base;
+
+        
+        return array_values(
+            array_filter(
+                $files,
+                function ($file) use ($base) {
+                    return preg_match('/^'.preg_quote($base, '/').'/', $file);
+                }
+            )
+        );
+    }
+
+    /**
+     * Remove bath path from file / path
+     *
+     * @param string $file
+     *
+     * @return string
+     */
+    private function removeBasePath(string $file) : string
+    {
+        return $this->base ? preg_replace('/^'.preg_quote($this->base, '/').'/', '', $file) : $file;
     }
 
     /**
@@ -1027,6 +1064,9 @@ class PHPloy
         $filesToUpload = array_merge($filteredFilesToUpload['files'], $filteredFilesToInclude);
         $filesToDelete = $filteredFilesToDelete['files'];
 
+        $filesToUpload = $this->filterBasePathFiles($filesToUpload);
+        $filesToDelete = $this->filterBasePathFiles($filesToDelete);
+
         $filesToSkip = array_merge($filteredFilesToUpload['filesToSkip'], $filteredFilesToDelete['filesToSkip']);
 
         return [
@@ -1081,8 +1121,11 @@ class PHPloy
                     $file = $this->currentSubmoduleName.'/'.$file;
                 }
 
+                // Remove base path, if set.
+                $fileBaseless = $this->removeBasePath($file);
+
                 // Make sure the folder exists in the FTP server.
-                $dir = explode('/', dirname($file));
+                $dir = explode('/', dirname($fileBaseless));
                 $path = '';
                 $ret = true;
 
@@ -1114,12 +1157,12 @@ class PHPloy
                 }
 
                 // If base is set, remove it from filename
-                $remoteFile = $this->base ? preg_replace('/^'.preg_quote($this->base, '/').'/', '', $file) : $file;
+                $remoteFile = $fileBaseless;
 
                 $uploaded = $this->connection->put($remoteFile, $data);
 
                 if (!$uploaded) {
-                    $this->cli->error(" ! Failed to upload {$file}.");
+                    $this->cli->error(" ! Failed to upload {$fileBaseless}.");
 
                     if (!$this->connection) {
                         $this->cli->info(' * Connection lost, trying to reconnect...');
@@ -1131,7 +1174,7 @@ class PHPloy
                 $this->deploymentSize += filesize($this->repo.'/'.($this->currentSubmoduleName ? str_replace($this->currentSubmoduleName.'/', '', $file) : $file));
                 $total = count($filesToUpload);
                 $fileNo = str_pad(++$fileNo, strlen($total), ' ', STR_PAD_LEFT);
-                $this->cli->lightGreen(" ^ $fileNo of $total <white>{$file}");
+                $this->cli->lightGreen(" ^ $fileNo of $total <white>{$fileBaseless}");
             }
         }
 
@@ -1265,7 +1308,10 @@ class PHPloy
                         'name' => $line[1],
                         'path' => $repo.'/'.$line[1],
                     ];
-                    $this->cli->out(sprintf('   Found submodule %s. %s', $line[1], $this->scanSubSubmodules ? PHP_EOL.'      Scanning for sub-submodules...' : null
+                    $this->cli->out(sprintf(
+                        '   Found submodule %s. %s',
+                        $line[1],
+                        $this->scanSubSubmodules ? PHP_EOL.'      Scanning for sub-submodules...' : null
                     ));
                 }
 
