@@ -75,6 +75,8 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     include[] = 'css/style.min.css:src/style.css' 
     ; Directories that should be copied after deploy, from->to
     copy[] = 'public->www'
+    ; Directories that should be purged before deploy
+    purge-before[] = "dist/"
     ; Directories that should be purged after deploy
     purge[] = "cache/"
     ; Pre- and Post-deploy hooks
@@ -110,19 +112,22 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     include[] = 'js/scripts.min.js'
     include[] = 'js/style.min.css'
     include[] = 'directory-name/'
+    purge-before[] = "dist/" 
     purge[] = "cache/" 
     pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
     post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
 ```
 
 If your password is missing in the `phploy.ini` file or the `PHPLOY_PASS` environment variable, PHPloy will interactively ask you for your password.
-There is also an option to store the password in a file called `.phploy`.
+There is also an option to store the user and password in a file called `.phploy`.
 
 ```
 [staging]
+    user="theUser"
     pass="thePassword"
     
 [production]
+    user="theUser"
     pass="thePassword"
 ```
 
@@ -255,6 +260,11 @@ In many cases, we need to purge the contents of a directory after a deployment. 
 
     ; relative to the deployment path
     purge[] = "cache/"
+
+To purge a directory before deployment, specify the directories in `phploy.ini` like this:
+
+    ; relative to the deployment path
+    purge-before[] = "dist/"
     
 ## Hooks
 
