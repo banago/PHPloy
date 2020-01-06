@@ -40,12 +40,18 @@ class Git
      * @param string $command Command to execute
      *
      * @return array of all lines that were output to the console during the command (STDOUT)
+     *
+     * @throws \Exception
      */
     public function exec($command)
     {
         $output = null;
 
-        exec('('.$command.') 2>&1', $output);
+        exec('('.$command.') 2>&1', $output, $exitcode);
+
+        if ($exitcode !== 0){
+            throw new \Exception('Command [' . $command . '] exited badly');
+        }
 
         return $output;
     }
