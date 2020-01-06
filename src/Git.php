@@ -38,18 +38,19 @@ class Git
      * Executes a console command and returns the output (as an array).
      *
      * @param string $command Command to execute
+     * @param boolean $onErrorStopExecution If there is a problem, stop execution of the code
      *
      * @return array of all lines that were output to the console during the command (STDOUT)
      *
      * @throws \Exception
      */
-    public function exec($command)
+    public function exec($command, $onErrorStopExecution = false)
     {
         $output = null;
 
         exec('('.$command.') 2>&1', $output, $exitcode);
 
-        if ($exitcode !== 0){
+        if ($onErrorStopExecution && $exitcode !== 0){
             throw new \Exception('Command [' . $command . '] exited badly');
         }
 
