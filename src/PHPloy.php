@@ -874,6 +874,20 @@ class PHPloy
 
             if ($this->listFiles) {
                 $this->listFiles($files[$this->currentServerName]);
+
+                if ($this->scanSubmodules && count($this->submodules) > 0) {
+                    foreach ($this->submodules as $submodule) {
+                        $this->repo = $submodule['path'];
+                        $this->currentSubmoduleName = $submodule['name'];
+
+                        $this->cli->gray()->out("SUBMODULE: ".$this->currentSubmoduleName);
+                        $files = $this->compare($submodule['revision']);
+                        $this->listFiles($files[$this->currentServerName]);
+                    }
+                    // We've finished deploying submodules, reset settings for the next server
+                    $this->repo = $this->mainRepo;
+                    $this->currentSubmoduleName = '';
+                }
             } else {
                 // Pre Deploy
                 if (isset($this->preDeploy[$name]) && count($this->preDeploy[$name]) > 0) {
