@@ -590,6 +590,7 @@ class PHPloy
                 // Look for .phploy config file
                 if (file_exists($this->getPasswordFile())) {
                     $options['pass'] = $this->getPasswordFromIniFile($name);
+                    $options['privkey'] = $this->getPrivateKeyFromIniFile($name);
                 } elseif (!empty(getenv('PHPLOY_PASS'))) {
                     $options['pass'] = getenv('PHPLOY_PASS');
                 } else {
@@ -698,6 +699,23 @@ class PHPloy
         $values = $this->parseIniFile($this->getPasswordFile());
         if (isset($values[$servername]['user']) === true) {
             return $values[$servername]['user'];
+        }
+
+        return '';
+    }
+
+    /**
+     * Try to fetch private key from .phploy file if not found, an empty string will be returned.
+     *
+     * @param string $servername Server to fetch user for
+     *
+     * @return string
+     * @throws \Exception
+     */
+    public function getPrivateKeyFromIniFile($servername) {
+        $values = $this->parseIniFile($this->getPasswordFile());
+        if (isset($values[$servername]['privkey']) === true) {
+            return $values[$servername]['privkey'];
         }
 
         return '';
