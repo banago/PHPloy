@@ -1502,7 +1502,7 @@ class PHPloy
         foreach ($commands as $command) {
             $this->cli->out("Execute : <white>{$command}");
 
-            $output = $this->git->exec($command);
+            $output = $this->git->exec($command, true);
 
             $output = implode("\n\r", $output);
             $this->cli->out("Result : <white>{$output}");
