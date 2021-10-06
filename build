@@ -27,7 +27,7 @@ $phar->startBuffering();
 // https://bugs.php.net/bug.php?id=58169
 $phar->buildFromDirectory(
     dirname(__FILE__), 
-    '/(vendor\/composer|vendor\/league|vendor\/phpseclib|vendor\/seld)\/.*/'
+    '/(vendor\/composer|vendor\/league|vendor\/phpseclib|vendor\/seld|vendor\/symfony|vendor\/myclabs)\/.*/'
 );
 
 // Adding main file

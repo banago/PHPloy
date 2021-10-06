@@ -18,7 +18,7 @@ class PHPloy
     /**
      * @var string
      */
-    protected $version = '4.8.11-tangkoko';
+    protected $version = '4.8.11.1-tangkoko';
 
     /**
      * @var string
