@@ -966,7 +966,7 @@ class PHPloy
 
             // Done
             if (!$this->listFiles) {
-                $this->cli->bold()->lightGreen("\r\n|---------------[ ".human_filesize($this->deploymentSize).' Deployed ]---------------|');
+                $this->cli->bold()->lightGreen("\r\n|---------------[ ".human_filesize($this->deploymentSize).' Deployed @ '.date('Y-m-d H:i:s').' ]---------------|');
                 $this->deploymentSize = 0;
             }
         }
