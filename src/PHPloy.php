@@ -13,6 +13,8 @@
 
 namespace Banago\PHPloy;
 
+use League\Flysystem\Plugin\ForcedRename;
+
 define('QUOTE', "'");
 define('DQUOTE', '"');
 
@@ -465,6 +467,7 @@ class PHPloy
             'passive' => null,
             'timeout' => null,
             'ssl' => false,
+            'uploadRename' => false,
             'visibility' => 'public',
             'permPublic' => 0774,
             'permPrivate' => 0700,
@@ -826,6 +829,9 @@ class PHPloy
     {
         $connection = new Connection($server);
         $this->connection = $connection->server;
+
+
+        $this->connection->addPlugin(new ForcedRename());
     }
 
     /**
@@ -1189,9 +1195,15 @@ class PHPloy
                 }
 
                 // If base is set, remove it from filename
-                $remoteFile = $fileBaseless;
+                $remoteFile = $upload_remoteFile = $fileBaseless;
 
-                $uploaded = $this->connection->put($remoteFile, $data);
+                //If uploadRename is enabled lets add a _tmp to file string
+                if($this->servers[$this->currentServerName]['uploadRename']) {
+                    $upload_remoteFile = $remoteFile.'_tmp';
+                }
+
+
+                $uploaded = $this->connection->put($upload_remoteFile, $data);
 
                 if (!$uploaded) {
                     $this->cli->error(" ! Failed to upload {$fileBaseless}.");
@@ -1199,7 +1211,15 @@ class PHPloy
                     if (!$this->connection) {
                         $this->cli->info(' * Connection lost, trying to reconnect...');
                         $this->connect($this->currentServerInfo);
-                        $uploaded = $this->connection->put($remoteFile, $data);
+                        $uploaded = $this->connection->put($upload_remoteFile, $data);
+                    }
+                }
+
+                if($uploaded) {
+                    //Upload was successful lets
+                    //If uploadRename lets rename on server to correct filename
+                    if($this->servers[$this->currentServerName]['uploadRename']) {
+                        $this->connection->forceRename($upload_remoteFile, $remoteFile);
                     }
                 }
 
