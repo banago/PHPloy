@@ -11,11 +11,13 @@
             "role": "Developer"
         }
     ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "require": {
         "php": "^7.3",
         "league/climate": "^3.0",
-        "league/flysystem": "^1.0",
-        "league/flysystem-sftp": "^1.0"
+        "league/flysystem": "^2.0",
+        "league/flysystem-sftp-v3": "2.x-dev"
     },
     "require-dev": {
         "phpunit/phpunit": "^8.0",

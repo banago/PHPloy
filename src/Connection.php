@@ -4,7 +4,9 @@ namespace Banago\PHPloy;
 
 use League\Flysystem\Adapter\Ftp as FtpAdapter;
 use League\Flysystem\Filesystem;
-use League\Flysystem\Sftp\SftpAdapter as SftpAdapter;
+use League\Flysystem\PhpseclibV3\ConnectionProvider;
+use League\Flysystem\PhpseclibV3\SftpAdapter as SftpAdapter;
+use League\Flysystem\PhpseclibV3\SftpConnectionProvider;
 
 /**
  * Class Connection.
@@ -15,6 +17,10 @@ class Connection
      * @var Filesystem
      */
     public $server;
+    /**
+     * @var ConnectionProvider
+     */
+    private $provider;
 
     /**
      * Connection constructor.
@@ -116,9 +122,26 @@ class Connection
             $options['privateKey'] = $server['privkey'];
             $options['port'] = ($server['port'] ?: 22);
 
-            return new Filesystem(new SftpAdapter($options));
+            $this->provider = new SftpConnectionProvider(
+                $options['host'],
+                $options['username'],
+                empty($options['privateKey']) ? $options['password'] : null,
+                $options['privateKey'] ?? null,
+                !empty($options['privateKey']) ? $options['password'] : null,
+                $options['port']
+            );
+
+            return new Filesystem(new SftpAdapter($this->provider, $options['root']));
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
+    }
+
+    /**
+     * @return ConnectionProvider
+     */
+    public function getConnectionProvider()
+    {
+        return $this->provider;
     }
 }
