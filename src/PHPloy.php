@@ -13,8 +13,6 @@
 
 namespace Banago\PHPloy;
 
-use League\Flysystem\Plugin\ForcedRename;
-
 define('QUOTE', "'");
 define('DQUOTE', '"');
 
@@ -829,9 +827,6 @@ class PHPloy
     {
         $connection = new Connection($server);
         $this->connection = $connection->server;
-
-
-        $this->connection->addPlugin(new ForcedRename());
     }
 
     /**
@@ -1219,7 +1214,10 @@ class PHPloy
                     //Upload was successful lets
                     //If uploadRename lets rename on server to correct filename
                     if($this->servers[$this->currentServerName]['uploadRename']) {
-                        $this->connection->forceRename($upload_remoteFile, $remoteFile);
+
+                        if(!$this->connection->getAdapter()->rename($upload_remoteFile, $remoteFile)) {
+                            throw new \Exception("'{$remoteFile}' Rename failed.");
+                        }
                     }
                 }
 
