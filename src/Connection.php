@@ -125,9 +125,9 @@ class Connection
             $this->provider = new SftpConnectionProvider(
                 $options['host'],
                 $options['username'],
-                empty($options['privateKey']) ? $options['password'] : null,
-                $options['privateKey'] ?? null,
-                !empty($options['privateKey']) ? $options['password'] : null,
+                empty($options['privateKey']) ? $options['password'] : null, // password
+                !empty($options['privateKey']) ? $options['privateKey'] : null, // key
+                !empty($options['privateKey']) ? $options['password'] : null, // passphrase
                 $options['port']
             );
 
