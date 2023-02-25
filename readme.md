@@ -71,7 +71,7 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     ; Files that are ignored by Git, but you want to send the the server
     include[] = 'js/scripts.min.js'
     include[] = 'directory-name/'
-    ; conditional include - if source file has changed, inclue file
+    ; conditional include - if source file has changed, include file
     include[] = 'css/style.min.css:src/style.css' 
     ; Directories that should be copied after deploy, from->to
     copy[] = 'public->www'
