@@ -1,8 +1,9 @@
 <?php
 
-use TQ\Git\Repository\Repository;
-
 require_once 'PHPLoyTestHelper.php';
+use TQ\Git\Repository\Repository;
+use PHPUnit\Framework\TestCase as PHPUnit_Framework_TestCase;
+
 
 class ExecutionErrorTest extends PHPUnit_Framework_TestCase
 {

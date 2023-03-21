@@ -13,6 +13,10 @@
 
 namespace Banago\PHPloy;
 
+use League\Flysystem\UnableToCheckExistence;
+use League\Flysystem\FilesystemException;
+use League\Flysystem\PhpseclibV3\ConnectionProvider;
+
 define('QUOTE', "'");
 define('DQUOTE', '"');
 
@@ -171,6 +175,10 @@ class PHPloy
      * @var \League\Flysystem\Filesystem;
      */
     protected $connection = null;
+    /**
+     * @var ConnectionProvider
+     */
+    protected $connectionProvider = null;
 
     /**
      * @var string
@@ -826,6 +834,7 @@ class PHPloy
     {
         $connection = new Connection($server);
         $this->connection = $connection->server;
+        $this->connectionProvider = $connection->getConnectionProvider();
     }
 
     /**
@@ -871,7 +880,7 @@ class PHPloy
 
                 $this->connect($server);
 
-                $this->connection->createDir($path);
+                $this->connection->createDirectory($path);
                 $this->cli->green('Deployment directory created. Ready to deploy.');
 
                 $this->connection = null;
@@ -1022,7 +1031,7 @@ class PHPloy
 
         if ($this->fresh) {
             $this->cli->out('Manual fresh upload...');
-        } elseif ($this->connection->has($this->dotRevision)) {
+        } elseif ($this->connection->fileExists($this->dotRevision)) {
             $remoteRevision = $this->connection->read($this->dotRevision);
             $this->debug('Remote revision: <bold>'.$remoteRevision);
         } else {
@@ -1168,8 +1177,8 @@ class PHPloy
                     for ($i = 0, $count = count($dir); $i < $count; ++$i) {
                         $path .= $dir[$i].'/';
                         if (!isset($pathsThatExist[$path])) {
-                            if (!$this->connection->has($path)) {
-                                $this->connection->createDir($path);
+                            if (!$this->connection->directoryExists($path)) {
+                                $this->connection->createDirectory($path);
                                 $this->cli->out(" + Created directory '$path'.");
                                 $pathsThatExist[$path] = true;
                             } else {
@@ -1191,15 +1200,19 @@ class PHPloy
                 // If base is set, remove it from filename
                 $remoteFile = $fileBaseless;
 
-                $uploaded = $this->connection->put($remoteFile, $data);
-
-                if (!$uploaded) {
+                try {
+                    $this->connection->write($remoteFile, $data);
+                } catch (FilesystemException | UnableToCheckExistence $e) {
                     $this->cli->error(" ! Failed to upload {$fileBaseless}.");
 
                     if (!$this->connection) {
                         $this->cli->info(' * Connection lost, trying to reconnect...');
                         $this->connect($this->currentServerInfo);
-                        $uploaded = $this->connection->put($remoteFile, $data);
+                        try {
+                            $this->connection->write($remoteFile, $data);
+                        } catch (FilesystemException | UnableToCheckExistence $e) {
+                            $this->cli->error(" ! Failed to upload {$fileBaseless}.");
+                        }
                     }
                 }
 
@@ -1218,7 +1231,7 @@ class PHPloy
                 }
                 $numberOfFilesToDelete = count($filesToDelete);
                 $fileNo = str_pad(++$fileNo, strlen($numberOfFilesToDelete), ' ', STR_PAD_LEFT);
-                if ($this->connection->has($file)) {
+                if ($this->connection->fileExists($file)) {
                     $this->connection->delete($file);
                     $this->cli->out("<red> × $fileNo of $numberOfFilesToDelete <white>{$file}");
                 } else {
@@ -1235,8 +1248,8 @@ class PHPloy
                 }
                 $numberOfdirsToDelete = count($dirsToDelete);
                 $dirNo = str_pad(++$dirNo, strlen($numberOfdirsToDelete), ' ', STR_PAD_LEFT);
-                if ($this->connection->has($dir)) {
-                    $this->connection->deleteDir($dir);
+                if ($this->connection->directoryExists($dir)) {
+                    $this->connection->deleteDirectory($dir);
                     $this->cli->out("<red> × $dirNo of $numberOfdirsToDelete <white>{$dir}");
                 } else {
                     $this->cli->out("<red> ! $dirNo of $numberOfdirsToDelete <white>{$dir} not found");
@@ -1284,7 +1297,7 @@ class PHPloy
             $this->cli->info("Setting remote revision to: $localRevision");
         }
 
-        $this->connection->put($this->dotRevision, $localRevision);
+        $this->connection->write($this->dotRevision, $localRevision);
     }
 
     /**
@@ -1429,7 +1442,7 @@ class PHPloy
 
             if (count($innerDirs) > 0) {
                 foreach ($innerDirs as $innerDir) {
-                    $this->connection->deleteDir($innerDir);
+                    $this->connection->deleteDirectory($innerDir);
                     $this->cli->out("<red> ×  {$innerDir} directory");
                 }
             }
@@ -1477,7 +1490,7 @@ class PHPloy
             foreach ($contents as $item) {
                 if ($item['type'] === 'file') {
                     $newPath = $toDir.'/'.pathinfo($item['path'], PATHINFO_BASENAME);
-                    if ($this->connection->has($newPath)) {
+                    if ($this->connection->fileExists($newPath)) {
                         $this->connection->delete($newPath);
                     }
                     $this->connection->copy($item['path'], $newPath);
@@ -1551,10 +1564,7 @@ class PHPloy
      */
     public function executeOnRemoteServer(array $commands)
     {
-        /*
-         * @var \phpseclib\Net\SFTP
-         */
-        $connection = $this->connection->getAdapter()->getConnection();
+        $connection = $this->connectionProvider->provideConnection();
 
         if ($this->servers[$this->currentServerName]['scheme'] != 'sftp') {
             $this->cli->yellow()->out("\r\nConnection scheme is not 'sftp' ignoring [pre/post]-deploy-remote");
