@@ -13,7 +13,7 @@
 
 namespace Banago\PHPloy;
 
-use League\Flysystem\FileExistsException;
+use League\Flysystem\UnableToCheckExistence;
 use League\Flysystem\FilesystemException;
 use League\Flysystem\PhpseclibV3\ConnectionProvider;
 
@@ -1177,7 +1177,7 @@ class PHPloy
                     for ($i = 0, $count = count($dir); $i < $count; ++$i) {
                         $path .= $dir[$i].'/';
                         if (!isset($pathsThatExist[$path])) {
-                            if (!$this->connection->fileExists($path)) {
+                            if (!$this->connection->directoryExists($path)) {
                                 $this->connection->createDirectory($path);
                                 $this->cli->out(" + Created directory '$path'.");
                                 $pathsThatExist[$path] = true;
@@ -1202,7 +1202,7 @@ class PHPloy
 
                 try {
                     $this->connection->write($remoteFile, $data);
-                } catch (FileExistsException | FilesystemException $e) {
+                } catch (FilesystemException | UnableToCheckExistence $e) {
                     $this->cli->error(" ! Failed to upload {$fileBaseless}.");
 
                     if (!$this->connection) {
@@ -1210,7 +1210,7 @@ class PHPloy
                         $this->connect($this->currentServerInfo);
                         try {
                             $this->connection->write($remoteFile, $data);
-                        } catch (FileExistsException | FilesystemException $e) {
+                        } catch (FilesystemException | UnableToCheckExistence $e) {
                             $this->cli->error(" ! Failed to upload {$fileBaseless}.");
                         }
                     }

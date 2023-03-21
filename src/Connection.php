@@ -2,7 +2,8 @@
 
 namespace Banago\PHPloy;
 
-use League\Flysystem\Adapter\Ftp as FtpAdapter;
+use League\Flysystem\Ftp\FtpAdapter as FtpAdapter;
+use League\Flysystem\Ftp\FtpConnectionOptions as FtpConnectionOptions;
 use League\Flysystem\Filesystem;
 use League\Flysystem\PhpseclibV3\ConnectionProvider;
 use League\Flysystem\PhpseclibV3\SftpAdapter as SftpAdapter;
@@ -90,9 +91,13 @@ class Connection
               ? (bool) $server['passive']
               : true;
             $options['ssl'] = ($server['ssl'] ?: false);
-            $options['port'] = ($server['port'] ?: 21);
+            $options['port'] = (intval($server['port'] ?: 21));
 
-            return new Filesystem(new FtpAdapter($options));
+
+            $ftp_options = FtpConnectionOptions::fromArray($options);
+
+
+            return new Filesystem(new FtpAdapter($ftp_options));
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }

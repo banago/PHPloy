@@ -1,6 +1,7 @@
 <?php
 
 require_once 'PHPLoyTestHelper.php';
+use PHPUnit\Framework\TestCase as PHPUnit_Framework_TestCase;
 
 class CommitFileTest extends PHPUnit_Framework_TestCase
 {

@@ -16,8 +16,9 @@
     "require": {
         "php": "^8.0",
         "league/climate": "^3.0",
-        "league/flysystem": "^2.5",
-        "league/flysystem-sftp-v3": "2.x-dev"
+        "league/flysystem": "^3.0",
+        "league/flysystem-ftp": "^3.0",
+        "league/flysystem-sftp-v3": "^3.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^8.0",
