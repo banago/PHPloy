@@ -1248,7 +1248,7 @@ class PHPloy
                 }
                 $numberOfdirsToDelete = count($dirsToDelete);
                 $dirNo = str_pad(++$dirNo, strlen($numberOfdirsToDelete), ' ', STR_PAD_LEFT);
-                if ($this->connection->fileExists($dir)) {
+                if ($this->connection->directoryExists($dir)) {
                     $this->connection->deleteDir($dir);
                     $this->cli->out("<red> × $dirNo of $numberOfdirsToDelete <white>{$dir}");
                 } else {
@@ -1472,7 +1472,7 @@ class PHPloy
                 break;
             }
             // Skip to next element if from is not present
-            if (!$this->connection->fileExists($fromDir)) {
+            if (!$this->connection->directoryExists($fromDir)) {
                 $this->cli->out("<red>Omitting directory <white>{$fromDir}<red>, as it does not exist on the server");
                 break;
             }
