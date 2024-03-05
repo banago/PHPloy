@@ -4,7 +4,7 @@ use TQ\Git\Repository\Repository;
 
 require_once 'PHPLoyTestHelper.php';
 
-class ExecutionErrorTest extends PHPUnit_Framework_TestCase
+class ExecutionErrorTest extends PHPUnit\Framework\TestCase 
 {
     public function testRunWithoutConfigurationShouldReturnError()
     {

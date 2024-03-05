@@ -13,6 +13,9 @@
 
 namespace Banago\PHPloy;
 
+use League\Flysystem\FilesystemException;
+use League\CLImate\CLImate;
+
 define('QUOTE', "'");
 define('DQUOTE', '"');
 
@@ -1191,15 +1194,15 @@ class PHPloy
                 // If base is set, remove it from filename
                 $remoteFile = $fileBaseless;
 
-                $uploaded = $this->connection->put($remoteFile, $data);
-
-                if (!$uploaded) {
+                try {
+                  $this->connection->write($remoteFile, $data);
+                } catch (FilesystemException $ex) {
                     $this->cli->error(" ! Failed to upload {$fileBaseless}.");
 
                     if (!$this->connection) {
                         $this->cli->info(' * Connection lost, trying to reconnect...');
                         $this->connect($this->currentServerInfo);
-                        $uploaded = $this->connection->put($remoteFile, $data);
+                        $this->connection->write($remoteFile, $data);
                     }
                 }
 
@@ -1284,7 +1287,7 @@ class PHPloy
             $this->cli->info("Setting remote revision to: $localRevision");
         }
 
-        $this->connection->put($this->dotRevision, $localRevision);
+        $this->connection->write($this->dotRevision, $localRevision);
     }
 
     /**
