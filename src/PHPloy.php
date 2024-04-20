@@ -874,7 +874,7 @@ class PHPloy
 
                 $this->connect($server);
 
-                $this->connection->createDir($path);
+                $this->connection->createDirectory($path);
                 $this->cli->green('Deployment directory created. Ready to deploy.');
 
                 $this->connection = null;
@@ -1172,7 +1172,7 @@ class PHPloy
                         $path .= $dir[$i].'/';
                         if (!isset($pathsThatExist[$path])) {
                             if (!$this->connection->has($path)) {
-                                $this->connection->createDir($path);
+                                $this->connection->createDirectory($path);
                                 $this->cli->out(" + Created directory '$path'.");
                                 $pathsThatExist[$path] = true;
                             } else {
