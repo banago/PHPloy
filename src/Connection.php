@@ -6,6 +6,7 @@ use League\Flysystem\Ftp\FtpAdapter;
 use League\Flysystem\Ftp\FtpConnectionOptions;
 use League\Flysystem\Filesystem;
 use League\Flysystem\PhpseclibV3\SftpAdapter;
+use League\Flysystem\PhpseclibV3\SftpConnectionProvider;
 
 /**
  * Class Connection.
@@ -116,10 +117,13 @@ class Connection
                 throw new \Exception("Private key {$server['privkey']} doesn't exists.");
             }
 
-            $options['privateKey'] = $server['privkey'];
-            $options['port'] = ($server['port'] ?: 22);
+            $options['privateKey'] = $server['privkey'] ?: null;
+            $options['port'] = intval($server['port']) ?: 22;
 
-            return new Filesystem(new SftpAdapter($options));
+            return new Filesystem(new SftpAdapter(
+              SftpConnectionProvider::fromArray($options),
+              $options['root']
+            ));
         } catch (\Exception $e) {
             echo "\r\nOh Snap: {$e->getMessage()}\r\n";
         }
