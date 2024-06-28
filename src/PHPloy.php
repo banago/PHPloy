@@ -1239,7 +1239,7 @@ class PHPloy
                 $numberOfdirsToDelete = count($dirsToDelete);
                 $dirNo = str_pad(++$dirNo, strlen($numberOfdirsToDelete), ' ', STR_PAD_LEFT);
                 if ($this->connection->has($dir)) {
-                    $this->connection->deleteDir($dir);
+                    $this->connection->deleteDirectory($dir);
                     $this->cli->out("<red> × $dirNo of $numberOfdirsToDelete <white>{$dir}");
                 } else {
                     $this->cli->out("<red> ! $dirNo of $numberOfdirsToDelete <white>{$dir} not found");
@@ -1432,7 +1432,7 @@ class PHPloy
 
             if (count($innerDirs) > 0) {
                 foreach ($innerDirs as $innerDir) {
-                    $this->connection->deleteDir($innerDir);
+                    $this->connection->deleteDirectory($innerDir);
                     $this->cli->out("<red> ×  {$innerDir} directory");
                 }
             }
