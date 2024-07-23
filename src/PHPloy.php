@@ -929,11 +929,7 @@ class PHPloy
                         $this->cli->out(PHP_EOL . "SUBMODULE: {$this->currentSubmoduleName}");
                         $files = $this->compare($submodule['revision']);
 
-                        if ($this->listFiles === true) {
-                            $this->listFiles($files[$this->currentServerName]);
-                        } else {
-                            $this->push($files[$this->currentServerName], $submodule['revision']);
-                        }
+                        $this->push($files[$this->currentServerName], $submodule['revision']);
                     }
                     // We've finished deploying submodules, reset settings for the next server
                     $this->repo = $this->mainRepo;
