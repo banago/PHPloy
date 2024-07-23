@@ -61,10 +61,8 @@ class PHPloy
     /**
      * The local directory that corresponds to the remote base directory. Defaults to an empty string, which corresponds
      * to the Git repository base. This needs to end with '/'.
-     *
-     * @var string
      */
-    public $base = false;
+    public string $base = '';
 
     /**
      * A list of files that should NOT be uploaded to any of the servers.
@@ -173,7 +171,7 @@ class PHPloy
     /**
      * @var \League\Flysystem\Filesystem;
      */
-    protected $connection = null;
+    protected ?\League\Flysystem\Filesystem $connection = null;
 
     /**
      * @var string
@@ -213,10 +211,8 @@ class PHPloy
 
     /**
      * Whether the --sync command line option was given.
-     *
-     * @var bool
      */
-    protected $sync = false;
+    protected string $sync = '';
 
     /**
      * Whether to print extra debugging info to the console, especially for git & FTP commands
@@ -398,7 +394,7 @@ class PHPloy
      *
      * @return string the argument that is undefined, or FALSE if all arguments are defined
      */
-    public function checkArguments()
+    public function checkArguments() : string|false
     {
         $prefixes = array_reduce($this->cli->arguments->all(), function ($result, $a) {
             if ($a->prefix()) {
@@ -1305,7 +1301,7 @@ class PHPloy
      *
      * @return string - current branch name or false if not in branch
      */
-    private function currentBranch()
+    private function currentBranch() : string|false
     {
         $currentBranch = $this->git->branch;
         if ($currentBranch != 'HEAD') {
@@ -1401,7 +1397,6 @@ class PHPloy
     /**
      * Purge given directory's contents.
      *
-     * @var string
      * @throws \League\Flysystem\FileNotFoundException
      */
     public function purge($purgeDirs)
@@ -1444,7 +1439,6 @@ class PHPloy
     /**
      * Copy given directory's contents.
      *
-     * @var string
      * @throws \League\Flysystem\FileNotFoundException
      * @throws \League\Flysystem\FileExistsException
      */
@@ -1498,7 +1492,7 @@ class PHPloy
     /**
      * Execute pre commands.
      *
-     * @var array
+     * @param array $commands
      */
     public function preDeploy(array $commands)
     {
@@ -1515,7 +1509,7 @@ class PHPloy
     /**
      * Execute post commands.
      *
-     * @var array
+     * @param array $commands
      */
     public function postDeploy(array $commands)
     {

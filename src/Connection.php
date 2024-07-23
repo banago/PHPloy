@@ -21,13 +21,9 @@ class Connection
     /**
      * Connection constructor.
      *
-     * @param string $server
-     *
      * @throws \Exception
-     *
-     * @return Connection
      */
-    public function __construct($server)
+    public function __construct(array $server)
     {
         if (!isset($server['scheme'])) {
             throw new \Exception("Please provide a connection protocol such as 'ftp' or 'sftp'.");
@@ -42,7 +38,7 @@ class Connection
         }
     }
 
-    private function getCommonOptions($server)
+    private function getCommonOptions(array $server) : array
     {
         $options = [
             'host' => $server['host'],
@@ -72,13 +68,9 @@ class Connection
     /**
      * Connects to the FTP Server.
      *
-     * @param string $server
-     *
      * @throws \Exception if it can't connect to FTP server
-     *
-     * @return Filesystem|null
      */
-    protected function connectToFtp($server)
+    protected function connectToFtp(array $server) : ?Filesystem
     {
         try {
             $options = $this->getCommonOptions($server);
@@ -94,18 +86,15 @@ class Connection
         } catch (\Exception $e) {
             echo PHP_EOL, "Oh Snap: {$e->getMessage()}", PHP_EOL;
         }
+        return null;
     }
 
     /**
      * Connects to the SFTP Server.
      *
-     * @param string $server
-     *
      * @throws \Exception if it can't connect to FTP server
-     *
-     * @return Filesystem|null
      */
-    protected function connectToSftp($server)
+    protected function connectToSftp(array $server) : ?Filesystem
     {
         try {
             $options = $this->getCommonOptions($server);
@@ -127,5 +116,6 @@ class Connection
         } catch (\Exception $e) {
             echo PHP_EOL, "Oh Snap: {$e->getMessage()}", PHP_EOL;
         }
+        return null;
     }
 }

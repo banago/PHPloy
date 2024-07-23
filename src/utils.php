@@ -108,7 +108,7 @@ function input_password()
 function human_filesize($bytes, $decimals = 2)
 {
     $sz = 'BKMGTP';
-    $factor = floor((strlen($bytes) - 1) / 3);
+    $factor = intval(floor((strlen((string)$bytes) - 1) / 3));
 
     return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).@$sz[$factor];
 }
@@ -116,12 +116,8 @@ function human_filesize($bytes, $decimals = 2)
 /**
  * Glob the file path.
  *
- * @param string $pattern
- * @param string $string
- *
- * @return string
  */
-function pattern_match($pattern, $string)
+function pattern_match(string $pattern, string $string) : int|false
 {
     return preg_match('#^'.strtr(preg_quote($pattern, '#'), ['\*' => '.*', '\?' => '.']).'$#i', $string);
 }
