@@ -86,7 +86,7 @@ class Connection
               ? (bool) $server['passive']
               : true;
             $options['ssl'] = $server['ssl'] === 'true';
-            $options['port'] = ($server['port'] ?: 21);
+            $options['port'] = intval($server['port']) ?: 21;
 
             return new Filesystem(new FtpAdapter(
               FtpConnectionOptions::fromArray($options)
