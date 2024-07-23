@@ -764,7 +764,7 @@ class PHPloy
 
         $base = $this->base;
 
-        
+
         return array_values(
             array_filter(
                 $files,

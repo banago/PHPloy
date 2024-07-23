@@ -61,7 +61,7 @@ function dir_tree($directory, $recursive = true, $listDirs = false, $listFiles =
 }
 
 /**
- * Gets the password from user input, hiding password and 
+ * Gets the password from user input, hiding password and
  * replaces it with stars (*) if user users Unix / Mac.
  *
  * @return string
@@ -76,7 +76,7 @@ function input_password()
     $pass = '';
 
     shell_exec('stty -icanon -echo min 1 time 0');
-    
+
     while (true) {
         $char = fgetc(STDIN);
         if ($char === "\n") {
