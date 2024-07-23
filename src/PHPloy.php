@@ -1410,7 +1410,7 @@ class PHPloy
             $this->cli->out("<red>Purging directory <white>{$dir}");
 
             // Recursive file/dir listing
-            $contents = $this->connection->listContents($dir, true);
+            $contents = $this->connection->listContents($dir, true)->toArray();
 
             if (count($contents) < 1) {
                 $this->cli->out(" - Nothing to purge in {$dir}");
@@ -1469,7 +1469,7 @@ class PHPloy
             $this->cli->out("<red>Copying directory <white>{$fromDir}<red> to <white>{$toDir}");
 
             // File/dir listing
-            $contents = $this->connection->listContents($fromDir, false);
+            $contents = $this->connection->listContents($fromDir, false)->toArray();
 
             if (count($contents) < 1) {
                 $this->cli->out(" - Nothing to copy in {$fromDir}");
