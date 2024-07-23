@@ -599,7 +599,7 @@ class PHPloy
                 } else {
                     fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
                     $options['pass'] = input_password();
-                    $this->cli->lightGreen()->out("\r\n".'Password received. Continuing deployment ...');
+                    $this->cli->lightGreen()->out(PHP_EOL . 'Password received. Continuing deployment ...');
                 }
             }
 
@@ -891,7 +891,7 @@ class PHPloy
 
             $files = $this->compare($this->revision);
 
-            $this->cli->bold()->white()->out("\r\nSERVER: ".$name);
+            $this->cli->bold()->white()->out(PHP_EOL . "SERVER: {$name}");
 
             if ($this->listFiles) {
                 $this->listFiles($files[$this->currentServerName]);
@@ -930,7 +930,7 @@ class PHPloy
                         $this->repo = $submodule['path'];
                         $this->currentSubmoduleName = $submodule['name'];
 
-                        $this->cli->gray()->out("\r\nSUBMODULE: ".$this->currentSubmoduleName);
+                        $this->cli->gray()->out(PHP_EOL . "SUBMODULE: {$this->currentSubmoduleName}");
                         $files = $this->compare($submodule['revision']);
 
                         if ($this->listFiles === true) {
@@ -963,7 +963,7 @@ class PHPloy
 
             // Done
             if (!$this->listFiles) {
-                $this->cli->bold()->lightGreen("\r\n|---------------[ ".human_filesize($this->deploymentSize).' Deployed ]---------------|');
+                $this->cli->bold()->lightGreen(PHP_EOL . "|---------------[ ".human_filesize($this->deploymentSize).' Deployed ]---------------|');
                 $this->deploymentSize = 0;
             }
         }
@@ -1053,7 +1053,7 @@ class PHPloy
         }
 
         $output = $this->git->diff($remoteRevision, $localRevision, $this->repo);
-        $this->debug(implode("\r\n", $output));
+        $this->debug(implode(PHP_EOL, $output));
 
         /*
          * Git Status Codes
@@ -1507,7 +1507,7 @@ class PHPloy
 
             $output = $this->git->exec($command, true);
 
-            $output = implode("\n\r", $output);
+            $output = implode(PHP_EOL, $output);
             $this->cli->out("Result : <white>{$output}");
         }
     }
@@ -1524,7 +1524,7 @@ class PHPloy
 
             $output = $this->git->exec($command);
 
-            $output = implode("\n\r", $output);
+            $output = implode(PHP_EOL, $output);
             $this->cli->out("Result : <white>{$output}");
         }
     }
@@ -1560,13 +1560,13 @@ class PHPloy
         $connection = $this->connection->getAdapter()->getConnection();
 
         if ($this->servers[$this->currentServerName]['scheme'] != 'sftp') {
-            $this->cli->yellow()->out("\r\nConnection scheme is not 'sftp' ignoring [pre/post]-deploy-remote");
+            $this->cli->yellow()->out(PHP_EOL . "Connection scheme is not 'sftp' ignoring [pre/post]-deploy-remote");
 
             return;
         }
 
         if (!$connection->isConnected()) {
-            $this->cli->red()->out("\r\nSFTP adapter connection problem skipping '[pre/post]-deploy-remote' commands");
+            $this->cli->red()->out(PHP_EOL . "SFTP adapter connection problem skipping '[pre/post]-deploy-remote' commands");
 
             return;
         }

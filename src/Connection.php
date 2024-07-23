@@ -92,7 +92,7 @@ class Connection
               FtpConnectionOptions::fromArray($options)
             ));
         } catch (\Exception $e) {
-            echo "\r\nOh Snap: {$e->getMessage()}\r\n";
+            echo PHP_EOL, "Oh Snap: {$e->getMessage()}", PHP_EOL;
         }
     }
 
@@ -125,7 +125,7 @@ class Connection
               $options['root']
             ));
         } catch (\Exception $e) {
-            echo "\r\nOh Snap: {$e->getMessage()}\r\n";
+            echo PHP_EOL, "Oh Snap: {$e->getMessage()}", PHP_EOL;
         }
     }
 }

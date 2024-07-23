@@ -8,7 +8,7 @@ require __DIR__.'/vendor/autoload.php';
 try {
     $phploy = new Banago\PHPloy\PHPloy();
 } catch (Exception $e) {
-    echo "\r\nOh Snap: {$e->getMessage()}\r\n";
+    echo PHP_EOL, "Oh Snap: {$e->getMessage()}", PHP_EOL;
     // Return 1 to indicate error to caller
     exit(1);
 }
