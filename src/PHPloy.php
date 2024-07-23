@@ -897,7 +897,7 @@ class PHPloy
                         $this->repo = $submodule['path'];
                         $this->currentSubmoduleName = $submodule['name'];
 
-                        $this->cli->gray()->out("SUBMODULE: ".$this->currentSubmoduleName);
+                        $this->cli->out("SUBMODULE: ".$this->currentSubmoduleName);
                         $files = $this->compare($submodule['revision']);
                         $this->listFiles($files[$this->currentServerName]);
                     }
@@ -926,7 +926,7 @@ class PHPloy
                         $this->repo = $submodule['path'];
                         $this->currentSubmoduleName = $submodule['name'];
 
-                        $this->cli->gray()->out(PHP_EOL . "SUBMODULE: {$this->currentSubmoduleName}");
+                        $this->cli->out(PHP_EOL . "SUBMODULE: {$this->currentSubmoduleName}");
                         $files = $this->compare($submodule['revision']);
 
                         if ($this->listFiles === true) {
@@ -1253,7 +1253,7 @@ class PHPloy
                 $this->setRevision($localRevision);
             }
         } else {
-            $this->cli->gray()->out('   No files to upload or delete.');
+            $this->cli->out(PHP_EOL . '   No files to upload or delete.');
         }
 
         // If $this->revision is not HEAD, it means the rollback command was provided
