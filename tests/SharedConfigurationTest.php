@@ -1,6 +1,6 @@
 <?php
 
-class SharedConfigurationTest extends PHPUnit_Framework_TestCase
+class SharedConfigurationTest extends PHPUnit\Framework\TestCase
 {
     /**
      * @return \Banago\PHPloy\Options

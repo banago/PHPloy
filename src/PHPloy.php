@@ -13,6 +13,9 @@
 
 namespace Banago\PHPloy;
 
+use League\Flysystem\FilesystemException;
+use League\CLImate\CLImate;
+
 define('QUOTE', "'");
 define('DQUOTE', '"');
 
@@ -58,10 +61,8 @@ class PHPloy
     /**
      * The local directory that corresponds to the remote base directory. Defaults to an empty string, which corresponds
      * to the Git repository base. This needs to end with '/'.
-     *
-     * @var string
      */
-    public $base = false;
+    public string $base = '';
 
     /**
      * A list of files that should NOT be uploaded to any of the servers.
@@ -170,7 +171,7 @@ class PHPloy
     /**
      * @var \League\Flysystem\Filesystem;
      */
-    protected $connection = null;
+    protected ?\League\Flysystem\Filesystem $connection = null;
 
     /**
      * @var string
@@ -210,10 +211,8 @@ class PHPloy
 
     /**
      * Whether the --sync command line option was given.
-     *
-     * @var bool
      */
-    protected $sync = false;
+    protected string $sync = '';
 
     /**
      * Whether to print extra debugging info to the console, especially for git & FTP commands
@@ -395,7 +394,7 @@ class PHPloy
      *
      * @return string the argument that is undefined, or FALSE if all arguments are defined
      */
-    public function checkArguments()
+    public function checkArguments() : string|false
     {
         $prefixes = array_reduce($this->cli->arguments->all(), function ($result, $a) {
             if ($a->prefix()) {
@@ -596,7 +595,7 @@ class PHPloy
                 } else {
                     fwrite(STDOUT, 'No password has been provided for user "'.$options['user'].'". Please enter a password: ');
                     $options['pass'] = input_password();
-                    $this->cli->lightGreen()->out("\r\n".'Password received. Continuing deployment ...');
+                    $this->cli->lightGreen()->out(PHP_EOL . 'Password received. Continuing deployment ...');
                 }
             }
 
@@ -765,7 +764,7 @@ class PHPloy
 
         $base = $this->base;
 
-        
+
         return array_values(
             array_filter(
                 $files,
@@ -871,7 +870,7 @@ class PHPloy
 
                 $this->connect($server);
 
-                $this->connection->createDir($path);
+                $this->connection->createDirectory($path);
                 $this->cli->green('Deployment directory created. Ready to deploy.');
 
                 $this->connection = null;
@@ -888,7 +887,7 @@ class PHPloy
 
             $files = $this->compare($this->revision);
 
-            $this->cli->bold()->white()->out("\r\nSERVER: ".$name);
+            $this->cli->bold()->white()->out(PHP_EOL . "SERVER: {$name}");
 
             if ($this->listFiles) {
                 $this->listFiles($files[$this->currentServerName]);
@@ -898,7 +897,7 @@ class PHPloy
                         $this->repo = $submodule['path'];
                         $this->currentSubmoduleName = $submodule['name'];
 
-                        $this->cli->gray()->out("SUBMODULE: ".$this->currentSubmoduleName);
+                        $this->cli->out("SUBMODULE: ".$this->currentSubmoduleName);
                         $files = $this->compare($submodule['revision']);
                         $this->listFiles($files[$this->currentServerName]);
                     }
@@ -927,14 +926,10 @@ class PHPloy
                         $this->repo = $submodule['path'];
                         $this->currentSubmoduleName = $submodule['name'];
 
-                        $this->cli->gray()->out("\r\nSUBMODULE: ".$this->currentSubmoduleName);
+                        $this->cli->out(PHP_EOL . "SUBMODULE: {$this->currentSubmoduleName}");
                         $files = $this->compare($submodule['revision']);
 
-                        if ($this->listFiles === true) {
-                            $this->listFiles($files[$this->currentServerName]);
-                        } else {
-                            $this->push($files[$this->currentServerName], $submodule['revision']);
-                        }
+                        $this->push($files[$this->currentServerName], $submodule['revision']);
                     }
                     // We've finished deploying submodules, reset settings for the next server
                     $this->repo = $this->mainRepo;
@@ -960,7 +955,7 @@ class PHPloy
 
             // Done
             if (!$this->listFiles) {
-                $this->cli->bold()->lightGreen("\r\n|---------------[ ".human_filesize($this->deploymentSize).' Deployed ]---------------|');
+                $this->cli->bold()->lightGreen(PHP_EOL . "|---------------[ ".human_filesize($this->deploymentSize).' Deployed ]---------------|');
                 $this->deploymentSize = 0;
             }
         }
@@ -1050,7 +1045,7 @@ class PHPloy
         }
 
         $output = $this->git->diff($remoteRevision, $localRevision, $this->repo);
-        $this->debug(implode("\r\n", $output));
+        $this->debug(implode(PHP_EOL, $output));
 
         /*
          * Git Status Codes
@@ -1169,7 +1164,7 @@ class PHPloy
                         $path .= $dir[$i].'/';
                         if (!isset($pathsThatExist[$path])) {
                             if (!$this->connection->has($path)) {
-                                $this->connection->createDir($path);
+                                $this->connection->createDirectory($path);
                                 $this->cli->out(" + Created directory '$path'.");
                                 $pathsThatExist[$path] = true;
                             } else {
@@ -1191,15 +1186,15 @@ class PHPloy
                 // If base is set, remove it from filename
                 $remoteFile = $fileBaseless;
 
-                $uploaded = $this->connection->put($remoteFile, $data);
-
-                if (!$uploaded) {
+                try {
+                  $this->connection->write($remoteFile, $data);
+                } catch (FilesystemException $ex) {
                     $this->cli->error(" ! Failed to upload {$fileBaseless}.");
 
                     if (!$this->connection) {
                         $this->cli->info(' * Connection lost, trying to reconnect...');
                         $this->connect($this->currentServerInfo);
-                        $uploaded = $this->connection->put($remoteFile, $data);
+                        $this->connection->write($remoteFile, $data);
                     }
                 }
 
@@ -1236,7 +1231,7 @@ class PHPloy
                 $numberOfdirsToDelete = count($dirsToDelete);
                 $dirNo = str_pad(++$dirNo, strlen($numberOfdirsToDelete), ' ', STR_PAD_LEFT);
                 if ($this->connection->has($dir)) {
-                    $this->connection->deleteDir($dir);
+                    $this->connection->deleteDirectory($dir);
                     $this->cli->out("<red> × $dirNo of $numberOfdirsToDelete <white>{$dir}");
                 } else {
                     $this->cli->out("<red> ! $dirNo of $numberOfdirsToDelete <white>{$dir} not found");
@@ -1254,7 +1249,7 @@ class PHPloy
                 $this->setRevision($localRevision);
             }
         } else {
-            $this->cli->gray()->out('   No files to upload or delete.');
+            $this->cli->out(PHP_EOL . '   No files to upload or delete.');
         }
 
         // If $this->revision is not HEAD, it means the rollback command was provided
@@ -1284,7 +1279,7 @@ class PHPloy
             $this->cli->info("Setting remote revision to: $localRevision");
         }
 
-        $this->connection->put($this->dotRevision, $localRevision);
+        $this->connection->write($this->dotRevision, $localRevision);
     }
 
     /**
@@ -1302,7 +1297,7 @@ class PHPloy
      *
      * @return string - current branch name or false if not in branch
      */
-    private function currentBranch()
+    private function currentBranch() : string|false
     {
         $currentBranch = $this->git->branch;
         if ($currentBranch != 'HEAD') {
@@ -1398,7 +1393,6 @@ class PHPloy
     /**
      * Purge given directory's contents.
      *
-     * @var string
      * @throws \League\Flysystem\FileNotFoundException
      */
     public function purge($purgeDirs)
@@ -1407,7 +1401,7 @@ class PHPloy
             $this->cli->out("<red>Purging directory <white>{$dir}");
 
             // Recursive file/dir listing
-            $contents = $this->connection->listContents($dir, true);
+            $contents = $this->connection->listContents($dir, true)->toArray();
 
             if (count($contents) < 1) {
                 $this->cli->out(" - Nothing to purge in {$dir}");
@@ -1429,7 +1423,7 @@ class PHPloy
 
             if (count($innerDirs) > 0) {
                 foreach ($innerDirs as $innerDir) {
-                    $this->connection->deleteDir($innerDir);
+                    $this->connection->deleteDirectory($innerDir);
                     $this->cli->out("<red> ×  {$innerDir} directory");
                 }
             }
@@ -1441,7 +1435,6 @@ class PHPloy
     /**
      * Copy given directory's contents.
      *
-     * @var string
      * @throws \League\Flysystem\FileNotFoundException
      * @throws \League\Flysystem\FileExistsException
      */
@@ -1466,7 +1459,7 @@ class PHPloy
             $this->cli->out("<red>Copying directory <white>{$fromDir}<red> to <white>{$toDir}");
 
             // File/dir listing
-            $contents = $this->connection->listContents($fromDir, false);
+            $contents = $this->connection->listContents($fromDir, false)->toArray();
 
             if (count($contents) < 1) {
                 $this->cli->out(" - Nothing to copy in {$fromDir}");
@@ -1495,7 +1488,7 @@ class PHPloy
     /**
      * Execute pre commands.
      *
-     * @var array
+     * @param array $commands
      */
     public function preDeploy(array $commands)
     {
@@ -1504,7 +1497,7 @@ class PHPloy
 
             $output = $this->git->exec($command, true);
 
-            $output = implode("\n\r", $output);
+            $output = implode(PHP_EOL, $output);
             $this->cli->out("Result : <white>{$output}");
         }
     }
@@ -1512,7 +1505,7 @@ class PHPloy
     /**
      * Execute post commands.
      *
-     * @var array
+     * @param array $commands
      */
     public function postDeploy(array $commands)
     {
@@ -1521,7 +1514,7 @@ class PHPloy
 
             $output = $this->git->exec($command);
 
-            $output = implode("\n\r", $output);
+            $output = implode(PHP_EOL, $output);
             $this->cli->out("Result : <white>{$output}");
         }
     }
@@ -1557,13 +1550,13 @@ class PHPloy
         $connection = $this->connection->getAdapter()->getConnection();
 
         if ($this->servers[$this->currentServerName]['scheme'] != 'sftp') {
-            $this->cli->yellow()->out("\r\nConnection scheme is not 'sftp' ignoring [pre/post]-deploy-remote");
+            $this->cli->yellow()->out(PHP_EOL . "Connection scheme is not 'sftp' ignoring [pre/post]-deploy-remote");
 
             return;
         }
 
         if (!$connection->isConnected()) {
-            $this->cli->red()->out("\r\nSFTP adapter connection problem skipping '[pre/post]-deploy-remote' commands");
+            $this->cli->red()->out(PHP_EOL . "SFTP adapter connection problem skipping '[pre/post]-deploy-remote' commands");
 
             return;
         }

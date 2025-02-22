@@ -25,7 +25,7 @@ class Git
     /**
      * Git constructor.
      *
-     * @param null $repo
+     * @param string $repo
      */
     public function __construct($repo = null)
     {

@@ -2,9 +2,11 @@
 
 namespace Banago\PHPloy;
 
-use League\Flysystem\Adapter\Ftp as FtpAdapter;
+use League\Flysystem\Ftp\FtpAdapter;
+use League\Flysystem\Ftp\FtpConnectionOptions;
 use League\Flysystem\Filesystem;
-use League\Flysystem\Sftp\SftpAdapter as SftpAdapter;
+use League\Flysystem\PhpseclibV3\SftpAdapter;
+use League\Flysystem\PhpseclibV3\SftpConnectionProvider;
 
 /**
  * Class Connection.
@@ -19,13 +21,9 @@ class Connection
     /**
      * Connection constructor.
      *
-     * @param string $server
-     *
      * @throws \Exception
-     *
-     * @return Connection
      */
-    public function __construct($server)
+    public function __construct(array $server)
     {
         if (!isset($server['scheme'])) {
             throw new \Exception("Please provide a connection protocol such as 'ftp' or 'sftp'.");
@@ -40,14 +38,14 @@ class Connection
         }
     }
 
-    private function getCommonOptions($server)
+    private function getCommonOptions(array $server) : array
     {
         $options = [
             'host' => $server['host'],
             'username' => $server['user'],
             'password' => $server['pass'],
             'root' => $server['path'],
-            'timeout' => ($server['timeout'] ?: 30),
+            'timeout' => intval($server['timeout']) ?: 30,
             'directoryPerm' => $server['directoryPerm'],
         ];
         if ($server['permissions']) {
@@ -70,38 +68,33 @@ class Connection
     /**
      * Connects to the FTP Server.
      *
-     * @param string $server
-     *
      * @throws \Exception if it can't connect to FTP server
-     *
-     * @return Filesystem|null
      */
-    protected function connectToFtp($server)
+    protected function connectToFtp(array $server) : ?Filesystem
     {
         try {
             $options = $this->getCommonOptions($server);
             $options['passive'] = isset($server['passive'])
               ? (bool) $server['passive']
               : true;
-            $options['ssl'] = ($server['ssl'] ?: false);
-            $options['port'] = ($server['port'] ?: 21);
+            $options['ssl'] = $server['ssl'] === 'true';
+            $options['port'] = intval($server['port']) ?: 21;
 
-            return new Filesystem(new FtpAdapter($options));
+            return new Filesystem(new FtpAdapter(
+              FtpConnectionOptions::fromArray($options)
+            ));
         } catch (\Exception $e) {
-            echo "\r\nOh Snap: {$e->getMessage()}\r\n";
+            echo PHP_EOL, "Oh Snap: {$e->getMessage()}", PHP_EOL;
         }
+        return null;
     }
 
     /**
      * Connects to the SFTP Server.
      *
-     * @param string $server
-     *
      * @throws \Exception if it can't connect to FTP server
-     *
-     * @return Filesystem|null
      */
-    protected function connectToSftp($server)
+    protected function connectToSftp(array $server) : ?Filesystem
     {
         try {
             $options = $this->getCommonOptions($server);
@@ -113,12 +106,16 @@ class Connection
                 throw new \Exception("Private key {$server['privkey']} doesn't exists.");
             }
 
-            $options['privateKey'] = $server['privkey'];
-            $options['port'] = ($server['port'] ?: 22);
+            $options['privateKey'] = $server['privkey'] ?: null;
+            $options['port'] = intval($server['port']) ?: 22;
 
-            return new Filesystem(new SftpAdapter($options));
+            return new Filesystem(new SftpAdapter(
+              SftpConnectionProvider::fromArray($options),
+              $options['root']
+            ));
         } catch (\Exception $e) {
-            echo "\r\nOh Snap: {$e->getMessage()}\r\n";
+            echo PHP_EOL, "Oh Snap: {$e->getMessage()}", PHP_EOL;
         }
+        return null;
     }
 }

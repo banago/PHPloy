@@ -2,7 +2,7 @@
 
 require_once 'PHPLoyTestHelper.php';
 
-class CommitFileTest extends PHPUnit_Framework_TestCase
+class CommitFileTest extends PHPUnit\Framework\TestCase
 {
     public function provider()
     {
