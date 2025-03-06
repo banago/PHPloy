@@ -1,0 +1,26 @@
+services:
+  ftp-server:
+    image: fauria/vsftpd
+    environment:
+      - FTP_USER=testuser
+      - FTP_PASS=testpass
+    ports:
+      - "21:21"
+      - "21100-21110:21100-21110"
+
+  sftp-server:
+    image: atmoz/sftp
+    command: testuser:testpass:::upload
+    ports:
+      - "22:22"
+
+  phploy-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - .:/app
+    command: tail -f /dev/null
+    depends_on:
+      - ftp-server
+      - sftp-server

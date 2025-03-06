@@ -1,5 +1,6 @@
 {
     "name": "banago/phploy",
+    "version": "5.0.0-beta",
     "description": "PHPloy - Incremental Git (S)FTP deployment tool that supports submodules, multiple servers and rollbacks.",
     "license": "MIT",
     "keywords": ["deploy", "ftp", "sftp", "git"],
@@ -11,15 +12,15 @@
             "role": "Developer"
         }
     ],
-    "require": {
-        "php": "^7.3",
-        "league/climate": "^3.0",
-        "league/flysystem": "^1.0",
-        "league/flysystem-sftp": "^1.0"
-    },
     "require-dev": {
-        "phpunit/phpunit": "^8.0",
-        "teqneers/php-stream-wrapper-for-git": ">=1.0.1 <2"
+        "pestphp/pest": "^2.0"
+    },
+    "require": {
+        "php": "^8.0",
+        "league/climate": "^3.0",
+        "league/flysystem": "^3.0",
+        "league/flysystem-sftp-v3": "^3.0",
+        "league/flysystem-ftp": "^3.0"
     },
     "autoload": {
         "psr-4": {
@@ -29,5 +30,24 @@
             "src/utils.php"
         ]
     },
-    "bin": ["bin/phploy"]
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "docker compose up -d && docker compose exec phploy-test ./vendor/bin/pest && docker compose down",
+        "test:up": "docker compose up -d",
+        "test:down": "docker compose down",
+        "test:exec": "docker compose exec phploy-test ./vendor/bin/pest",
+        "lint": "phpcs --standard=PSR12 src/ tests/",
+        "lint:fix": "phpcbf --standard=PSR12 src/ tests/",
+        "analyze": "phpstan analyze src/ tests/ --level=max"
+    },
+    "bin": ["bin/phploy"],
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
 }

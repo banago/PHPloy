@@ -9,7 +9,7 @@
  */
 function rel_path($el)
 {
-    $abs = getcwd().'/';
+    $abs = getcwd() . '/';
 
     return str_replace($abs, '', $el);
 }
@@ -38,17 +38,17 @@ function dir_tree($directory, $recursive = true, $listDirs = false, $listFiles =
                 preg_match($exclude, $file, $skipByExclude);
             }
             if (!$skip && !$skipByExclude) {
-                if (is_dir($directory.'/'.$file)) {
+                if (is_dir($directory . '/' . $file)) {
                     if ($recursive) {
-                        $arrayItems = array_merge($arrayItems, dir_tree($directory.'/'.$file, $recursive, $listDirs, $listFiles, $exclude));
+                        $arrayItems = array_merge($arrayItems, dir_tree($directory . '/' . $file, $recursive, $listDirs, $listFiles, $exclude));
                     }
                     if ($listDirs) {
-                        $file = $directory.'/'.$file;
+                        $file = $directory . '/' . $file;
                         $arrayItems[] = $file;
                     }
                 } else {
                     if ($listFiles) {
-                        $file = $directory.'/'.$file;
+                        $file = $directory . '/' . $file;
                         $arrayItems[] = $file;
                     }
                 }
@@ -61,7 +61,7 @@ function dir_tree($directory, $recursive = true, $listDirs = false, $listFiles =
 }
 
 /**
- * Gets the password from user input, hiding password and 
+ * Gets the password from user input, hiding password and
  * replaces it with stars (*) if user users Unix / Mac.
  *
  * @return string
@@ -76,7 +76,7 @@ function input_password()
     $pass = '';
 
     shell_exec('stty -icanon -echo min 1 time 0');
-    
+
     while (true) {
         $char = fgetc(STDIN);
         if ($char === "\n") {
@@ -92,7 +92,7 @@ function input_password()
         }
     }
 
-    shell_exec('stty '.$original);
+    shell_exec('stty ' . $original);
 
     return $pass;
 }
@@ -110,7 +110,7 @@ function human_filesize($bytes, $decimals = 2)
     $sz = 'BKMGTP';
     $factor = floor((strlen($bytes) - 1) / 3);
 
-    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).@$sz[$factor];
+    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
 }
 
 /**
@@ -123,5 +123,5 @@ function human_filesize($bytes, $decimals = 2)
  */
 function pattern_match($pattern, $string)
 {
-    return preg_match('#^'.strtr(preg_quote($pattern, '#'), ['\*' => '.*', '\?' => '.']).'$#i', $string);
+    return preg_match('#^' . strtr(preg_quote($pattern, '#'), ['\*' => '.*', '\?' => '.']) . '$#i', $string);
 }

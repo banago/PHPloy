@@ -2,11 +2,15 @@
 
 namespace Banago\PHPloy;
 
+use Banago\PHPloy\Traits\DebugTrait;
+
 /**
  * Class Git.
  */
 class Git
 {
+    use DebugTrait;
+
     /**
      * @var string Git branch
      */
@@ -25,13 +29,18 @@ class Git
     /**
      * Git constructor.
      *
-     * @param null $repo
+     * @param string|null $repo
+     * @throws \Exception
      */
     public function __construct($repo = null)
     {
         $this->repo = $repo;
-        $this->branch = $this->command('rev-parse --abbrev-ref HEAD')[0];
-        $this->revision = $this->command('rev-parse HEAD')[0];
+        try {
+            $this->branch = $this->command('rev-parse --abbrev-ref HEAD')[0];
+            $this->revision = $this->command('rev-parse HEAD')[0];
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to initialize Git: " . $e->getMessage());
+        }
     }
 
     /**
@@ -48,10 +57,10 @@ class Git
     {
         $output = null;
 
-        exec('('.$command.') 2>&1', $output, $exitcode);
+        exec('(' . $command . ') 2>&1', $output, $exitcode);
 
-        if ($onErrorStopExecution && $exitcode !== 0){
-            throw new \Exception('Command [' . $command . '] exited badly');
+        if ($onErrorStopExecution && $exitcode !== 0) {
+            throw new \Exception('Command [' . $command . '] failed with exit code ' . $exitcode);
         }
 
         return $output;
@@ -61,9 +70,10 @@ class Git
      * Runs a git command and returns the output (as an array).
      *
      * @param string $command  "git [your-command-here]"
-     * @param string $repoPath Defaults to $this->repo
+     * @param string|null $repoPath Defaults to $this->repo
      *
      * @return array Lines of the output
+     * @throws \Exception
      */
     public function command($command, $repoPath = null)
     {
@@ -71,30 +81,38 @@ class Git
             $repoPath = $this->repo;
         }
 
-        // "-c core.quotepath=false" in fixes special characters issue like ë, ä, ü etc., in file names
-        $command = 'git -c core.quotepath=false --git-dir="'.$repoPath.'/.git" --work-tree="'.$repoPath.'" '.$command;
+        if (!is_dir($repoPath)) {
+            throw new \Exception("Repository path does not exist: {$repoPath}");
+        }
 
-        return $this->exec($command);
+        if (!is_dir($repoPath . '/.git')) {
+            throw new \Exception("Not a git repository: {$repoPath}");
+        }
+
+        // "-c core.quotepath=false" fixes special characters issue like ë, ä, ü etc., in file names
+        $command = 'git -c core.quotepath=false --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
+
+        $output = $this->exec($command);
+        $this->debug("Git command: {$command}\nOutput: " . implode("\n", $output));
+        return $output;
     }
 
     /**
      * Diff versions.
      *
-     * @param string $remoteRevision
+     * @param string|null $remoteRevision
      * @param string $localRevision
-     * @param string $repoPath
+     * @param string|null $repoPath
      *
      * @return array
+     * @throws \Exception
      */
     public function diff($remoteRevision, $localRevision, $repoPath = null)
     {
         if (empty($remoteRevision)) {
             $command = 'ls-files';
-        } elseif ($localRevision === 'HEAD') {
-            $command = 'diff --name-status '.$remoteRevision.' '.$localRevision;
         } else {
-            // What's the point of this ELSE clause?
-            $command = 'diff --name-status '.$remoteRevision.' '.$localRevision;
+            $command = 'diff --name-status ' . $remoteRevision . ' ' . $localRevision;
         }
 
         return $this->command($command, $repoPath);
@@ -104,13 +122,18 @@ class Git
      * Checkout given $branch.
      *
      * @param string $branch
-     * @param string $repoPath
+     * @param string|null $repoPath
      *
      * @return array
+     * @throws \Exception
      */
     public function checkout($branch, $repoPath = null)
     {
-        $command = 'checkout '.$branch;
+        if (empty($branch)) {
+            throw new \Exception("Branch name cannot be empty");
+        }
+
+        $command = 'checkout ' . $branch;
 
         return $this->command($command, $repoPath);
     }

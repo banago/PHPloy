@@ -1,7 +1,20 @@
 # PHPloy
-**Version 4.9.2**
+**Version 5.0.0**
 
-PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 7.3+** and **Git 1.8+**.
+PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 8.0+** (PHP 8.2+ for development/testing) and **Git 1.8+**.
+
+## What's New in 5.0.0
+
+- **Improved File Structure**: Better organized codebase with clear separation of concerns
+- **Flysystem 3.0 Upgrade**: Enhanced file system abstraction with latest Flysystem version
+- **Modern Testing Suite**: 
+  - Replaced legacy Vagrant setup with Docker Compose
+  - Migrated from PHPUnit to Pest PHP for more expressive tests
+  - Added FTP and SFTP test servers for comprehensive integration testing
+- **Code Quality Tools**:
+  - PSR-12 coding standards enforcement
+  - Static analysis with PHPStan
+  - Automated code style fixing
 
 ## How it works
 
@@ -22,10 +35,19 @@ in your `$PATH` so the PHPloy executable can be located by your system.
 
 ### Via Phar Archive
 
-You can install PHPloy Phar globally, in your `/usr/local/bin` directory or, locally, in your project directory. **Rename** `phploy.phar` to `phploy` for ease of use.
+You can install PHPloy via a phar archive:
 
-1. **Globally:** Move `phploy` into `/usr/local/bin`. Make it executable by running `sudo chmod +x phploy`.
-2. **Locally** Move `phploy` into your project directory. 
+1. **Download**: Get the latest `phploy.phar` from our releases page
+2. **Install**:
+   - **Globally:** Move to `/usr/local/bin/phploy` and make executable:
+     ```bash
+     sudo mv phploy.phar /usr/local/bin/phploy
+     sudo chmod +x /usr/local/bin/phploy
+     ```
+   - **Locally:** Move to your project directory and use as:
+     ```bash
+     php phploy.phar
+     ```
 
 ## Usage 
 
@@ -288,7 +310,7 @@ To turn logging on, add this to `phploy.ini`:
 
 ## Contribute
 
-Contributions are very welcome; PHPloy is great because of the contributors. Please check out the [issues](https://github.com/banago/PHPloy/issues). 
+CaContributions are very welcome; PHPloy is great because of the contributors. Please check out the [issues](https://github.com/banago/PHPloy/issues). 
 
 ## Credits
 

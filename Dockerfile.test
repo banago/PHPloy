@@ -1,0 +1,29 @@
+FROM php:8.2-cli
+
+# Install Git and other dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    zip \
+    unzip \
+    libssh2-1-dev \
+    && docker-php-ext-install ftp \
+    && pecl install ssh2-1.3.1 \
+    && docker-php-ext-enable ssh2
+
+# Configure Git
+RUN git config --global user.email "test@phploy.org" \
+    && git config --global user.name "PHPloy Test"
+
+WORKDIR /app
+
+# Install composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Copy composer files
+COPY composer.json composer.lock ./
+
+# Install dependencies
+RUN composer install --no-interaction --no-plugins --no-scripts
+
+# Copy the rest of the application
+COPY . .
