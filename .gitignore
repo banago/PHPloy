@@ -1,8 +1,10 @@
-/.idea
-/.settings
-/.vscode
-/vendor
-/dev
 *~
 *.swp
 .DS_Store
+/.idea
+/.vscode
+/.settings
+/.clinerules
+/memory-bank
+/vendor
+/dev

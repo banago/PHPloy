@@ -38,7 +38,7 @@ class Deployment
     /**
      * @var array
      */
-    protected $currentServerInfo = [];
+    protected $currentServerInfo = array();
 
     /**
      * @var string
@@ -58,7 +58,7 @@ class Deployment
     /**
      * @var array
      */
-    protected $submodules = [];
+    protected $submodules = array();
 
     /**
      * @var bool
@@ -79,6 +79,11 @@ class Deployment
      * @var bool
      */
     protected $listFiles = false;
+
+    /**
+     * @var bool
+     */
+    protected $remoteList = false;
 
     /**
      * @var bool|string
@@ -102,20 +107,21 @@ class Deployment
      */
     public function __construct(Cli $cli, Git $git, Config $config)
     {
-        $this->cli = $cli;
-        $this->git = $git;
+        $this->cli    = $cli;
+        $this->git    = $git;
         $this->config = $config;
 
-        $this->repo = getcwd();
+        $this->setDebug($cli->hasArgument('debug'));
+
+        $this->repo     = getcwd();
         $this->mainRepo = $this->repo;
 
-        // Set options from CLI arguments
-        $this->listFiles = $cli->hasArgument('list');
-        $this->sync = $cli->hasArgument('sync');
-        $this->setDebug($cli->hasArgument('debug'));
+        $this->fresh          = $cli->hasArgument('fresh');
+        $this->listFiles      = $cli->hasArgument('list');
+        $this->remoteList     = $cli->hasArgument('remote-list');
         $this->scanSubmodules = $cli->hasArgument('submodules');
-        $this->fresh = $cli->hasArgument('fresh');
-        $this->revision = $cli->hasArgument('rollback') ? $cli->getArgument('rollback') : 'HEAD';
+        $this->sync           = $cli->hasArgument('sync') ? $cli->getArgument('sync') : false;
+        $this->revision       = $cli->hasArgument('rollback') ? $cli->getArgument('rollback') : 'HEAD';
     }
 
     /**
@@ -123,13 +129,13 @@ class Deployment
      */
     public function run(): void
     {
-        $servers = $this->config->getServers();
+        $servers          = $this->config->getServers();
         $hasDefaultServer = isset($servers['default']);
-        $deployAll = $this->cli->hasArgument('all') || !$hasDefaultServer;
+        $deployAll        = $this->cli->hasArgument('all') || ! $hasDefaultServer;
 
         // Get target server if specified
         $targetServer = $this->cli->getArgument('server');
-        if ($targetServer && !isset($servers[$targetServer])) {
+        if ($targetServer && ! isset($servers[ $targetServer ])) {
             throw new \Exception("The server \"{$targetServer}\" is not defined in phploy.ini.");
         }
 
@@ -141,10 +147,10 @@ class Deployment
             // Skip if:
             // 1. A specific server was requested and this isn't it, or
             // 2. No specific server was requested, --all wasn't specified,
-            //    a default server exists, and this isn't the default server
+            // a default server exists, and this isn't the default server
             if (
-                ($targetServer && $targetServer !== $name) ||
-                (!$targetServer && !$deployAll && $hasDefaultServer && $name !== 'default')
+                ( $targetServer && $targetServer !== $name ) ||
+                ( ! $targetServer && ! $deployAll && $hasDefaultServer && $name !== 'default' )
             ) {
                 continue;
             }
@@ -163,10 +169,24 @@ class Deployment
 
         // Connect to server
         $this->connection = new Connection($server);
+        
+        // Check if remote path exists
+        if (!$this->connection->directoryExists('')) {
+            $this->cli->error("\r\nSERVER: " . $name);
+            $this->cli->error("Remote path does not exist: " . $server['path']);
+            $this->cli->info("Deployment skipped.");
+            return;
+        }
 
         // Handle sync mode
         if ($this->sync) {
             $this->setRevision();
+            return;
+        }
+
+        // Handle remote-list mode
+        if ($this->remoteList) {
+            $this->listRemotePath();
             return;
         }
 
@@ -184,7 +204,7 @@ class Deployment
         }
 
         // Show deployment size
-        if (!$this->listFiles && $this->deploymentSize > 0) {
+        if (! $this->listFiles && $this->deploymentSize > 0) {
             $this->cli->success(
                 sprintf(
                     "\r\n|---------------[ %s Deployed ]---------------|",
@@ -200,15 +220,15 @@ class Deployment
      */
     protected function handleSubmodules(array $files): void
     {
-        if (!$this->scanSubmodules || empty($this->submodules)) {
+        if (! $this->scanSubmodules || empty($this->submodules)) {
             return;
         }
 
         foreach ($this->submodules as $submodule) {
-            $this->repo = $submodule['path'];
+            $this->repo                 = $submodule['path'];
             $this->currentSubmoduleName = $submodule['name'];
 
-            $this->cli->info("SUBMODULE: " . $this->currentSubmoduleName);
+            $this->cli->info('SUBMODULE: ' . $this->currentSubmoduleName);
             $subFiles = $this->compare($submodule['revision']);
 
             if ($this->listFiles) {
@@ -219,7 +239,7 @@ class Deployment
         }
 
         // Reset after submodule deployment
-        $this->repo = $this->mainRepo;
+        $this->repo                 = $this->mainRepo;
         $this->currentSubmoduleName = '';
     }
 
@@ -228,14 +248,14 @@ class Deployment
      */
     protected function checkSubmodules(): void
     {
-        if (!$this->scanSubmodules) {
+        if (! $this->scanSubmodules) {
             return;
         }
 
         $this->cli->info('Scanning repository...');
 
         $output = $this->git->command('submodule status', $this->repo);
-        $count = count($output);
+        $count  = count($output);
 
         $this->cli->info("Found {$count} submodules.");
 
@@ -243,17 +263,19 @@ class Deployment
             foreach ($output as $line) {
                 $line = explode(' ', trim($line));
 
-                $this->submodules[] = [
+                $this->submodules[] = array(
                     'revision' => $line[0],
-                    'name' => $line[1],
-                    'path' => $this->repo . '/' . $line[1],
-                ];
+                    'name'     => $line[1],
+                    'path'     => $this->repo . '/' . $line[1],
+                );
 
-                $this->cli->info(sprintf(
-                    'Found submodule %s. %s',
-                    $line[1],
-                    $this->scanSubSubmodules ? "\nScanning for sub-submodules..." : ''
-                ));
+                $this->cli->info(
+                    sprintf(
+                        'Found submodule %s. %s',
+                        $line[1],
+                        $this->scanSubSubmodules ? "\nScanning for sub-submodules..." : ''
+                    )
+                );
 
                 if ($this->scanSubSubmodules) {
                     $this->checkSubSubmodules($line[1]);
@@ -276,11 +298,11 @@ class Deployment
 
             $line = explode(' ', trim($line));
 
-            $this->submodules[] = [
+            $this->submodules[] = array(
                 'revision' => $line[0],
-                'name' => $name . '/' . $line[1],
-                'path' => $this->repo . '/' . $name . '/' . $line[1],
-            ];
+                'name'     => $name . '/' . $line[1],
+                'path'     => $this->repo . '/' . $name . '/' . $line[1],
+            );
 
             $this->cli->info("Found sub-submodule {$name}/{$line[1]}");
         }
@@ -296,12 +318,12 @@ class Deployment
         }
 
         $remoteRevision = null;
-        $dotRevision = $this->currentSubmoduleName
+        $dotRevision    = $this->currentSubmoduleName
             ? $this->currentSubmoduleName . '/.revision'
             : '.revision';
 
         // Get remote revision
-        if (!$this->fresh && $this->connection->has($dotRevision)) {
+        if (! $this->fresh && $this->connection->has($dotRevision)) {
             $remoteRevision = $this->connection->read($dotRevision);
             $this->debug("Remote revision: {$remoteRevision}");
         } else {
@@ -309,7 +331,7 @@ class Deployment
         }
 
         // Handle branch checkout
-        if (!empty($this->currentServerInfo['branch'])) {
+        if (! empty($this->currentServerInfo['branch'])) {
             $this->checkoutBranch($this->currentServerInfo['branch']);
         }
 
@@ -325,8 +347,8 @@ class Deployment
      */
     protected function processGitDiff(array $output, ?string $remoteRevision): array
     {
-        $filesToUpload = [];
-        $filesToDelete = [];
+        $filesToUpload = array();
+        $filesToDelete = array();
 
         if (empty($remoteRevision)) {
             $filesToUpload = $output;
@@ -355,8 +377,8 @@ class Deployment
 
                     case 'R':
                         list(, $oldFile, $newFile) = preg_split('/\s+/', $line);
-                        $filesToDelete[] = trim($oldFile);
-                        $filesToUpload[] = trim($newFile);
+                        $filesToDelete[]           = trim($oldFile);
+                        $filesToUpload[]           = trim($newFile);
                         break;
 
                     default:
@@ -367,10 +389,10 @@ class Deployment
             }
         }
 
-        return [
+        return array(
             'upload' => $filesToUpload,
             'delete' => $filesToDelete,
-        ];
+        );
     }
 
     /**
@@ -401,7 +423,7 @@ class Deployment
         }
 
         // Update revision
-        if (!empty($files['upload']) || !empty($files['delete'])) {
+        if (! empty($files['upload']) || ! empty($files['delete'])) {
             if ($this->revision !== 'HEAD') {
                 $revision = $this->git->command('rev-parse HEAD')[0];
                 $this->setRevision($revision);
@@ -423,7 +445,7 @@ class Deployment
 
         // Restore branch after rollback
         if ($this->revision !== 'HEAD') {
-            $this->git->command('checkout ' . ($initialBranch ?: 'master'));
+            $this->git->command('checkout ' . ( $initialBranch ?: 'master' ));
         }
     }
 
@@ -436,7 +458,7 @@ class Deployment
             $file = $this->currentSubmoduleName . '/' . $file;
         }
 
-        $filePath = $this->repo . '/' . ($this->currentSubmoduleName
+        $filePath = $this->repo . '/' . ( $this->currentSubmoduleName
             ? str_replace($this->currentSubmoduleName . '/', '', $file)
             : $file
         );
@@ -451,12 +473,12 @@ class Deployment
             $this->connection->put($file, $data);
             $this->deploymentSize += filesize($filePath);
 
-            $fileNo = str_pad((string)$number, strlen((string)$total), ' ', STR_PAD_LEFT);
+            $fileNo = str_pad((string) $number, strlen((string) $total), ' ', STR_PAD_LEFT);
             $this->cli->success(" ^ {$fileNo} of {$total} {$file}");
         } catch (\Exception $e) {
             $this->cli->error("Failed to upload {$file}: " . $e->getMessage());
 
-            if (!$this->connection) {
+            if (! $this->connection) {
                 $this->cli->info('Connection lost, trying to reconnect...');
                 $this->connection = new Connection($this->currentServerInfo);
 
@@ -464,7 +486,7 @@ class Deployment
                     $this->connection->put($file, $data);
                     $this->deploymentSize += filesize($filePath);
 
-                    $fileNo = str_pad((string)$number, strlen((string)$total), ' ', STR_PAD_LEFT);
+                    $fileNo = str_pad((string) $number, strlen((string) $total), ' ', STR_PAD_LEFT);
                     $this->cli->success(" ^ {$fileNo} of {$total} {$file}");
                 } catch (\Exception $e) {
                     $this->cli->error("Failed to upload {$file} after reconnect: " . $e->getMessage());
@@ -482,7 +504,7 @@ class Deployment
             $file = $this->currentSubmoduleName . '/' . $file;
         }
 
-        $fileNo = str_pad((string)$number, strlen((string)$total), ' ', STR_PAD_LEFT);
+        $fileNo = str_pad((string) $number, strlen((string) $total), ' ', STR_PAD_LEFT);
 
         try {
             if ($this->connection->has($file)) {
@@ -527,15 +549,45 @@ class Deployment
     {
         $output = $this->git->checkout($branch, $this->repo);
 
-        if (!empty($output[0])) {
+        if (! empty($output[0])) {
             if (strpos($output[0], 'error') === 0) {
                 throw new \Exception('Stash your modifications before deploying.');
             }
             $this->cli->info($output[0]);
         }
 
-        if (!empty($output[1]) && $output[1][0] === 'M') {
+        if (! empty($output[1]) && $output[1][0] === 'M') {
             throw new \Exception('Stash your modifications before deploying.');
+        }
+    }
+
+    /**
+     * List remote path contents
+     */
+    protected function listRemotePath(): void
+    {
+        try {
+            $this->cli->info("\r\nChecking remote path: " . $this->currentServerInfo['path']);
+            
+            // Check if the directory exists
+            if (!$this->connection->directoryExists('')) {
+                $this->cli->error("Remote path does not exist: " . $this->currentServerInfo['path']);
+                return;
+            }
+            
+            // Try to list contents of the root directory
+            $contents = $this->connection->listContents('', false);
+            
+            if (empty($contents)) {
+                $this->cli->warning("Remote path exists but is empty.");
+            } else {
+                $this->cli->success("Remote path exists and contains " . count($contents) . " items:");
+                foreach ($contents as $item) {
+                    $this->cli->info("  " . $item['type'] . ": " . $item['path']);
+                }
+            }
+        } catch (\Exception $e) {
+            $this->cli->error("Remote path does not exist or is not accessible: " . $e->getMessage());
         }
     }
 
@@ -549,14 +601,14 @@ class Deployment
             return;
         }
 
-        if (!empty($files['delete'])) {
+        if (! empty($files['delete'])) {
             $this->cli->warning('Files that will be deleted in next deployment:');
             foreach ($files['delete'] as $file) {
                 $this->cli->info("   {$file}");
             }
         }
 
-        if (!empty($files['upload'])) {
+        if (! empty($files['upload'])) {
             $this->cli->success('Files that will be uploaded in next deployment:');
             foreach ($files['upload'] as $file) {
                 $this->cli->info("   {$file}");

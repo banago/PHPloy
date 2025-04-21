@@ -182,6 +182,21 @@ class Connection
     }
 
     /**
+     * Check if a directory exists
+     *
+     * @param string $path
+     * @return bool
+     */
+    public function directoryExists($path)
+    {
+        try {
+            return $this->server->directoryExists($path);
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
      * Read a file
      *
      * @param string $path

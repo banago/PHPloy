@@ -100,6 +100,11 @@ class Cli
                 'longPrefix' => 'dryrun',
                 'description' => 'Stops after parsing arguments and do not alter the remote servers',
                 'noValue' => true,
+            ],
+            'remote-list' => [
+                'longPrefix' => 'remote-list',
+                'description' => 'Lists the contents of the remote deployment path to verify it exists',
+                'noValue' => true,
             ]
         ]);
 
