@@ -311,7 +311,7 @@ class Deployment
     /**
      * Compare revisions and get files to deploy
      */
-    protected function compare(string $localRevision = null): array
+    protected function compare(?string $localRevision = null): array
     {
         if ($localRevision === null) {
             $localRevision = $this->revision;
@@ -398,7 +398,7 @@ class Deployment
     /**
      * Push files to server
      */
-    protected function push(array $files, string $localRevision = null): void
+    protected function push(array $files, ?string $localRevision = null): void
     {
         if ($localRevision === null) {
             $localRevision = $this->git->revision;
