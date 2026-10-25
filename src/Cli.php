@@ -37,6 +37,11 @@ class Cli
                 'description' => 'Lists the files and directories to be uploaded or deleted',
                 'noValue' => true,
             ],
+            'status' => [
+                'longPrefix' => 'status',
+                'description' => 'Shows the remote revision, commits behind, and files to deploy/delete',
+                'noValue' => true,
+            ],
             'server' => [
                 'prefix' => 's',
                 'longPrefix' => 'server',

@@ -86,6 +86,11 @@ class Deployment
     protected $remoteList = false;
 
     /**
+     * @var bool
+     */
+    protected $status = false;
+
+    /**
      * @var bool|string
      */
     protected $sync = false;
@@ -119,6 +124,7 @@ class Deployment
         $this->fresh          = $cli->hasArgument('fresh');
         $this->listFiles      = $cli->hasArgument('list');
         $this->remoteList     = $cli->hasArgument('remote-list');
+        $this->status         = $cli->hasArgument('status');
         $this->scanSubmodules = $cli->hasArgument('submodules');
         $this->sync           = $cli->hasArgument('sync') ? $cli->getArgument('sync') : false;
         $this->revision       = $cli->hasArgument('rollback') ? $cli->getArgument('rollback') : 'HEAD';
@@ -196,6 +202,12 @@ class Deployment
         // Handle remote-list mode
         if ($this->remoteList) {
             $this->listRemotePath();
+            return;
+        }
+
+        // Handle status mode
+        if ($this->status) {
+            $this->showStatus($name);
             return;
         }
 
@@ -589,6 +601,38 @@ class Deployment
         if (! empty($output[1]) && $output[1][0] === 'M') {
             throw new \Exception('Stash your modifications before deploying.');
         }
+    }
+
+    /**
+     * Show the remote revision and pending changes for a server.
+     */
+    protected function showStatus(string $name): void
+    {
+        $remoteRevision = $this->connection->has('.revision')
+            ? trim((string) $this->connection->read('.revision'))
+            : null;
+
+        $this->cli->info("\r\nSERVER: " . $name);
+        $this->cli->info('Revision: ' . ($remoteRevision ?: '(none - not yet deployed)'));
+
+        // Files that would be uploaded/deleted on the next deploy (also handles branch checkout)
+        $files = $this->compare();
+        $files = $this->filterBasePath($files);
+        $files = $this->filterExcluded($files);
+        $files = $this->filterIncluded($files);
+
+        if ($remoteRevision) {
+            $behind = $this->git->commitsBehind($remoteRevision, $this->revision, $this->repo);
+
+            if ($behind >= 0) {
+                $this->cli->info($behind . ' commits behind');
+            } else {
+                $this->cli->warning('Cannot determine commits behind (remote revision is not in the local history)');
+            }
+        }
+
+        $this->cli->info(count($files['upload']) . ' files to be deployed');
+        $this->cli->info(count($files['delete']) . ' files to be deleted');
     }
 
     /**

@@ -119,6 +119,26 @@ class Git
     }
 
     /**
+     * Count how many commits $localRevision is ahead of $remoteRevision.
+     *
+     * @param string $remoteRevision
+     * @param string $localRevision
+     * @param string|null $repoPath
+     *
+     * @return int Number of commits (0 = in sync), or -1 when the remote revision is unknown locally.
+     */
+    public function commitsBehind($remoteRevision, $localRevision, $repoPath = null)
+    {
+        $output = $this->command('rev-list --count ' . $remoteRevision . '..' . $localRevision, $repoPath);
+
+        if (empty($output) || !is_numeric($output[0])) {
+            return -1;
+        }
+
+        return (int) $output[0];
+    }
+
+    /**
      * Checkout given $branch.
      *
      * @param string $branch
