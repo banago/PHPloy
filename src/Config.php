@@ -100,6 +100,8 @@ class Config
             'permissions' => null,
             'directoryPerm' => 0755,
             'branch' => '',
+            'base' => '',
+            'logger' => false,
             'include' => [],
             'exclude' => array_merge($this->globalFilesToExclude, [self::$iniFile]),
             'copy' => [],
@@ -129,7 +131,12 @@ class Config
             }
         }
 
-        // Merge parsed quickmode details
+        // Normalise base: must end with '/' when non-empty
+        if (!empty($config['base'])) {
+            $config['base'] = rtrim($config['base'], '/') . '/';
+        }
+
+        // Merge quickmode URL if present
         if (isset($options['quickmode'])) {
             $parsed_url = parse_url($options['quickmode']);
             if ($parsed_url === false) {

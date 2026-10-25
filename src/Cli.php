@@ -212,14 +212,17 @@ class Cli
     }
 
     /**
-     * Log a deployment event
+     * Log a deployment event and optionally persist it to phploy.log.
+     *
+     * @param bool $logToFile Write the entry to phploy.log when true (logger = on in phploy.ini)
      */
     public function logDeployment(
         string $sha,
         string $server,
         string $branch,
         int $filesUploaded,
-        int $filesDeleted
+        int $filesDeleted,
+        bool $logToFile = false
     ): void {
         $message = sprintf(
             '[SHA: %s] Deployment to server: "%s" from branch "%s". %d files uploaded; %d files deleted.',
@@ -231,5 +234,27 @@ class Cli
         );
 
         $this->info($message);
+
+        if ($logToFile) {
+            $this->writeLog($message);
+        }
+    }
+
+    /**
+     * Append a log entry to phploy.log in the current working directory.
+     */
+    public function writeLog(string $message, string $type = 'INFO'): void
+    {
+        $filename = getcwd() . DIRECTORY_SEPARATOR . 'phploy.log';
+
+        if (!file_exists($filename)) {
+            touch($filename);
+        }
+
+        file_put_contents(
+            $filename,
+            date('Y-m-d H:i:sP') . ' --- ' . $type . ': ' . $message . PHP_EOL,
+            FILE_APPEND
+        );
     }
 }

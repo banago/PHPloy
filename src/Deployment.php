@@ -171,7 +171,16 @@ class Deployment
         $this->connection = new Connection($server);
         
         // Check if remote path exists
-        if (!$this->connection->directoryExists('')) {
+        try {
+            $rootExists = $this->connection->directoryExists('');
+        } catch (\Exception $e) {
+            $this->cli->error("\r\nSERVER: " . $name);
+            $this->cli->error("Could not connect to server: " . $e->getMessage());
+            $this->cli->info("Deployment skipped.");
+            return;
+        }
+
+        if (!$rootExists) {
             $this->cli->error("\r\nSERVER: " . $name);
             $this->cli->error("Remote path does not exist: " . $server['path']);
             $this->cli->info("Deployment skipped.");
@@ -193,14 +202,29 @@ class Deployment
         // Get files to deploy
         $files = $this->compare();
 
+        // Apply filters from phploy.ini
+        $files = $this->filterBasePath($files);
+        $files = $this->filterExcluded($files);
+        $files = $this->filterIncluded($files);
+
         $this->cli->info("\r\nSERVER: " . $name);
 
         if ($this->listFiles) {
             $this->listFiles($files);
             $this->handleSubmodules($files);
         } else {
+            // pre-deploy (local) — failure stops the deployment
+            $this->runLocalCommands($server['pre-deploy'] ?? [], true);
+            // pre-deploy-remote (SFTP only)
+            $this->runRemoteCommands($server['pre-deploy-remote'] ?? []);
+
             $this->push($files);
             $this->handleSubmodules($files);
+
+            // post-deploy (local) — failure is logged but does not abort
+            $this->runLocalCommands($server['post-deploy'] ?? []);
+            // post-deploy-remote (SFTP only)
+            $this->runRemoteCommands($server['post-deploy-remote'] ?? []);
         }
 
         // Show deployment size
@@ -437,7 +461,8 @@ class Deployment
                 $this->currentServerName,
                 $initialBranch ?: 'master',
                 count($files['upload']),
-                count($files['delete'])
+                count($files['delete']),
+                !empty($this->currentServerInfo['logger'])
             );
         } else {
             $this->cli->info('No files to upload or delete.');
@@ -469,8 +494,10 @@ class Deployment
             return;
         }
 
+        $remoteFile = $this->removeBasePath($file);
+
         try {
-            $this->connection->put($file, $data);
+            $this->connection->put($remoteFile, $data);
             $this->deploymentSize += filesize($filePath);
 
             $fileNo = str_pad((string) $number, strlen((string) $total), ' ', STR_PAD_LEFT);
@@ -483,7 +510,7 @@ class Deployment
                 $this->connection = new Connection($this->currentServerInfo);
 
                 try {
-                    $this->connection->put($file, $data);
+                    $this->connection->put($remoteFile, $data);
                     $this->deploymentSize += filesize($filePath);
 
                     $fileNo = str_pad((string) $number, strlen((string) $total), ' ', STR_PAD_LEFT);
@@ -505,10 +532,11 @@ class Deployment
         }
 
         $fileNo = str_pad((string) $number, strlen((string) $total), ' ', STR_PAD_LEFT);
+        $remoteFile = $this->removeBasePath($file);
 
         try {
-            if ($this->connection->has($file)) {
-                $this->connection->delete($file);
+            if ($this->connection->has($remoteFile)) {
+                $this->connection->delete($remoteFile);
                 $this->cli->info(" × {$fileNo} of {$total} {$file}");
             } else {
                 $this->cli->warning(" ! {$fileNo} of {$total} {$file} not found");
@@ -612,6 +640,157 @@ class Deployment
             $this->cli->success('Files that will be uploaded in next deployment:');
             foreach ($files['upload'] as $file) {
                 $this->cli->info("   {$file}");
+            }
+        }
+    }
+
+    /**
+     * Remove files matching exclude[] patterns from both upload and delete lists.
+     * Patterns support wildcards (* and ?) and bare directory names.
+     */
+    protected function filterExcluded(array $files): array
+    {
+        $exclude = $this->currentServerInfo['exclude'] ?? [];
+
+        if (empty($exclude)) {
+            return $files;
+        }
+
+        $filter = function (string $file) use ($exclude): bool {
+            foreach ($exclude as $pattern) {
+                if (
+                    pattern_match($pattern, $file) ||
+                    pattern_match($pattern, basename($file)) ||
+                    strpos($file, rtrim($pattern, '/\\') . '/') === 0
+                ) {
+                    $this->cli->info(" - Excluded: {$file}");
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        $files['upload'] = array_values(array_filter($files['upload'], $filter));
+        $files['delete'] = array_values(array_filter($files['delete'], $filter));
+
+        return $files;
+    }
+
+    /**
+     * Restrict upload/delete lists to files that live inside the configured base path.
+     * base = 'subdir/' in phploy.ini means only files under subdir/ are deployed.
+     */
+    protected function filterBasePath(array $files): array
+    {
+        $base = $this->currentServerInfo['base'] ?? '';
+
+        if (empty($base)) {
+            return $files;
+        }
+
+        $pattern = '/^' . preg_quote($base, '/') . '/';
+
+        $files['upload'] = array_values(array_filter($files['upload'], fn($f) => preg_match($pattern, $f)));
+        $files['delete'] = array_values(array_filter($files['delete'], fn($f) => preg_match($pattern, $f)));
+
+        return $files;
+    }
+
+    /**
+     * Strip the base path prefix from a file path to obtain the remote path.
+     */
+    protected function removeBasePath(string $file): string
+    {
+        $base = $this->currentServerInfo['base'] ?? '';
+
+        if (empty($base)) {
+            return $file;
+        }
+
+        return preg_replace('/^' . preg_quote($base, '/') . '/', '', $file);
+    }
+
+    /**
+     * Add files matching include[] patterns to the upload list, regardless of git diff.
+     * Patterns support wildcards and directory names (all files inside are included).
+     */
+    protected function filterIncluded(array $files): array
+    {
+        $include = $this->currentServerInfo['include'] ?? [];
+
+        if (empty($include)) {
+            return $files;
+        }
+
+        foreach ($include as $pattern) {
+            $matches = glob($this->repo . DIRECTORY_SEPARATOR . $pattern);
+            if ($matches === false) {
+                continue;
+            }
+
+            foreach ($matches as $match) {
+                if (is_dir($match)) {
+                    $dirFiles = dir_tree($match, true, false, true);
+                    foreach ($dirFiles as $localFile) {
+                        $relFile = ltrim(str_replace([$this->repo . '/', $this->repo . '\\'], '', $localFile), '/\\');
+                        if (! in_array($relFile, $files['upload'], true)) {
+                            $files['upload'][] = $relFile;
+                        }
+                    }
+                } elseif (is_file($match)) {
+                    $relFile = ltrim(str_replace([$this->repo . '/', $this->repo . '\\'], '', $match), '/\\');
+                    if (! in_array($relFile, $files['upload'], true)) {
+                        $files['upload'][] = $relFile;
+                    }
+                }
+            }
+        }
+
+        return $files;
+    }
+
+    /**
+     * Execute local shell commands (pre-deploy / post-deploy).
+     * When $failOnError is true an exception stops the deployment.
+     */
+    protected function runLocalCommands(array $commands, bool $failOnError = false): void
+    {
+        foreach ($commands as $command) {
+            $this->cli->info("$ {$command}");
+            $output = $this->git->exec($command, $failOnError);
+            foreach ($output as $line) {
+                $this->cli->info($line);
+            }
+        }
+    }
+
+    /**
+     * Execute commands on the remote server via SFTP (pre-deploy-remote / post-deploy-remote).
+     * Each command is prefixed with a cd to the deployment path.
+     */
+    protected function runRemoteCommands(array $commands): void
+    {
+        if (empty($commands)) {
+            return;
+        }
+
+        if (! $this->connection->isSftp()) {
+            $this->cli->warning('Remote commands are only supported for SFTP connections. Skipping.');
+            return;
+        }
+
+        $path = rtrim($this->currentServerInfo['path'], '/');
+
+        foreach ($commands as $command) {
+            $full = "cd {$path} && {$command}";
+            $this->cli->info("remote$ {$command}");
+            try {
+                $output = $this->connection->exec($full);
+                if ($output !== '') {
+                    $this->cli->info(rtrim($output));
+                }
+            } catch (\Exception $e) {
+                $this->cli->error('Remote command failed: ' . $e->getMessage());
             }
         }
     }
