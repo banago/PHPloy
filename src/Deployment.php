@@ -823,6 +823,9 @@ class Deployment
             }
 
             foreach ($matches as $match) {
+                // glob() keeps a trailing slash on directory patterns (include[] = 'dir/'),
+                // so dir_tree() would emit 'dir//file'. Strip it to keep paths clean.
+                $match = rtrim($match, '/\\');
                 if (is_dir($match)) {
                     $dirFiles = dir_tree($match, true, false, true);
                     foreach ($dirFiles as $localFile) {
