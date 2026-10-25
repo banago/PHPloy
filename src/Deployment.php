@@ -276,6 +276,8 @@ class Deployment
             return;
         }
 
+        $this->cli->warning('Submodule support is deprecated and will be removed in a future major version. Use Composer to manage dependencies instead.');
+
         $this->cli->info('Scanning repository...');
 
         $output = $this->git->command('submodule status', $this->repo);

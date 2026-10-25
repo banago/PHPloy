@@ -28,7 +28,7 @@ class Cli
      */
     protected function registerArguments(): void
     {
-        $this->climate->description('PHPloy - Incremental Git FTP/SFTP deployment tool that supports multiple servers, submodules and rollbacks.');
+        $this->climate->description('PHPloy - Incremental Git FTP/SFTP deployment tool that supports multiple servers and rollbacks.');
 
         $this->climate->arguments->add([
             'list' => [
@@ -55,7 +55,7 @@ class Cli
             'submodules' => [
                 'prefix' => 'm',
                 'longPrefix' => 'submodules',
-                'description' => 'Includes submodules in next deployment',
+                'description' => 'DEPRECATED: Includes submodules in next deployment (will be removed in a future version)',
                 'noValue' => true,
             ],
             'init' => [

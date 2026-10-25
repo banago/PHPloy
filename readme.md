@@ -1,7 +1,7 @@
 # PHPloy
 **Version 5.0.0**
 
-PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports submodules, sub-submodules, deploying to multiple servers and rollbacks. PHPloy requires **PHP 8.0+** (PHP 8.2+ for development/testing) and **Git 1.8+**.
+PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports deploying to multiple servers and rollbacks. Submodule support is deprecated — see [Submodules](#submodules). PHPloy requires **PHP 8.0+** (PHP 8.2+ for development/testing) and **Git 1.8+**.
 
 ## What's New in 5.0.0
 
@@ -271,6 +271,8 @@ If you want to do a fresh upload, even if you have deployed earlier, use the `--
     phploy --fresh
 
 ## Submodules
+
+> **⚠️ Deprecated.** Submodule support is deprecated and will be removed in a future major version. Composer is the recommended way to manage dependencies in PHP projects. If you actively use `--submodules`, please [open an issue](https://github.com/banago/PHPloy/issues) so we can gauge real-world usage before removal.
 
 Submodules are supported, but are turned off by default since you don't expect them to change very often and you only update them once in a while. To run a deployment with submodule scanning, add the `--submodules` parameter to the command:
 
