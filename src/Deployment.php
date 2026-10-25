@@ -242,8 +242,16 @@ class Deployment
             // pre-deploy-remote (SFTP only)
             $this->runRemoteCommands($server['pre-deploy-remote'] ?? []);
 
+            // purge-before[] — purge remote directories before uploading
+            $this->purge($server['purge-before'] ?? []);
+
             $this->push($files);
             $this->handleSubmodules($files);
+
+            // copy[] — copy remote directories (from -> to)
+            $this->copy($server['copy'] ?? []);
+            // purge[] — purge remote directories after uploading
+            $this->purge($server['purge'] ?? []);
 
             // post-deploy (local) — failure is logged but does not abort
             $this->runLocalCommands($server['post-deploy'] ?? []);
@@ -889,6 +897,102 @@ class Deployment
             } catch (\Exception $e) {
                 $this->cli->error('Remote command failed: ' . $e->getMessage());
             }
+        }
+    }
+
+    /**
+     * Purge the contents of the given remote directories (files and subdirectories).
+     * The directory itself is kept. Used by purge-before[] (before deploy) and
+     * purge[] (after deploy). Paths are relative to the deployment path.
+     */
+    protected function purge(array $dirs): void
+    {
+        foreach ($dirs as $dir) {
+            $dir = rtrim(trim((string) $dir), '/');
+
+            if (! $this->connection->directoryExists($dir)) {
+                $this->cli->warning(" - Skipping purge {$dir}: it does not exist on the server.");
+                continue;
+            }
+
+            $this->cli->info("Purging {$dir}");
+
+            $contents = $this->connection->listContents($dir, true);
+
+            if (empty($contents)) {
+                $this->cli->info(" - Nothing to purge in {$dir}");
+                continue;
+            }
+
+            // Delete files first, then directories (deepest first).
+            foreach ($contents as $item) {
+                if ($item['type'] === 'file') {
+                    $this->connection->delete($item['path']);
+                    $this->cli->info(" x {$item['path']}");
+                }
+            }
+
+            $subDirs = array_values(array_filter($contents, fn($i) => $i['type'] === 'dir'));
+            usort($subDirs, fn($a, $b) => substr_count($b['path'], '/') <=> substr_count($a['path'], '/'));
+
+            foreach ($subDirs as $item) {
+                $this->connection->deleteDir($item['path']);
+                $this->cli->info(" x {$item['path']}");
+            }
+
+            $this->cli->success("Purged {$dir}");
+        }
+    }
+
+    /**
+     * Copy remote directories from -> to (e.g. copy[] = 'public->www'), both
+     * relative to the deployment path. Directory structure is preserved.
+     */
+    protected function copy(array $copyDirs): void
+    {
+        $trim = fn(string $name): string => rtrim(trim($name), '/');
+
+        foreach ($copyDirs as $copyRule) {
+            [$from, $to] = array_map($trim, array_pad(explode('->', (string) $copyRule), 2, '.'));
+
+            if ($from === $to) {
+                $this->cli->warning(" - Skipping copy {$from}: source and destination are the same.");
+                continue;
+            }
+
+            if (! $this->connection->directoryExists($from)) {
+                $this->cli->warning(" - Skipping copy {$from}: it does not exist on the server.");
+                continue;
+            }
+
+            $this->cli->info("Copying {$from} to {$to}");
+
+            $contents = $this->connection->listContents($from, true);
+
+            if (empty($contents)) {
+                $this->cli->info(" - Nothing to copy in {$from}");
+                continue;
+            }
+
+            $relPath = fn(string $path): string => ltrim(substr($path, strlen($from)), '/');
+
+            // Create the destination directory structure first.
+            foreach ($contents as $item) {
+                if ($item['type'] === 'dir') {
+                    $this->connection->createDir($to . '/' . $relPath($item['path']));
+                }
+            }
+
+            // Copy files.
+            foreach ($contents as $item) {
+                if ($item['type'] === 'file') {
+                    $dest = $to . '/' . $relPath($item['path']);
+                    $this->connection->put($dest, $this->connection->read($item['path']));
+                    $this->cli->info(" x {$item['path']} to {$dest}");
+                }
+            }
+
+            $this->cli->success("Copied {$from} to {$to}");
         }
     }
 }
