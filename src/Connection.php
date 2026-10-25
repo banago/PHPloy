@@ -137,6 +137,9 @@ class Connection
             if (!empty($options['privkey']) && !is_file($options['privkey']) && "---" !== substr($options['privkey'], 0, 3)) {
                 throw new \Exception("Private key {$options['privkey']} doesn't exists.");
             }
+            if (!empty($server['port'])) {
+                $options['port'] = (int)$server['port'];
+            }
 
             $connectionProvider = new SftpConnectionProvider(
                 $options['host'],
