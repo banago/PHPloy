@@ -152,12 +152,17 @@ class Connection
                 $options['port'] = (int)$server['port'];
             }
 
+            // When authenticating with a private key, `pass` doubles as the key's
+            // passphrase. Flysystem v3 keeps the passphrase separate from the login
+            // password, so we map it explicitly (v1/v4 reused `password` for both).
+            $passphrase = ! empty($options['privkey']) ? ($options['password'] ?: null) : null;
+
             $connectionProvider = new SftpConnectionProvider(
                 $options['host'],
                 $options['username'],
                 $options['password'],
                 $options['privkey'] ?? null, // privkey
-                $options['passphrase'] ?? null, // passphrase
+                $passphrase,
                 $options['port'] ?? 22,
                 false, // use agent
                 30, // timeout
