@@ -14,7 +14,7 @@ class Config
     /**
      * @var string
      */
-    protected $iniFile = 'phploy.ini';
+    protected static $iniFile = 'phploy.ini';
 
     /**
      * @var string
@@ -53,15 +53,15 @@ class Config
      */
     protected function loadConfig(): void
     {
-        $iniFile = getcwd() . DIRECTORY_SEPARATOR . $this->iniFile;
+        $iniFile = getcwd() . DIRECTORY_SEPARATOR . self::$iniFile;
 
         if (!file_exists($iniFile)) {
-            throw new \Exception("'{$this->iniFile}' does not exist.");
+            throw new \Exception("'{self::$iniFile}' does not exist.");
         }
 
         $config = parse_ini_file($iniFile, true);
         if (!$config) {
-            throw new \Exception("'{$this->iniFile}' is not a valid .ini file.");
+            throw new \Exception("'{self::$iniFile}' is not a valid .ini file.");
         }
 
         // Get shared config if exists
@@ -71,7 +71,7 @@ class Config
         // Process each server
         foreach ($config as $name => $options) {
             if (! is_array($options)) {
-                throw new \Exception("No options could be parsed. Please name your server on your '{$this->iniFile}'.");
+                throw new \Exception("No options could be parsed. Please name your server on your '{self::$iniFile}'.");
             }
             $this->servers[$name] = $this->processServerConfig($name, $options, $shared);
         }
@@ -101,7 +101,7 @@ class Config
             'directoryPerm' => 0755,
             'branch' => '',
             'include' => [],
-            'exclude' => array_merge($this->globalFilesToExclude, [$this->iniFile]),
+            'exclude' => array_merge($this->globalFilesToExclude, [self::$iniFile]),
             'copy' => [],
             'purge' => [],
             'purge-before' => [],
@@ -222,12 +222,12 @@ class Config
     /**
      * Create sample config file
      */
-    public function createSampleConfig(): void
+    public static function createSampleConfig(Cli $cli): void
     {
-        $iniFile = getcwd() . DIRECTORY_SEPARATOR . $this->iniFile;
+        $iniFile = getcwd() . DIRECTORY_SEPARATOR . self::$iniFile;
 
         if (file_exists($iniFile)) {
-            $this->cli->info("\nphploy.ini file already exists.\n");
+            $cli->info("\nphploy.ini file already exists.\n");
             return;
         }
 
@@ -258,7 +258,7 @@ include[] = "dist"
 INI;
 
         if (file_put_contents($iniFile, $sample)) {
-            $this->cli->info("\nSample phploy.ini file created.\n");
+            $cli->info("\nSample phploy.ini file created.\n");
         }
     }
 }

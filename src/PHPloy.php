@@ -96,7 +96,7 @@ class PHPloy
 
         // Create sample config
         if ($this->cli->hasArgument('init')) {
-            $this->config->createSampleConfig();
+            Config::createSampleConfig($this->cli);
             return true;
         }
 
