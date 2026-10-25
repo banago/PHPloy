@@ -130,6 +130,7 @@ class Connection
         try {
             $options = $this->getCommonOptions($server);
 
+            $options['privkey'] = $server['privkey'] ?? null;
             if (!empty($server['privkey']) && '~' === $server['privkey'][0] && getenv('HOME') !== null) {
                 $options['privkey'] = substr_replace($server['privkey'], getenv('HOME'), 0, 1);
             }
