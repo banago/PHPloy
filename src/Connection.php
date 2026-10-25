@@ -6,6 +6,7 @@ use Banago\PHPloy\Traits\DebugTrait;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Ftp\FtpAdapter;
 use League\Flysystem\Ftp\FtpConnectionOptions;
+use League\Flysystem\Ftp\UnableToResolveConnectionRoot;
 use League\Flysystem\PhpseclibV3\SftpAdapter;
 use League\Flysystem\PhpseclibV3\SftpConnectionProvider;
 use League\Flysystem\UnixVisibility\PortableVisibilityConverter;
@@ -244,7 +245,14 @@ class Connection
      */
     public function directoryExists($path)
     {
-       return $this->server->directoryExists($path);
+        try {
+            return $this->server->directoryExists($path);
+        } catch (UnableToResolveConnectionRoot $e) {
+            // The FTP adapter throws when the connection root (deployment path)
+            // is missing. Treat it as "does not exist" so callers get a consistent
+            // false (the SFTP adapter returns false instead of throwing).
+            return false;
+        }
     }
 
     /**

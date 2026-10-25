@@ -91,6 +91,11 @@ class Deployment
     protected $status = false;
 
     /**
+     * @var bool
+     */
+    protected $force = false;
+
+    /**
      * @var bool|string
      */
     protected $sync = false;
@@ -122,6 +127,7 @@ class Deployment
         $this->mainRepo = $this->repo;
 
         $this->fresh          = $cli->hasArgument('fresh');
+        $this->force          = $cli->hasArgument('force');
         $this->listFiles      = $cli->hasArgument('list');
         $this->remoteList     = $cli->hasArgument('remote-list');
         $this->status         = $cli->hasArgument('status');
@@ -172,6 +178,12 @@ class Deployment
     {
         $this->currentServerName = $name;
         $this->currentServerInfo = $server;
+
+        // Create the deployment directory when --force is set.
+        if ($this->force && ! $this->createDeploymentDirectory($server)) {
+            $this->cli->info('Deployment skipped.');
+            return;
+        }
 
         // Connect to server
         $this->connection = new Connection($server);
@@ -249,6 +261,42 @@ class Deployment
             );
             $this->deploymentSize = 0;
         }
+    }
+
+    /**
+     * Create the deployment directory on the server (used with --force).
+     */
+    protected function createDeploymentDirectory(array $server): bool
+    {
+        $path = $server['path'];
+
+        // Root (or empty) path always exists — nothing to create.
+        if ($path === '' || $path === '/') {
+            return true;
+        }
+
+        $this->cli->info("Creating deployment directory: '{$path}'.");
+
+        try {
+            // Connect to the parent so the path can be created recursively even
+            // when it does not exist yet. Flysystem's FTP/SFTP createDirectory
+            // creates intermediate directories for us.
+            $parent = $server;
+            $parent['path'] = '/';
+
+            $parentConnection = new Connection($parent);
+
+            if ($parentConnection->createDir($path)) {
+                $this->cli->success('Deployment directory created. Ready to deploy.');
+                return true;
+            }
+
+            $this->cli->error("Could not create deployment directory: {$path}");
+        } catch (\Exception $e) {
+            $this->cli->error('Could not create deployment directory: ' . $e->getMessage());
+        }
+
+        return false;
     }
 
     /**
