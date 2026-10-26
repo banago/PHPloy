@@ -21,8 +21,8 @@ Path from `5.0.0-rc` → `5.0.0` stable → `5.1.0`. Last updated 2026-10-26.
 
 - [ ] **#395 — upload to `*.tmp` then rename** so the live server never serves a half-uploaded file. Revive the closed PR #396 approach.
 - [ ] **Unit tests for Config/Git parsing** — the quickmode reserved-char bug (`.phploy`, env-var precedence) has zero regression coverage.
-- [ ] *(optional)* Extract `FileFilter` (filter/remove-base/included) and `RemoteOps` (purge/copy/hooks) out of the 1060-line `Deployment.php`.
 - [x] **Resilient mid-list resume** — `uploadFile()` now reconnects and retries with backoff (2s/5s/10s/20s, 5 attempts) instead of one silent-skip retry; the boundary file is re-streamed from a fresh handle every attempt. On exhaustion it throws `Deploy stopped at file N of M (path)` *before* `.revision` advances, and the new `--from <index>` (1-based, inclusive) resumes uploads from that point. Covered by `FromResumeTest`.
+- [x] **Extract `FileFilter`** — `filterBasePath`/`filterExcluded`/`filterIncluded`/`removeBasePath` moved to `src/FileFilter.php` (with a single `filter()` entry point that captures the raw pre-filter diff for conditional `include[]`); `Deployment` now delegates through `$this->fileFilter`, rebuilt per server in `deployToServer()`. 1148 → 1027 lines.
 
 ## Backlog triage
 
