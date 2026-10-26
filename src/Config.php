@@ -238,31 +238,19 @@ class Config
             return;
         }
 
-        $sample = <<<INI
-; This is a sample configuration file
-; Comments start with ';', as in php.ini
-; Copy this file as phploy.ini and modify as needed
+        $template = dirname(__DIR__) . DIRECTORY_SEPARATOR . self::$iniFile;
 
-[staging]
-scheme = sftp
-host = example.com
-path = /path/to/deployment
-user = username
-pass = password
-port = 22
-; privkey = path/to/or/contents/of/privatekey
-passive = true
-ssl = false
-timeout = 30
+        if (!is_file($template)) {
+            $cli->error("\nSample config template not found: {$template}\n");
+            return;
+        }
 
-[production]
-quickmode = sftp://username:password@example.com:22/path/to/deployment
+        $sample = file_get_contents($template);
 
-[*]
-; Shared configuration for all servers
-exclude[] = "vendor"
-include[] = "dist"
-INI;
+        if ($sample === false) {
+            $cli->error("\nUnable to read sample config template: {$template}\n");
+            return;
+        }
 
         if (file_put_contents($iniFile, $sample)) {
             $cli->info("\nSample phploy.ini file created.\n");

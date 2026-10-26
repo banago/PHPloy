@@ -60,85 +60,16 @@ Windows Users: [Installing PHPloy globally on Windows](https://github.com/banago
 
 ## phploy.ini
 
-The `phploy.ini` file holds your project configuration. It should be located in the root directory of the project. `phploy.ini` is never uploaded to server.  Check the sample below for all available options:
+The `phploy.ini` file holds your project configuration. It should be located in the root directory of the project and is never uploaded to the server.
+
+A minimal example:
 
 ```ini
-; This is a sample phploy.ini file. You can specify as many
-; servers as you need and use normal or quickmode configuration.
-;
-; NOTE: If a value in the .ini file contains any non-alphanumeric 
-; characters it needs to be enclosed in double-quotes (").
-
-[staging]
-    scheme = sftp
-    user = example
-    ; When connecting via SFTP, you can opt for password-based authentication:
-    pass = password
-    ; Or private key-based authentication:
-    privkey = 'path/to/or/contents/of/privatekey'
-    host = staging-example.com
-    path = /path/to/installation
-    port = 22
-    ; You can specify a branch to deploy from
-    branch = develop
-    ; File permission set on the uploaded files/directories
-    permissions = 0700
-    ; File permissions set on newly created directories
-    directoryPerm = 0775
-    ; Deploy only this directory as base directory
-    base = 'directory-name/'
-    ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
-    exclude[] = 'src/*.scss'
-    exclude[] = '*.ini'
-    ; Files that are ignored by Git, but you want to send to the server
-    include[] = 'js/scripts.min.js'
-    include[] = 'directory-name/'
-    ; conditional include - if source file has changed, include file
-    include[] = 'css/style.min.css:src/style.css' 
-    ; Directories that should be copied after deploy, from->to
-    copy[] = 'public->www'
-    ; Directories that should be purged before deploy
-    purge-before[] = "dist/"
-    ; Directories that should be purged after deploy
-    purge[] = "cache/"
-    ; Pre- and Post-deploy hooks
-    ; Use "DQUOTE" inside your double-quoted strings to insert a literal double quote
-    ; Use 'QUOTE' inside your quoted strings to insert a literal quote
-    ; For example pre-deploy[] = 'echo "that'QUOTE's nice"' to get a literal "that's".
-    ; That workaround is based on http://php.net/manual/de/function.parse-ini-file.php#70847
-    pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
-    post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
-    ; Works only via SSH2 connection
-    pre-deploy-remote[] = "touch .maintenance"
-    post-deploy-remote[] = "mv cache cache2"
-    post-deploy-remote[] = "rm .maintenance"
-    ; You can specify a timeout for the underlying connection which might be useful for long running remote 
-    ; operations (cache clear, dependency update, etc.)
-    timeout = 60
-
 [production]
-    quickmode = ftp://example:password@production-example.com:21/path/to/installation
-    passive = true
-    ssl = false
-    ; You can specify a branch to deploy from
-    branch = master
-    ; File permission set on the uploaded files/directories
-    permissions = 0774
-    ; File permissions set on newly created directories
-    directoryPerm = 0755
-    ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
-    exclude[] = 'libs/*'
-    exclude[] = 'config/*'
-    exclude[] = 'src/*.scss'
-    ; Files that are ignored by Git, but you want to send to the server
-    include[] = 'js/scripts.min.js'
-    include[] = 'js/style.min.css'
-    include[] = 'directory-name/'
-    purge-before[] = "dist/" 
-    purge[] = "cache/" 
-    pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
-    post-deploy[] = "wget http://staging-example.com/post-deploy/test.php --spider --quiet"
+    quickmode = ftp://user:pass@example.com:21/path/to/installation
 ```
+
+The full annotated sample — with every available option documented inline — lives in [`phploy.ini`](phploy.ini) at the repo root. Run `phploy --init` in your project to generate it.
 
 If your password is missing in the `phploy.ini` file or the `PHPLOY_PASS` environment variable, PHPloy will interactively ask you for your password.
 There is also an option to store the user and password in a file called `.phploy`.

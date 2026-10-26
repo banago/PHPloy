@@ -2,8 +2,9 @@
 <?php
 
 /**
- * Build phploy.phar straight from the checkout — src/ plus the full vendor/
- * (dev dependencies included). Simplicity over size: no staging, no composer step.
+ * Build phploy.phar straight from the checkout — phploy.php, src/, phploy.ini,
+ * plus the full vendor/ (dev dependencies included). Simplicity over size: no
+ * staging, no composer step.
  */
 
 $filename    = 'phploy.phar';
@@ -14,7 +15,7 @@ $output_file = __DIR__ . '/dist/' . $filename;
 
 $phar = new Phar($output_file, FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::KEY_AS_FILENAME, $filename);
 $phar->startBuffering();
-$phar->buildFromDirectory(__DIR__, '~^(?:.*/)?(?:phploy\.php|src/|vendor/)~');
+$phar->buildFromDirectory(__DIR__, '~^(?:.*/)?(?:phploy\.php|phploy\.ini|src/|vendor/)~');
 $stub = "#!/usr/bin/env php \n" . $phar->createDefaultStub('phploy.php');
 $phar->setStub($stub);
 $phar->compressFiles(Phar::GZ);

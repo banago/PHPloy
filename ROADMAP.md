@@ -32,7 +32,7 @@ Path from `5.0.0-rc` → `5.0.0` stable → `5.1.0`. Last updated 2026-10-26.
 
 ## Docs / DX hygiene
 
-- [ ] **Consolidate three sample configs** (root `phploy.ini`, readme sample, `Config::createSampleConfig()`) into one source of truth.
+- [x] **Consolidate three sample configs** — root `phploy.ini` is the single source of truth; `--init` reads it (`Config::createSampleConfig()` no longer hardcodes), the readme links to it, and `build` bundles it into the phar.
 - [ ] **Refresh or retire `memory-bank/`** (stale: claims 5.0.0, PHP 8.2, no submodule-deprecation warning).
 - [x] **Fix `contributing.md`** — PHP version fixed (8.0+ runtime / 8.4 dev). Verified `composer lint` passes and `php build`/`php -d phar.readonly=0 build` are the correct documented invocations (the `build` file is non-executable, so `php build` is right) — the "lint broken / build not executable" sub-claims were stale.
 - [x] **Fix Docker fresh-clone bootstrap** — `composer test`/`test:exec` now install deps in-container when `vendor/` is missing; added `.dockerignore` so the image build stops copying the host `vendor/` into the build context.
