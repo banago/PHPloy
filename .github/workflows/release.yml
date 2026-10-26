@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Install runtime dependencies
+        run: composer install --no-dev --no-interaction --no-progress --prefer-dist
+
+      - name: Build phar
+        run: php -d phar.readonly=0 build
+
+      - name: Resolve version
+        id: version
+        run: |
+          VERSION="$(php dist/phploy.phar --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?')"
+          echo "phar reports v${VERSION}"
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            TAG="${GITHUB_REF_NAME#v}"
+            [ "$VERSION" = "$TAG" ] || { echo "::error::phar version ${VERSION} != tag ${TAG}"; exit 1; }
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate latest.json
+        run: |
+          SHA="$(sha256sum dist/phploy.phar | cut -d' ' -f1)"
+          printf '{"version":"%s","url":"https://banago.github.io/PHPloy/phploy.phar","sha256":"%s"}\n' \
+            "${{ steps.version.outputs.version }}" "$SHA" > dist/latest.json
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
