@@ -13,7 +13,7 @@ Once your code is merged, it is available for free to everybody under the MIT Li
 Thank you for your contribution! PHPloy wouldn't be so great without you.
 
 ## Dependencies
-The project requires PHP 8.2 or higher. Dependencies are managed through Composer:
+The project requires PHP 8.0 or higher to run. Development and testing use PHP 8.4 (the Docker test image pins `php:8.4-cli`). Dependencies are managed through Composer:
 ```bash
 composer install
 ```

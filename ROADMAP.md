@@ -7,13 +7,13 @@ Path from `5.0.0-rc` → `5.0.0` stable → `5.1.0`. Last updated 2026-10-26.
 - [ ] **Bump version** `5.0.0-rc` → `5.0.0` in the 5 spots (composer.json, `src/PHPloy.php` `$version`, `@version` docblock, readme header + "What's New" heading).
 - [ ] **Add `LICENSE` file** — MIT is declared in `composer.json` but no `LICENSE` exists in the repo.
 - [x] **Fix the false "Code Quality Tools" claim** — added `squizlabs/php_codesniffer` (^4.0) + `phpstan/phpstan` (^2.3) to `require-dev`; `composer lint` (PSR-12) and `composer analyze` (level 5) both pass. Claim is now true.
-- [ ] **Reconcile PHP version** — composer `^8.0`, contributing "8.2+", readme "8.0+ / 8.4 dev", memory-bank "8.2 dev". Pick one truth (runtime `^8.0`, dev/test `8.4`).
+- [x] **Reconcile PHP version** — runtime `^8.0`, dev/test `8.4`. Fixed `contributing.md` (said 8.2+) and `memory-bank/projectbrief.md` (said 8.2 dev); `composer.json`, `readme.md`, `Dockerfile.test`, and workflows were already correct.
 - [ ] Rebuild `dist/phploy.phar`, assert `--version` = `5.0.0`, tag `v5.0.0`.
 
 ## CI/CD — right after stable
 
-- [ ] **Add a CI test workflow** (biggest gap). Run the Docker test suite (`docker compose up` + `pest`) on push/PR.
-- [ ] **Release workflow: create the GitHub Release.** Today `release.yml` only publishes to Pages; add a step to create the release with generated notes and attach `dist/phploy.phar`.
+- [x] **Add a CI test workflow** (biggest gap). Run the Docker test suite (`docker compose up` + `pest`) on push/PR.
+- [x] **Release workflow: create the GitHub Release.** Today `release.yml` only publishes to Pages; add a step to create the release with generated notes and attach `dist/phploy.phar`.
 - [ ] **Dependabot** for composer deps (security updates).
 - [ ] **Issue + PR templates** to keep the backlog tidy going forward.
 

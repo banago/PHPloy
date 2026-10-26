@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -53,6 +53,13 @@ jobs:
           SHA="$(sha256sum dist/phploy.phar | cut -d' ' -f1)"
           printf '{"version":"%s","url":"https://banago.github.io/PHPloy/phploy.phar","sha256":"%s"}\n' \
             "${{ steps.version.outputs.version }}" "$SHA" > dist/latest.json
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/phploy.phar
+          generate_release_notes: true
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
