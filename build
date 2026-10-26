@@ -1,55 +1,25 @@
 #!/usr/bin/env php
 <?php
 
-$filename = 'phploy.phar';
-$output_dir = __DIR__ . '/dist/';
-$output_file = $output_dir . $filename;
+/**
+ * Build phploy.phar straight from the checkout — src/ plus the full vendor/
+ * (dev dependencies included). Simplicity over size: no staging, no composer step.
+ */
 
-// Remove existing file, recursively create directories if needed
+$filename    = 'phploy.phar';
+$output_file = __DIR__ . '/dist/' . $filename;
+
 @unlink($output_file);
-@mkdir($output_dir, 0755, true);
+@mkdir(__DIR__ . '/dist', 0755, true);
 
-// If vendors directory doesn't exist, try to install with composer
-if (! is_dir(__DIR__ . '/vendor')) {
-    @shell_exec('composer --working-dir="' . __DIR__ . '" install');
-}
-
-// Start phar
-$phar = new Phar(
-    $output_file,
-    FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::KEY_AS_FILENAME,
-    $filename
-);
-
+$phar = new Phar($output_file, FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::KEY_AS_FILENAME, $filename);
 $phar->startBuffering();
-
-// Add all files from vendor and src
-$phar->buildFromDirectory(dirname(__FILE__), '/^(?!.*\/(\.git|tests|build|dist)).*$/');
-
-
-// Adding main files
-$phar->addFile('phploy.php');
-$phar->addFile('phploy.ini');
-$phar->addFile('src/utils.php');
-$phar->addFile('src/Cli.php');
-$phar->addFile('src/Git.php');
-$phar->addFile('src/Config.php');
-$phar->addFile('src/PHPloy.php');
-$phar->addFile('src/Connection.php');
-$phar->addFile('src/Deployment.php');
-$phar->addFile('src/Traits/DebugTrait.php');
-// Autoloader
-$phar->addFile('vendor/autoload.php');
-
-// Create a stub and add the shebang
-$default = $phar->createDefaultStub('phploy.php');
-$stub = "#!/usr/bin/env php \n" . $default;
+$phar->buildFromDirectory(__DIR__, '~^(?:.*/)?(?:phploy\.php|src/|vendor/)~');
+$stub = "#!/usr/bin/env php \n" . $phar->createDefaultStub('phploy.php');
 $phar->setStub($stub);
-
 $phar->compressFiles(Phar::GZ);
 $phar->stopBuffering();
 
-// Set file permissions
 chmod($output_file, 0755);
 
-echo 'Build was successful: dist/phploy.phar' . PHP_EOL;
+echo 'Build was successful: ' . $output_file . PHP_EOL;

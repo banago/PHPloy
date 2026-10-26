@@ -1,9 +1,9 @@
 # PHPloy
-**Version 5.0.0**
+**Version 5.0.0-beta2**
 
 PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports deploying to multiple servers and rollbacks. Submodule support is deprecated — see [Submodules](#submodules). PHPloy requires **PHP 8.0+** (PHP 8.2+ for development/testing) and **Git 1.8+**.
 
-## What's New in 5.0.0
+## What's New in 5.0.0-beta2
 
 - **Improved File Structure**: Better organized codebase with clear separation of concerns
 - **Flysystem 3.0 Upgrade**: Enhanced file system abstraction with latest Flysystem version
@@ -63,7 +63,7 @@ Windows Users: [Installing PHPloy globally on Windows](https://github.com/banago
 The `phploy.ini` file holds your project configuration. It should be located in the root directory of the project. `phploy.ini` is never uploaded to server.  Check the sample below for all available options:
 
 ```ini
-; This is a sample deploy.ini file. You can specify as many
+; This is a sample phploy.ini file. You can specify as many
 ; servers as you need and use normal or quickmode configuration.
 ;
 ; NOTE: If a value in the .ini file contains any non-alphanumeric 
@@ -90,7 +90,7 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     ; Files that should be ignored and not uploaded to your server, but still tracked in your repository
     exclude[] = 'src/*.scss'
     exclude[] = '*.ini'
-    ; Files that are ignored by Git, but you want to send the the server
+    ; Files that are ignored by Git, but you want to send to the server
     include[] = 'js/scripts.min.js'
     include[] = 'directory-name/'
     ; conditional include - if source file has changed, include file
@@ -102,8 +102,8 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     ; Directories that should be purged after deploy
     purge[] = "cache/"
     ; Pre- and Post-deploy hooks
-    ; Use "DQOUTE" inside your double-quoted strings to insert a literal double quote
-    ; Use 'QUOTE' inside your qouted strings to insert a literal quote
+    ; Use "DQUOTE" inside your double-quoted strings to insert a literal double quote
+    ; Use 'QUOTE' inside your quoted strings to insert a literal quote
     ; For example pre-deploy[] = 'echo "that'QUOTE's nice"' to get a literal "that's".
     ; That workaround is based on http://php.net/manual/de/function.parse-ini-file.php#70847
     pre-deploy[] = "wget http://staging-example.com/pre-deploy/test.php --spider --quiet"
@@ -130,7 +130,7 @@ The `phploy.ini` file holds your project configuration. It should be located in 
     exclude[] = 'libs/*'
     exclude[] = 'config/*'
     exclude[] = 'src/*.scss'
-    ; Files that are ignored by Git, but you want to send the the server
+    ; Files that are ignored by Git, but you want to send to the server
     include[] = 'js/scripts.min.js'
     include[] = 'js/style.min.css'
     include[] = 'directory-name/'
@@ -248,6 +248,14 @@ Or:
 
     phploy --list
 
+## Checking deployment status
+
+PHPloy can report the state of a server without deploying anything: the remote revision, how many commits you are behind, and how many files the next deploy would upload and delete:
+
+    phploy --status
+
+If the server has never been deployed, the revision is reported as `(none - not yet deployed)`.
+
 ## Updating or "syncing" the remote revision
 
 If you want to update the `.revision` file on the server to match your current local revision, run:
@@ -260,7 +268,7 @@ If you want to set it to a previous commit revision, just specify the revision l
 
 ## Creating deployment directory on first deploy
 
-If the deployment directory does not exits, you can instruct PHPloy to create it for you:
+If the deployment directory does not exist, you can instruct PHPloy to create it for you:
 
     phploy --force
 
@@ -312,7 +320,7 @@ To turn logging on, add this to `phploy.ini`:
 
 ## Contribute
 
-CaContributions are very welcome; PHPloy is great because of the contributors. Please check out the [issues](https://github.com/banago/PHPloy/issues). 
+Contributions are very welcome; PHPloy is great because of the contributors. Please check out the [issues](https://github.com/banago/PHPloy/issues). 
 
 ## Credits
 
