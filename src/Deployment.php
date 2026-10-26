@@ -133,7 +133,44 @@ class Deployment
         $this->status         = $cli->hasArgument('status');
         $this->scanSubmodules = $cli->hasArgument('submodules');
         $this->sync           = $cli->hasArgument('sync') ? $cli->getArgument('sync') : false;
-        $this->revision       = $cli->hasArgument('rollback') ? $cli->getArgument('rollback') : 'HEAD';
+        $this->revision       = $this->resolveRevision($cli);
+    }
+
+    /**
+     * Resolve the revision to deploy from the --rollback argument.
+     *
+     * `--rollback <sha>` rolls back to the given commit. `--rollback` with no
+     * value presents an interactive, arrow-key selectable list of recent
+     * commits to roll back to.
+     */
+    protected function resolveRevision(Cli $cli): string
+    {
+        if (! $cli->hasArgument('rollback')) {
+            return 'HEAD';
+        }
+
+        if ($cli->argumentProvided('rollback')) {
+            return (string) $cli->getArgument('rollback');
+        }
+
+        $commits = $this->git->recentCommits();
+
+        if (empty($commits)) {
+            throw new \Exception('No commits to roll back to.');
+        }
+
+        $options = [];
+        foreach ($commits as $commit) {
+            $options[$commit['sha']] = $commit['sha'] . '  ' . $commit['subject'];
+        }
+
+        $selected = $cli->pickFromList('Select a commit to roll back to:', $options);
+
+        if (empty($selected)) {
+            throw new \Exception('No commit selected. Rollback aborted.');
+        }
+
+        return $selected;
     }
 
     /**

@@ -140,6 +140,32 @@ class Git
     }
 
     /**
+     * List recent commits (most recent first) for the interactive rollback picker.
+     *
+     * @param int $limit
+     * @return array<int, array{sha: string, subject: string}>
+     * @throws \Exception
+     */
+    public function recentCommits(int $limit = 20): array
+    {
+        // %x09 is a literal tab — avoids the space that would otherwise split
+        // the --format value into two shell arguments.
+        $output = $this->command('log --format=%H%x09%s -' . $limit);
+
+        $commits = [];
+        foreach ($output as $line) {
+            if (preg_match('/^([0-9a-f]{40})\t(.*)$/', $line, $matches)) {
+                $commits[] = [
+                    'sha' => $matches[1],
+                    'subject' => $matches[2],
+                ];
+            }
+        }
+
+        return $commits;
+    }
+
+    /**
      * Checkout given $branch.
      *
      * @param string $branch

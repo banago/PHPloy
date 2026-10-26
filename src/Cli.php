@@ -177,6 +177,28 @@ class Cli
     }
 
     /**
+     * Whether a value was explicitly provided on the command line for an
+     * argument (as opposed to falling back to its default value).
+     */
+    public function argumentProvided(string $name): bool
+    {
+        return $this->climate->arguments->provided($name);
+    }
+
+    /**
+     * Present an arrow-key selectable list and return the chosen option's key.
+     *
+     * @param array<string, string> $options Map of value => label.
+     * @return string|null The selected value, or null if none was chosen.
+     */
+    public function pickFromList(string $prompt, array $options): ?string
+    {
+        $selected = $this->climate->radio($prompt, $options)->prompt();
+
+        return is_string($selected) ? $selected : null;
+    }
+
+    /**
      * Output an error message.
      */
     public function error(string $message): void
