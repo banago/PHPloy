@@ -1,9 +1,9 @@
 # PHPloy
-**Version 5.0.0-rc**
+**Version 5.0.0**
 
 PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports deploying to multiple servers and rollbacks. Submodule support is deprecated — see [Submodules](#submodules). PHPloy requires **PHP 8.0+** (PHP 8.4+ for development/testing) and **Git 1.8+**.
 
-## What's New in 5.0.0-rc
+## What's New in 5.0.0
 
 - **Improved File Structure**: Better organized codebase with clear separation of concerns
 - **Flysystem 3.0 Upgrade**: Enhanced file system abstraction with latest Flysystem version
@@ -208,6 +208,14 @@ If the deployment directory does not exist, you can instruct PHPloy to create it
 If you want to do a fresh upload, even if you have deployed earlier, use the `--fresh` argument like this:
 
     phploy --fresh
+
+## Resuming an interrupted deploy
+
+If a deploy is interrupted mid-list — a dropped connection, a lost network, a stopped process — PHPloy aborts loudly with the file index it stopped at and does not advance the server revision, so a plain re-run resumes correctly. To skip re-uploading the files that already landed, pass the 1-based index from the error message to `--from`:
+
+    phploy --from 599
+
+This re-uploads file 599 (in case it was only partially transferred) and continues from there.
 
 ## Submodules
 

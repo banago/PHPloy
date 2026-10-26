@@ -8,14 +8,14 @@ namespace Banago\PHPloy;
  * @author Baki Goxhaj <banago@gmail.com>
  * @link https://github.com/banago/PHPloy
  * @licence MIT Licence
- * @version 5.0.0-rc
+ * @version 5.0.0
  */
 class PHPloy
 {
     /**
      * @var string
      */
-    protected $version = '5.0.0-rc';
+    protected $version = '5.0.0';
 
     /**
      * @var Cli

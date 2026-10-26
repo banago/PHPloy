@@ -4,10 +4,12 @@ Path from `5.0.0-rc` → `5.0.0` stable → `5.1.0`. Last updated 2026-10-26.
 
 ## 5.0.0 stable — release blockers
 
-- [ ] **Bump version** `5.0.0-rc` → `5.0.0` in the 5 spots (composer.json, `src/PHPloy.php` `$version`, `@version` docblock, readme header + "What's New" heading).
+- [x] **Bump version** `5.0.0-rc` → `5.0.0` in the 5 spots (composer.json, `src/PHPloy.php` `$version`, `@version` docblock, readme header + "What's New" heading).
 - [x] **Add `LICENSE` file** — decided not to (noise; `composer.json` already declares MIT). GitHub's repo page shows "No license" (it only reads the LICENSE file), but Packagist still shows MIT from `composer.json`.
 - [x] **Fix the false "Code Quality Tools" claim** — added `squizlabs/php_codesniffer` (^4.0) + `phpstan/phpstan` (^2.3) to `require-dev`; `composer lint` (PSR-12) and `composer analyze` (level 5) both pass. Claim is now true.
 - [x] **Reconcile PHP version** — runtime `^8.0`, dev/test `8.4`. Fixed `contributing.md` (said 8.2+) and `memory-bank/projectbrief.md` (said 8.2 dev); `composer.json`, `readme.md`, `Dockerfile.test`, and workflows were already correct.
+- [x] **Resilient mid-list resume** — `uploadFile()` now reconnects and retries with backoff (2s/5s/10s/20s, 5 attempts) instead of one silent-skip retry; the boundary file is re-streamed from a fresh handle every attempt. On exhaustion it throws `Deploy stopped at file N of M (path)` *before* `.revision` advances, and the new `--from <index>` (1-based, inclusive) resumes uploads from that point. Covered by `FromResumeTest`.
+- [x] **Extract `FileFilter`** — `filterBasePath`/`filterExcluded`/`filterIncluded`/`removeBasePath` moved to `src/FileFilter.php` (with a single `filter()` entry point that captures the raw pre-filter diff for conditional `include[]`); `Deployment` now delegates through `$this->fileFilter`, rebuilt per server in `deployToServer()`. 1148 → 1027 lines.
 - [ ] Rebuild `dist/phploy.phar`, assert `--version` = `5.0.0`, tag `v5.0.0`.
 
 ## CI/CD — right after stable
@@ -17,12 +19,10 @@ Path from `5.0.0-rc` → `5.0.0` stable → `5.1.0`. Last updated 2026-10-26.
 - [ ] **Dependabot** for composer deps (security updates).
 - [ ] **Issue + PR templates** to keep the backlog tidy going forward.
 
-## 5.1.0 — headline: atomic-ish uploads + resilient mid-list resume
+## 5.1.0 — headline: atomic-ish uploads
 
 - [ ] **#395 — upload to `*.tmp` then rename** so the live server never serves a half-uploaded file. Revive the closed PR #396 approach.
 - [ ] **Unit tests for Config/Git parsing** — the quickmode reserved-char bug (`.phploy`, env-var precedence) has zero regression coverage.
-- [x] **Resilient mid-list resume** — `uploadFile()` now reconnects and retries with backoff (2s/5s/10s/20s, 5 attempts) instead of one silent-skip retry; the boundary file is re-streamed from a fresh handle every attempt. On exhaustion it throws `Deploy stopped at file N of M (path)` *before* `.revision` advances, and the new `--from <index>` (1-based, inclusive) resumes uploads from that point. Covered by `FromResumeTest`.
-- [x] **Extract `FileFilter`** — `filterBasePath`/`filterExcluded`/`filterIncluded`/`removeBasePath` moved to `src/FileFilter.php` (with a single `filter()` entry point that captures the raw pre-filter diff for conditional `include[]`); `Deployment` now delegates through `$this->fileFilter`, rebuilt per server in `deployToServer()`. 1148 → 1027 lines.
 
 ## Backlog triage
 
