@@ -38,10 +38,10 @@
         }
     },
     "scripts": {
-        "test": "docker compose up -d && docker compose exec phploy-test ./vendor/bin/pest && docker compose down",
+        "test": "docker compose up -d && docker compose exec phploy-test sh -c '[ -d vendor ] || composer install --no-interaction' && docker compose exec phploy-test ./vendor/bin/pest && docker compose down",
         "test:up": "docker compose up -d",
         "test:down": "docker compose down",
-        "test:exec": "docker compose exec phploy-test ./vendor/bin/pest",
+        "test:exec": "docker compose exec phploy-test sh -c '[ -d vendor ] || composer install --no-interaction' && docker compose exec phploy-test ./vendor/bin/pest",
         "lint": "phpcs --standard=PSR12 src/ tests/",
         "lint:fix": "phpcbf --standard=PSR12 src/ tests/",
         "analyze": "phpstan analyze src/ --level=5"

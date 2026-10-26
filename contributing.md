@@ -41,6 +41,8 @@ The project uses Pest PHP testing framework with Docker-based integration tests.
    composer test:down    # Stop Docker containers
    ```
 
+Dependencies are installed into the test container automatically on first run, so a fresh clone can run `composer test` with no manual setup.
+
 ### Writing Tests
 
 Tests are written using Pest PHP, a delightful testing framework built on top of PHPUnit. Example test structure:

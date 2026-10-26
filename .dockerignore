@@ -1,0 +1,4 @@
+.git/
+vendor/
+dist/
+memory-bank/
