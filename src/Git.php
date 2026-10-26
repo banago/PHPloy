@@ -85,7 +85,8 @@ class Git
             throw new \Exception("Repository path does not exist: {$repoPath}");
         }
 
-        if (!is_dir($repoPath . '/.git')) {
+        // A submodule's `.git` is a *file* (a `gitdir:` pointer), not a directory.
+        if (!is_dir($repoPath . '/.git') && !is_file($repoPath . '/.git')) {
             throw new \Exception("Not a git repository: {$repoPath}");
         }
 

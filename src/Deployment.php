@@ -232,6 +232,14 @@ class Deployment
         $files = $this->filterExcluded($files);
         $files = $this->filterIncluded($files, $changedFiles);
 
+        // Submodule paths are gitlinks, not real files — skip them in the main
+        // deploy; their contents are pushed separately by handleSubmodules().
+        if ($this->scanSubmodules && ! empty($this->submodules)) {
+            $submodulePaths = array_column($this->submodules, 'name');
+            $files['upload'] = array_values(array_diff($files['upload'], $submodulePaths));
+            $files['delete'] = array_values(array_diff($files['delete'], $submodulePaths));
+        }
+
         $this->cli->info("\r\nSERVER: " . $name);
 
         if ($this->listFiles) {
@@ -358,8 +366,11 @@ class Deployment
             foreach ($output as $line) {
                 $line = explode(' ', trim($line));
 
+                // `git submodule status` prefixes the recorded SHA with a status
+                // char: ' ' in-sync, '-' uninitialized, '+' differs, 'U' conflict.
+                // Strip it so `revision` stays a valid 40-char SHA.
                 $this->submodules[] = array(
-                    'revision' => $line[0],
+                    'revision' => ltrim($line[0], ' -+U'),
                     'name'     => $line[1],
                     'path'     => $this->repo . '/' . $line[1],
                 );
@@ -394,7 +405,7 @@ class Deployment
             $line = explode(' ', trim($line));
 
             $this->submodules[] = array(
-                'revision' => $line[0],
+                'revision' => ltrim($line[0], ' -+U'),
                 'name'     => $name . '/' . $line[1],
                 'path'     => $this->repo . '/' . $name . '/' . $line[1],
             );
