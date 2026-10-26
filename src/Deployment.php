@@ -607,36 +607,36 @@ class Deployment
             : $file
         );
 
-        $data = @file_get_contents($filePath);
-        if ($data === false) {
-            $this->cli->error("File not found - please check path: {$filePath}");
-            return;
-        }
-
         $remoteFile = $this->removeBasePath($file);
+        $fileNo = str_pad((string) $number, strlen((string) $total), ' ', STR_PAD_LEFT);
 
-        try {
-            $this->connection->put($remoteFile, $data);
-            $this->deploymentSize += filesize($filePath);
+        // Stream the file to the server (never loaded into memory), reconnecting
+        // and retrying once if the transfer fails (e.g. a dropped connection).
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            $handle = @fopen($filePath, 'rb');
+            if ($handle === false) {
+                $this->cli->error("File not found - please check path: {$filePath}");
+                return;
+            }
 
-            $fileNo = str_pad((string) $number, strlen((string) $total), ' ', STR_PAD_LEFT);
-            $this->cli->success(" ^ {$fileNo} of {$total} {$file}");
-        } catch (\Exception $e) {
-            $this->cli->error("Failed to upload {$file}: " . $e->getMessage());
+            try {
+                $this->connection->putStream($remoteFile, $handle);
+                fclose($handle);
 
-            if (! $this->connection) {
-                $this->cli->info('Connection lost, trying to reconnect...');
-                $this->connection = new Connection($this->currentServerInfo);
+                $this->deploymentSize += filesize($filePath);
+                $this->cli->success(" ^ {$fileNo} of {$total} {$file}");
+                return;
+            } catch (\Exception $e) {
+                fclose($handle);
 
-                try {
-                    $this->connection->put($remoteFile, $data);
-                    $this->deploymentSize += filesize($filePath);
-
-                    $fileNo = str_pad((string) $number, strlen((string) $total), ' ', STR_PAD_LEFT);
-                    $this->cli->success(" ^ {$fileNo} of {$total} {$file}");
-                } catch (\Exception $e) {
-                    $this->cli->error("Failed to upload {$file} after reconnect: " . $e->getMessage());
+                if ($attempt < 2) {
+                    $this->cli->info('Upload failed, reconnecting and retrying once...');
+                    $this->connection = new Connection($this->currentServerInfo);
+                    continue;
                 }
+
+                $this->cli->error("Failed to upload {$file}: " . $e->getMessage());
+                return;
             }
         }
     }

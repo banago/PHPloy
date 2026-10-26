@@ -291,6 +291,19 @@ class Connection
     }
 
     /**
+     * Write a file from a stream (memory-bounded, for large files).
+     *
+     * @param string   $path
+     * @param resource $stream
+     *
+     * @return void
+     */
+    public function putStream($path, $stream)
+    {
+        $this->server->writeStream($path, $stream);
+    }
+
+    /**
      * Delete a file
      *
      * @param string $path
