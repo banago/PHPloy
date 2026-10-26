@@ -225,11 +225,11 @@ servers. This basically allows you to inject custom default values.
 
 PHPloy allows you to roll back to an earlier version when you need to. Rolling back is very easy. 
 
-To roll back to the previous commit, you just run:
+To roll back interactively, run `--rollback` with no value and pick a commit from an arrow-key list of your recent commits:
 
     phploy --rollback
 
-To roll back to whatever commit you want, you run:
+To roll back to a specific commit, pass its hash:
 
     phploy --rollback commit-hash-goes-here
 
