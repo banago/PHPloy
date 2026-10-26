@@ -16,6 +16,20 @@ test('deploys only to default server when no --all flag', function () {
     shell_exec('git add test.txt');
     shell_exec('git commit -m "Initial commit"');
 
+    // The remote is shared across tests — clear any leftover test.txt on the
+    // SFTP server so "not deployed here" is actually verifiable.
+    $sftpCleanup = new Connection([
+        'scheme' => 'sftp',
+        'host' => 'sftp-server',
+        'user' => 'testuser',
+        'pass' => 'testpass',
+        'path' => '/upload',
+        'timeout' => 30
+    ]);
+    if ($sftpCleanup->has('test.txt')) {
+        $sftpCleanup->delete('test.txt');
+    }
+
     // 2. Create and configure phploy.ini with default server
     $phployConfig = <<<INI
 [default]

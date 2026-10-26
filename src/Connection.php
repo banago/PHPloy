@@ -141,9 +141,12 @@ class Connection
         try {
             $options = $this->getCommonOptions($server);
 
-            $options['privkey'] = $server['privkey'] ?? null;
-            if (!empty($server['privkey']) && '~' === $server['privkey'][0] && getenv('HOME') !== null) {
-                $options['privkey'] = substr_replace($server['privkey'], getenv('HOME'), 0, 1);
+            // Normalise privkey: Config defaults it to '' but Flysystem treats any
+            // non-null privateKey as "use key auth", so '' would force the wrong
+            // auth path and break password logins.
+            $options['privkey'] = ($server['privkey'] ?? '') ?: null;
+            if (!empty($options['privkey']) && '~' === $options['privkey'][0] && getenv('HOME') !== null) {
+                $options['privkey'] = substr_replace($options['privkey'], getenv('HOME'), 0, 1);
             }
 
             if (!empty($options['privkey']) && !is_file($options['privkey']) && "---" !== substr($options['privkey'], 0, 3)) {
