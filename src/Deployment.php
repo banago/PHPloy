@@ -227,9 +227,10 @@ class Deployment
         $files = $this->compare();
 
         // Apply filters from phploy.ini
+        $changedFiles = $files['upload']; // raw pre-filter diff, used by conditional include[]
         $files = $this->filterBasePath($files);
         $files = $this->filterExcluded($files);
-        $files = $this->filterIncluded($files);
+        $files = $this->filterIncluded($files, $changedFiles);
 
         $this->cli->info("\r\nSERVER: " . $name);
 
@@ -673,9 +674,10 @@ class Deployment
 
         // Files that would be uploaded/deleted on the next deploy (also handles branch checkout)
         $files = $this->compare();
+        $changedFiles = $files['upload']; // raw pre-filter diff, used by conditional include[]
         $files = $this->filterBasePath($files);
         $files = $this->filterExcluded($files);
-        $files = $this->filterIncluded($files);
+        $files = $this->filterIncluded($files, $changedFiles);
 
         if ($remoteRevision) {
             $behind = $this->git->commitsBehind($remoteRevision, $this->revision, $this->repo);
@@ -814,9 +816,12 @@ class Deployment
 
     /**
      * Add files matching include[] patterns to the upload list, regardless of git diff.
-     * Patterns support wildcards and directory names (all files inside are included).
+     * Patterns support wildcards, directory names (all files inside are included), and
+     * conditional includes of the form 'target:condition' — the target is only included
+     * when `condition` is among the files changed in this deploy (matched against the
+     * raw pre-filter diff, so excluded/out-of-base source files still trigger it).
      */
-    protected function filterIncluded(array $files): array
+    protected function filterIncluded(array $files, ?array $changedFiles = null): array
     {
         $include = $this->currentServerInfo['include'] ?? [];
 
@@ -825,6 +830,15 @@ class Deployment
         }
 
         foreach ($include as $pattern) {
+            $condition = '';
+            if (strpos($pattern, ':') !== false) {
+                [$pattern, $condition] = explode(':', $pattern, 2);
+            }
+
+            if ($condition !== '' && $changedFiles !== null && ! in_array($condition, $changedFiles, true)) {
+                continue;
+            }
+
             $matches = glob($this->repo . DIRECTORY_SEPARATOR . $pattern);
             if ($matches === false) {
                 continue;
