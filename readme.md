@@ -1,9 +1,9 @@
 # PHPloy
-**Version 5.0.0-beta2**
+**Version 5.0.0-rc**
 
-PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports deploying to multiple servers and rollbacks. Submodule support is deprecated — see [Submodules](#submodules). PHPloy requires **PHP 8.0+** (PHP 8.2+ for development/testing) and **Git 1.8+**.
+PHPloy is an incremental Git FTP and SFTP deployment tool. By keeping track of the state of the remote server(s) it deploys only the files that were committed since the last deployment. PHPloy supports deploying to multiple servers and rollbacks. Submodule support is deprecated — see [Submodules](#submodules). PHPloy requires **PHP 8.0+** (PHP 8.4+ for development/testing) and **Git 1.8+**.
 
-## What's New in 5.0.0-beta2
+## What's New in 5.0.0-rc
 
 - **Improved File Structure**: Better organized codebase with clear separation of concerns
 - **Flysystem 3.0 Upgrade**: Enhanced file system abstraction with latest Flysystem version
@@ -37,7 +37,7 @@ in your `$PATH` so the PHPloy executable can be located by your system.
 
 You can install PHPloy via a phar archive:
 
-1. **Download**: Get the latest `phploy.phar` from our releases page
+1. **Download**: Get the latest `phploy.phar` from [GitHub Pages](https://banago.github.io/PHPloy/phploy.phar)
 2. **Install**:
    - **Globally:** Move to `/usr/local/bin/phploy` and make executable:
      ```bash
