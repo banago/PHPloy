@@ -9,6 +9,8 @@ use Banago\PHPloy\Traits\DebugTrait;
  */
 class Deployment
 {
+    use DebugTrait;
+
     /**
      * @var Cli
      */
@@ -99,8 +101,6 @@ class Deployment
      * @var bool|string
      */
     protected $sync = false;
-
-    use DebugTrait;
 
     /**
      * @var bool
@@ -196,10 +196,10 @@ class Deployment
             // Skip if:
             // 1. A specific server was requested and this isn't it, or
             // 2. No specific server was requested, --all wasn't specified,
-            // a default server exists, and this isn't the default server
+            // and this isn't the default server
             if (
                 ( $targetServer && $targetServer !== $name ) ||
-                ( ! $targetServer && ! $deployAll && $hasDefaultServer && $name !== 'default' )
+                ( ! $targetServer && ! $deployAll && $name !== 'default' )
             ) {
                 continue;
             }
@@ -224,7 +224,7 @@ class Deployment
 
         // Connect to server
         $this->connection = new Connection($server);
-        
+
         // Check if remote path exists
         try {
             $rootExists = $this->connection->directoryExists('');
@@ -390,7 +390,10 @@ class Deployment
             return;
         }
 
-        $this->cli->warning('Submodule support is deprecated and will be removed in a future major version. Use Composer to manage dependencies instead.');
+        $this->cli->warning(
+            'Submodule support is deprecated and will be removed in a future major version. '
+            . 'Use Composer to manage dependencies instead.'
+        );
 
         $this->cli->info('Scanning repository...');
 
@@ -526,7 +529,8 @@ class Deployment
 
                     default:
                         throw new \Exception(
-                            "Unknown git-diff status. Use '--sync' to update remote revision or use '--debug' to see what's wrong."
+                            "Unknown git-diff status. Use '--sync' to update remote revision "
+                            . "or use '--debug' to see what's wrong."
                         );
                 }
             }
@@ -610,34 +614,52 @@ class Deployment
         $remoteFile = $this->removeBasePath($file);
         $fileNo = str_pad((string) $number, strlen((string) $total), ' ', STR_PAD_LEFT);
 
-        // Stream the file to the server (never loaded into memory), reconnecting
-        // and retrying once if the transfer fails (e.g. a dropped connection).
-        for ($attempt = 1; $attempt <= 2; $attempt++) {
-            $handle = @fopen($filePath, 'rb');
-            if ($handle === false) {
+        // Stream the file (never loaded into memory), reconnecting and retrying
+        // once if the transfer fails (e.g. a dropped connection).
+        $handle = @fopen($filePath, 'rb');
+        if ($handle === false) {
+            $this->cli->error("File not found - please check path: {$filePath}");
+            return;
+        }
+
+        try {
+            $this->streamFile($remoteFile, $handle);
+        } catch (\Exception $e) {
+            $this->cli->info('Upload failed, reconnecting and retrying once...');
+            $this->connection = new Connection($this->currentServerInfo);
+
+            $retryHandle = @fopen($filePath, 'rb');
+            if ($retryHandle === false) {
                 $this->cli->error("File not found - please check path: {$filePath}");
                 return;
             }
 
             try {
-                $this->connection->putStream($remoteFile, $handle);
-                fclose($handle);
-
-                $this->deploymentSize += filesize($filePath);
-                $this->cli->success(" ^ {$fileNo} of {$total} {$file}");
-                return;
+                $this->streamFile($remoteFile, $retryHandle);
             } catch (\Exception $e) {
-                fclose($handle);
-
-                if ($attempt < 2) {
-                    $this->cli->info('Upload failed, reconnecting and retrying once...');
-                    $this->connection = new Connection($this->currentServerInfo);
-                    continue;
-                }
-
                 $this->cli->error("Failed to upload {$file}: " . $e->getMessage());
                 return;
             }
+        }
+
+        $this->deploymentSize += filesize($filePath);
+        $this->cli->success(" ^ {$fileNo} of {$total} {$file}");
+    }
+
+    /**
+     * Stream an open file handle to the server, closing it afterwards.
+     *
+     * @param string   $remoteFile
+     * @param resource $handle
+     *
+     * @return void
+     */
+    protected function streamFile(string $remoteFile, $handle): void
+    {
+        try {
+            $this->connection->putStream($remoteFile, $handle);
+        } finally {
+            fclose($handle);
         }
     }
 
@@ -748,16 +770,16 @@ class Deployment
     {
         try {
             $this->cli->info("\r\nChecking remote path: " . $this->currentServerInfo['path']);
-            
+
             // Check if the directory exists
             if (!$this->connection->directoryExists('')) {
                 $this->cli->error("Remote path does not exist: " . $this->currentServerInfo['path']);
                 return;
             }
-            
+
             // Try to list contents of the root directory
             $contents = $this->connection->listContents('', false);
-            
+
             if (empty($contents)) {
                 $this->cli->warning("Remote path exists but is empty.");
             } else {

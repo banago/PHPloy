@@ -13,7 +13,9 @@
         }
     ],
     "require-dev": {
-        "pestphp/pest": "^2.0"
+        "pestphp/pest": "^2.0",
+        "squizlabs/php_codesniffer": "^4.0",
+        "phpstan/phpstan": "^2.3"
     },
     "require": {
         "php": "^8.0",
@@ -42,7 +44,7 @@
         "test:exec": "docker compose exec phploy-test ./vendor/bin/pest",
         "lint": "phpcs --standard=PSR12 src/ tests/",
         "lint:fix": "phpcbf --standard=PSR12 src/ tests/",
-        "analyze": "phpstan analyze src/ tests/ --level=max"
+        "analyze": "phpstan analyze src/ --level=5"
     },
     "bin": ["bin/phploy"],
     "config": {

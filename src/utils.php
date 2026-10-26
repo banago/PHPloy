@@ -40,7 +40,10 @@ function dir_tree($directory, $recursive = true, $listDirs = false, $listFiles =
             if (!$skip && !$skipByExclude) {
                 if (is_dir($directory . '/' . $file)) {
                     if ($recursive) {
-                        $arrayItems = array_merge($arrayItems, dir_tree($directory . '/' . $file, $recursive, $listDirs, $listFiles, $exclude));
+                        $arrayItems = array_merge(
+                            $arrayItems,
+                            dir_tree($directory . '/' . $file, $recursive, $listDirs, $listFiles, $exclude)
+                        );
                     }
                     if ($listDirs) {
                         $file = $directory . '/' . $file;
@@ -108,7 +111,7 @@ function input_password()
 function human_filesize($bytes, $decimals = 2)
 {
     $sz = 'BKMGTP';
-    $factor = floor((strlen($bytes) - 1) / 3);
+    $factor = $bytes > 0 ? (int) floor(log($bytes, 1024)) : 0;
 
     return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
 }
@@ -119,7 +122,7 @@ function human_filesize($bytes, $decimals = 2)
  * @param string $pattern
  * @param string $string
  *
- * @return string
+ * @return int|false
  */
 function pattern_match($pattern, $string)
 {

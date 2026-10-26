@@ -91,7 +91,8 @@ class Git
         }
 
         // "-c core.quotepath=false" fixes special characters issue like ë, ä, ü etc., in file names
-        $command = 'git -c core.quotepath=false --git-dir="' . $repoPath . '/.git" --work-tree="' . $repoPath . '" ' . $command;
+        $command = 'git -c core.quotepath=false --git-dir="' . $repoPath . '/.git" '
+            . '--work-tree="' . $repoPath . '" ' . $command;
 
         $output = $this->exec($command);
         $this->debug("Git command: {$command}\nOutput: " . implode("\n", $output));

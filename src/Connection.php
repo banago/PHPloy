@@ -94,19 +94,22 @@ class Connection
             $options = $this->getCommonOptions($server);
 
             $config = new FtpConnectionOptions(
-                $options['host'],
-                $options['root'],
-                $options['username'],
-                $options['password'],
-                $server['port'] ?? 21,
-                $server['ssl'] ?? false,
-                $options['timeout'] ?? 90,
-                false, //utf8
-                $server['passive'] ?? true,
-                FTP_BINARY, // transferMode
-                null, // ignorePassiveAddress
-                30, // timestampsOnUnixListingsEnabled
-                true // recurseManually
+                host: $options['host'],
+                root: $options['root'],
+                username: $options['username'],
+                password: $options['password'],
+                port: $server['port'] ?? 21,
+                ssl: $server['ssl'] ?? false,
+                timeout: $options['timeout'] ?? 90,
+                utf8: false,
+                passive: $server['passive'] ?? true,
+                transferMode: FTP_BINARY,
+                systemType: null,
+                // true: connect to the control host, not the PASV-returned address —
+                // required when the server misreports it (e.g. NAT'd containers).
+                ignorePassiveAddress: true,
+                enableTimestampsOnUnixListings: true,
+                recurseManually: false,
             );
 
             $visibility = PortableVisibilityConverter::fromArray([
@@ -145,11 +148,15 @@ class Connection
             // non-null privateKey as "use key auth", so '' would force the wrong
             // auth path and break password logins.
             $options['privkey'] = ($server['privkey'] ?? '') ?: null;
-            if (!empty($options['privkey']) && '~' === $options['privkey'][0] && getenv('HOME') !== null) {
+            if (!empty($options['privkey']) && '~' === $options['privkey'][0] && getenv('HOME') !== false) {
                 $options['privkey'] = substr_replace($options['privkey'], getenv('HOME'), 0, 1);
             }
 
-            if (!empty($options['privkey']) && !is_file($options['privkey']) && "---" !== substr($options['privkey'], 0, 3)) {
+            if (
+                !empty($options['privkey'])
+                && !is_file($options['privkey'])
+                && "---" !== substr($options['privkey'], 0, 3)
+            ) {
                 throw new \Exception("Private key {$options['privkey']} doesn't exists.");
             }
             if (!empty($server['port'])) {
