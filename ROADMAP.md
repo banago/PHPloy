@@ -17,17 +17,19 @@ Path from `5.0.0-rc` → `5.0.0` stable → `5.1.0`. Last updated 2026-10-26.
 - [ ] **Dependabot** for composer deps (security updates).
 - [ ] **Issue + PR templates** to keep the backlog tidy going forward.
 
-## 5.1.0 — headline: atomic-ish uploads
+## 5.1.0 — headline: atomic-ish uploads + resilient mid-list resume
 
 - [ ] **#395 — upload to `*.tmp` then rename** so the live server never serves a half-uploaded file. Revive the closed PR #396 approach.
 - [ ] **Unit tests for Config/Git parsing** — the quickmode reserved-char bug (`.phploy`, env-var precedence) has zero regression coverage.
 - [ ] *(optional)* Extract `FileFilter` (filter/remove-base/included) and `RemoteOps` (purge/copy/hooks) out of the 1060-line `Deployment.php`.
+- [x] **Resilient mid-list resume** — `uploadFile()` now reconnects and retries with backoff (2s/5s/10s/20s, 5 attempts) instead of one silent-skip retry; the boundary file is re-streamed from a fresh handle every attempt. On exhaustion it throws `Deploy stopped at file N of M (path)` *before* `.revision` advances, and the new `--from <index>` (1-based, inclusive) resumes uploads from that point. Covered by `FromResumeTest`.
 
 ## Backlog triage
 
 - [ ] Close **#376** (auto-closes on push — commit says `fixes #376`).
 - [ ] Close **#381** (PowerShell env-var docs) — trivial doc fix.
-- [ ] Close as `wontfix`: **#369** WebDAV, **#340** web UI, **#259** tarball.
+- [ ] Close as `wontfix`: **#369** WebDAV, **#340** web UI, **#259** tarball (FTP has no server-side extract; would only work for SFTP or via a dropped helper script — dead end for a general solution).
+- [ ] **#302** multithreading — leave closed. Re-checked 2026-10-26: Flysystem 3.36 (latest) still has no parallel FTP/SFTP uploads; the real blocker is PHP-side (`pcntl_fork` = Unix-only, `ext-parallel` unfit for `ext-ftp`/phpseclib I/O). The actual pain (6000-file first deploy dying mid-list) is solved by mid-list resume + `--from`, not by parallelism — annotate the issue, don't reopen.
 - [ ] Label **#353** (tag support) `help wanted` + defer.
 
 ## Docs / DX hygiene

@@ -108,6 +108,11 @@ class Deployment
     protected $fresh = false;
 
     /**
+     * @var int 1-based upload index to resume from (0 = disabled).
+     */
+    protected $from = 0;
+
+    /**
      * @var int
      */
     protected $deploymentSize = 0;
@@ -134,6 +139,25 @@ class Deployment
         $this->scanSubmodules = $cli->hasArgument('submodules');
         $this->sync           = $cli->hasArgument('sync') ? $cli->getArgument('sync') : false;
         $this->revision       = $this->resolveRevision($cli);
+        $this->from           = $this->resolveFromIndex($cli);
+    }
+
+    /**
+     * Resolve the --from resume index (1-based) or 0 when not provided.
+     */
+    protected function resolveFromIndex(Cli $cli): int
+    {
+        if (! $cli->hasArgument('from')) {
+            return 0;
+        }
+
+        $from = $cli->getArgument('from');
+
+        if (! ctype_digit((string) $from) || (int) $from < 1) {
+            throw new \Exception('--from expects a positive integer (the 1-based file index to resume from).');
+        }
+
+        return (int) $from;
     }
 
     /**
@@ -559,9 +583,27 @@ class Deployment
             $this->git->command('checkout ' . $this->revision, $this->repo);
         }
 
+        // Apply --from resume index (main repo only; submodules deploy fully).
+        $uploadFiles = $files['upload'];
+        $fromIndex = 0;
+
+        if ($this->from > 0 && ! $this->currentSubmoduleName) {
+            $fromIndex = $this->from;
+
+            if ($this->from > count($files['upload'])) {
+                $this->cli->warning(
+                    " --from {$this->from} exceeds the " . count($files['upload'])
+                    . ' files to upload; nothing to upload.'
+                );
+            }
+
+            $uploadFiles = array_slice($uploadFiles, $this->from - 1);
+        }
+
         // Upload files
-        foreach ($files['upload'] as $i => $file) {
-            $this->uploadFile($file, $i + 1, count($files['upload']));
+        foreach ($uploadFiles as $i => $file) {
+            $number = $fromIndex > 0 ? $fromIndex + $i : $i + 1;
+            $this->uploadFile($file, $number, count($files['upload']));
         }
 
         // Delete files
@@ -570,7 +612,7 @@ class Deployment
         }
 
         // Update revision
-        if (! empty($files['upload']) || ! empty($files['delete'])) {
+        if (! empty($uploadFiles) || ! empty($files['delete'])) {
             if ($this->revision !== 'HEAD') {
                 $revision = $this->git->command('rev-parse HEAD')[0];
                 $this->setRevision($revision);
@@ -583,7 +625,7 @@ class Deployment
                 $localRevision,
                 $this->currentServerName,
                 $initialBranch ?: 'master',
-                count($files['upload']),
+                count($uploadFiles),
                 count($files['delete']),
                 !empty($this->currentServerInfo['logger'])
             );
@@ -598,7 +640,12 @@ class Deployment
     }
 
     /**
-     * Upload a file
+     * Upload a file, reconnecting and retrying with backoff on connection
+     * drops. The boundary file is re-streamed from a fresh handle on every
+     * attempt, so a half-uploaded file is overwritten rather than trusted.
+     *
+     * Exhausting all attempts throws with the index so the caller can resume
+     * via `--from <index>`; the file is never silently skipped.
      */
     protected function uploadFile(string $file, int $number, int $total): void
     {
@@ -614,36 +661,55 @@ class Deployment
         $remoteFile = $this->removeBasePath($file);
         $fileNo = str_pad((string) $number, strlen((string) $total), ' ', STR_PAD_LEFT);
 
-        // Stream the file (never loaded into memory), reconnecting and retrying
-        // once if the transfer fails (e.g. a dropped connection).
-        $handle = @fopen($filePath, 'rb');
-        if ($handle === false) {
-            $this->cli->error("File not found - please check path: {$filePath}");
-            return;
-        }
+        $maxAttempts = 5;
+        $backoff = [2, 5, 10, 20];
+        $attempts = 0;
 
-        try {
-            $this->streamFile($remoteFile, $handle);
-        } catch (\Exception $e) {
-            $this->cli->info('Upload failed, reconnecting and retrying once...');
-            $this->connection = new Connection($this->currentServerInfo);
+        while (true) {
+            $attempts++;
 
-            $retryHandle = @fopen($filePath, 'rb');
-            if ($retryHandle === false) {
+            $handle = @fopen($filePath, 'rb');
+            if ($handle === false) {
                 $this->cli->error("File not found - please check path: {$filePath}");
                 return;
             }
 
             try {
-                $this->streamFile($remoteFile, $retryHandle);
-            } catch (\Exception $e) {
-                $this->cli->error("Failed to upload {$file}: " . $e->getMessage());
+                $this->streamFile($remoteFile, $handle);
+                $this->deploymentSize += filesize($filePath);
+                $this->cli->success(" ^ {$fileNo} of {$total} {$file}");
                 return;
+            } catch (\Exception $e) {
+                $lastError = $e->getMessage();
+
+                if ($attempts >= $maxAttempts) {
+                    throw new \Exception(sprintf(
+                        'Deploy stopped at file %d of %d (%s) after %d attempts. Last error: %s. '
+                        . 'Re-run with --from %d to resume.',
+                        $number,
+                        $total,
+                        $file,
+                        $maxAttempts,
+                        $lastError,
+                        $number
+                    ));
+                }
+
+                $delay = $backoff[min($attempts - 1, count($backoff) - 1)];
+                $this->cli->info(
+                    "Upload failed, reconnecting and retrying in {$delay}s "
+                    . "(attempt {$attempts} of {$maxAttempts})..."
+                );
+
+                try {
+                    $this->connection = new Connection($this->currentServerInfo);
+                } catch (\Exception $reconnectError) {
+                    $this->cli->info('Reconnect failed: ' . $reconnectError->getMessage());
+                }
+
+                sleep($delay);
             }
         }
-
-        $this->deploymentSize += filesize($filePath);
-        $this->cli->success(" ^ {$fileNo} of {$total} {$file}");
     }
 
     /**

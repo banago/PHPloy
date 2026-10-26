@@ -113,6 +113,11 @@ class Cli
                 'longPrefix' => 'remote-list',
                 'description' => 'Lists the contents of the remote deployment path to verify it exists',
                 'noValue' => true,
+            ],
+            'from' => [
+                'longPrefix' => 'from',
+                'description' => 'Resume uploads at the given 1-based file index '
+                    . '(use after a deploy was interrupted mid-list)',
             ]
         ]);
 
